@@ -168,6 +168,3 @@ autocmd FileType {javascript,javascript.jsx} setlocal completefunc=JsBallsRequir
 com JsBallsLintFix call s:LintFix()
 com JsBallsListRoutes call s:ListExpressRoutes()
 com JsBallsListRequirers call s:ListRequirers()
-
-"autocmd FileType {javascript,javascript.jsx} nnoremap <Leader>p :call FixJsFormatting()<cr>
-"autocmd FileType {javascript,javascript.jsx} nnoremap <leader>R :call JsRequires()<cr>

@@ -2,6 +2,7 @@ language: vim
 sudo: required
 
 before_script:
+  - sudo apt-get install silversearcher-ag
   - git clone https://github.com/junegunn/vader.vim.git
   - "git clone https://github.com/vim/vim && cd vim && ./configure --with-features=huge && make && sudo make install && cd -"
 env:
