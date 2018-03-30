@@ -1,4 +1,4 @@
-# Js Balls
+# Js Balls [![Build Status](https://travis-ci.org/artemave/js-balls.svg?branch=master)](https://travis-ci.org/artemave/js-balls)
 
 Essential for javascript productivity.
 
