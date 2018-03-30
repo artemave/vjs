@@ -25,13 +25,21 @@ Plugin 'artemave/js-balls'
 
 Js Balls registers "user defined completion" (`CTRL-X-u`) which gives you this:
 
+![2018-03-12 23 40 39](https://user-images.githubusercontent.com/23721/38147456-b25bad1a-3452-11e8-984f-f609de469211.gif)
+
 Js Balls comes with no bindings, but does add the following commands:
 
 **`:JsBallsListRequirers`** - show list of modules that require current file in quickfix window.
 
+![2018-03-30 19 51 28](https://user-images.githubusercontent.com/23721/38147735-d9631104-3453-11e8-91fa-67db2bf13055.gif)
+
 **`:JsBallsListRoutes`** - show list of express routes of current file in quickfix window.
 
+![2018-03-30 19 55 02](https://user-images.githubusercontent.com/23721/38147868-5995de2e-3454-11e8-9f87-8178004862d9.gif)
+
 **`:JsBallsLintFix`** - fix js linting. This will try `eslint`, `standard` and `prettier` before giving up. Note that it runs asynchronously so vim is never frozen.
+
+![2018-03-30 19 56 59](https://user-images.githubusercontent.com/23721/38147921-9ff6de22-3454-11e8-810d-596451d3765d.gif)
 
 ### Example bindings
 
