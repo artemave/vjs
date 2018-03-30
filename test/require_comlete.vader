@@ -1,0 +1,27 @@
+Given javascript:
+
+Execute:
+  file test/fixtures/deeper/stuff.js
+
+Do (require sibling):
+  i
+  const blah = require('bl\<C-X>\<C-U>\<cr>
+
+Expect:
+  const blah = require('./blah
+  
+
+Do (require from parent folder):
+  i
+  const blops = require('bl\<C-X>\<C-U>\<Down>\<cr>
+
+Expect:
+  const blops = require('../blops
+
+Do (require index.js):
+  i
+  const package = require('pa\<C-X>\<C-U>\<cr>
+
+Expect:
+  const package = require('../package
+  

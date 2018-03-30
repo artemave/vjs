@@ -1,0 +1,11 @@
+language: vim
+sudo: required
+
+before_script:
+  - git clone https://github.com/junegunn/vader.vim.git
+  - "git clone https://github.com/vim/vim && cd vim && ./configure --with-features=huge && make && sudo make install && cd -"
+env:
+  global:
+    - "PATH=/usr/local/bin:$PATH"
+script:
+  ./run_tests

@@ -1,0 +1,38 @@
+filetype off
+set rtp+=vader.vim
+set rtp+=.
+set rtp+=after
+filetype plugin indent on
+syntax enable
+
+set grepprg=ag\ --vimgrep
+set grepformat=%f:%l:%c:%m
+
+let g:jsballs_debug=1
+
+fun GetLastMessage()
+  redir => msgs
+  silent messages
+  redir END
+  return get(split(msgs, "\n"), -1, "")
+endf
+
+fun LogAllMessages()
+  redir => msgs
+  silent messages
+  redir END
+  Log msgs
+endf
+
+fun GetQFListFiles()
+  let qflist = getqflist()
+  call map(qflist, {k,v -> {'fname': bufname(v.bufnr), 'lnum': v.lnum, 'text': v.text}})
+  return qflist
+endf
+
+fun GetQFList()
+  let qflist = getqflist()
+  call map(qflist, {k,v -> {'lnum': v.lnum, 'text': v.text}})
+  return qflist
+endf
+
