@@ -24,15 +24,20 @@ fun LogAllMessages()
   Log msgs
 endf
 
+fun SortByLnum(a,b)
+  return a:a.lnum > a:b.lnum ? 1 : -1
+endf
+
 fun GetQFListFiles()
   let qflist = getqflist()
   call map(qflist, {k,v -> {'fname': bufname(v.bufnr), 'lnum': v.lnum, 'text': v.text}})
-  return qflist
+  return sort(qflist, "SortByLnum")
 endf
 
 fun GetQFList()
   let qflist = getqflist()
   call map(qflist, {k,v -> {'lnum': v.lnum, 'text': v.text}})
   return qflist
+  return sort(qflist, "SortByLnum")
 endf
 

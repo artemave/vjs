@@ -1,0 +1,11 @@
+version: 2
+jobs:
+   build:
+     docker:
+       - image: ubuntu
+     steps:
+       - run: apt-get update
+       - run: apt-get install --yes silversearcher-ag git vim
+       - checkout
+       - run: git clone https://github.com/junegunn/vader.vim.git
+       - run: ./run_tests

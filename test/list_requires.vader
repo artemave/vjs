@@ -6,7 +6,7 @@ Execute:
 Execute:
   JsBallsListRequirers
   AssertEqual GetQFListFiles(), [
-    \ {'lnum': 2, 'fname': 'test/fixtures/deeper/blah.jsx', 'text': "const stuff = require('./stuff')"},
     \ {'lnum': 1, 'fname': 'test/fixtures/blops.js', 'text': "const stuff = require('./deeper/stuff')"},
+    \ {'lnum': 2, 'fname': 'test/fixtures/deeper/blah.jsx', 'text': "const stuff = require('./stuff')"},
     \ {'lnum': 3, 'fname': 'test/fixtures/package/index.js', 'text': 'const stuff = require("../deeper/stuff")'},
   \]
