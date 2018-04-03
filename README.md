@@ -13,13 +13,17 @@ Namely:
 - list express routes
 - fix linting errors
 
+For testing related goodies check out [vigun](https://github.com/artemave/vigun).
+
 ## Installation
 
 Use [a plugin manager](https://github.com/VundleVim/Vundle.vim):
 
 ```vim script
 Plugin 'artemave/js-balls'
-```
+``` 
+
+[ag](https://github.com/ggreer/the_silver_searcher) is required.
 
 ## Usage
 
