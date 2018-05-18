@@ -25,3 +25,14 @@ Do (require index.js):
 Expect:
   const package = require('../package
   
+
+Execute (regression: require file with no common file ancestor AND that is closer to root):
+  file lib/lib2/lib3/lib4/fuga.js
+
+Do:
+  i
+  const package = require('blo\<C-X>\<C-U>\<cr>
+
+Expect:
+  const package = require('../../../../test/fixtures/blops
+  

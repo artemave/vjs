@@ -95,7 +95,13 @@ fun! JsBallsRequireComplete(findstart, base)
         let i = 0
         while i < len(current_path_entries)
           let current_path_entry = current_path_entries[i]
-          let m_path_entry = m_path_entries[i]
+
+          if len(m_path_entries) > i
+            let m_path_entry = m_path_entries[i]
+          else
+            let m_path_entry = ''
+          endif
+
           if current_path_entry == m_path_entry
             let m = substitute(m, '^'.m_path_entry.'\/', '', '')
           else
