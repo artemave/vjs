@@ -8,7 +8,7 @@ syntax enable
 set grepprg=ag\ --vimgrep
 set grepformat=%f:%l:%c:%m
 
-let g:jsballs_debug=1
+let g:vjs_debug=1
 
 fun GetLastMessage()
   redir => msgs

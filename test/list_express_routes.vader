@@ -32,7 +32,7 @@ Given javascript:
   )
 
 Execute:
-  JsBallsListRoutes
+  VjsListRoutes
   AssertEqual GetQFList(), [
     \ {'lnum': 5,  'text': "app.use('/status'"},
     \ {'lnum': 10, 'text': "app.use('/commit'"},

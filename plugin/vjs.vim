@@ -1,17 +1,17 @@
-if exists("g:jsballs_loaded")
+if exists("g:vjs_loaded")
   finish
 endif
-let g:jsballs_loaded = 1
+let g:vjs_loaded = 1
 
 if !executable('ag') || &grepprg !~ '^ag'
-  throw "Js Balls requies `ag` as `grepprg`"
+  throw "Vjs requies `ag` as `grepprg`"
   echo "Add this to .vimrc:"
   echo "set grepprg=ag \--vimgrep"
   echo "set grepformat=%f:%l:%c:%m"
 endif
 
 fun s:Debug(message)
-  if exists("g:jsballs_debug")
+  if exists("g:vjs_debug")
     echom a:message
   endif
 endf
@@ -64,7 +64,7 @@ fun! s:LintFix()
   checktime
 endf
 
-fun! JsBallsRequireComplete(findstart, base)
+fun! VjsRequireComplete(findstart, base)
   if a:findstart
     " locate the start of the word
     let line = getline('.')
@@ -170,7 +170,7 @@ fun! s:ListExpressRoutes()
   syntax match llFileName /^[^|]*|[^|]*| / transparent conceal
 endf
 
-autocmd FileType {javascript,javascript.jsx} setlocal completefunc=JsBallsRequireComplete
-com JsBallsLintFix call s:LintFix()
-com JsBallsListRoutes call s:ListExpressRoutes()
-com JsBallsListRequirers call s:ListRequirers()
+autocmd FileType {javascript,javascript.jsx} setlocal completefunc=VjsRequireComplete
+com VjsLintFix call s:LintFix()
+com VjsListRoutes call s:ListExpressRoutes()
+com VjsListRequirers call s:ListRequirers()
