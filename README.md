@@ -21,7 +21,7 @@ For testing related goodies check out [vigun](https://github.com/artemave/vigun)
 Use [a plugin manager](https://github.com/VundleVim/Vundle.vim):
 
 ```vim script
-Plugin 'artemave/js-balls'
+Plugin 'artemave/vjs'
 ``` 
 
 [ag](https://github.com/ggreer/the_silver_searcher) is required.
