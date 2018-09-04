@@ -170,7 +170,37 @@ fun! s:ListExpressRoutes()
   syntax match llFileName /^[^|]*|[^|]*| / transparent conceal
 endf
 
+fun! s:ExtractVariable()
+  let [line_end, column_end] = getpos("'>")[1:2]
+  let end_of_line_selected = len(getline(line_end)) == column_end
+
+  let @v = input('Variable name: ')
+  if empty(@v)
+    return
+  endif
+
+  normal gv
+  normal "sx
+  if empty(@s)
+    return
+  endif
+
+  if end_of_line_selected == 1
+    normal "vp
+  else
+    normal "vP
+  endif
+
+  normal Oconst 
+  normal "vp
+  normal a = 
+  normal "sp
+
+  let @s = ''
+endf
+
 autocmd FileType {javascript,javascript.jsx} setlocal completefunc=VjsRequireComplete
 com VjsLintFix call s:LintFix()
 com VjsListRoutes call s:ListExpressRoutes()
 com VjsListRequirers call s:ListRequirers()
+com -range VjsExtractVariable call s:ExtractVariable()
