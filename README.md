@@ -1,4 +1,4 @@
-# Vjs [![Build Status](https://travis-ci.org/artemave/vjs.svg?branch=master)](https://travis-ci.org/artemave/vjs)
+# Vjs [![CircleCI](https://circleci.com/gh/artemave/vjs.svg?style=svg)](https://circleci.com/gh/artemave/vjs)
 
 Essential for javascript productivity.
 
