@@ -42,7 +42,7 @@ Vjs comes with no bindings, but does add the following commands:
 
 ![2018-03-30 19 55 02](https://user-images.githubusercontent.com/23721/38147868-5995de2e-3454-11e8-9f87-8178004862d9.gif)
 
-**`:VjsLintFix`** - fix js linting. This will try `eslint`, `standard` and `prettier` before giving up. Note that it runs asynchronously so vim is never frozen.
+**`:VjsLintFix`** - fix js/typescript lint errors. For js it will try `eslint`, `standard` and `prettier` (in that order). Note that it runs asynchronously so vim is never frozen.
 
 ![2018-03-30 19 56 59](https://user-images.githubusercontent.com/23721/38147921-9ff6de22-3454-11e8-810d-596451d3765d.gif)
 

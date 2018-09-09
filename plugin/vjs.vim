@@ -53,11 +53,16 @@ fun! s:ListRequirers()
 endf
 
 fun! s:LintFix()
-  let command = 'eslint --fix'
-  if executable('standard')
-    let command = 'standard --fix'
-  elseif executable('prettier')
-    let command = 'prettier --write'
+  let command = './node_modules/.bin/eslint --fix'
+
+  if &ft == 'typescript'
+    let command = './node_modules/.bin/tslint --fix'
+  else
+    if executable('./node_modules/.bin/standard')
+      let command = './node_modules/.bin/standard --fix'
+    elseif executable('./node_modules/.bin/prettier')
+      let command = './node_modules/.bin/prettier --write'
+    endif
   endif
   :w
   silent let f = system(command.' '.expand('%'))
