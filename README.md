@@ -34,7 +34,7 @@ Vjs registers "user defined completion" (`CTRL-X-u`) which gives you this:
 
 Vjs comes with no bindings, but does add the following commands:
 
-**`:VjsListRequirers`** - show list of modules that require current file in quickfix window.
+**`:VjsListRequirers`** - show list of modules that require current file in quickfix window. Supports both commonJS and ES6 modules.
 
 ![2018-03-30 19 51 28](https://user-images.githubusercontent.com/23721/38147735-d9631104-3453-11e8-91fa-67db2bf13055.gif)
 

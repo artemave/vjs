@@ -17,7 +17,7 @@ fun s:Debug(message)
 endf
 
 fun! s:ListRequirers()
-  let grep_term = 'require\(.*\)'
+  let grep_term = '(require\(.*\)\|^import)'
   execute 'silent grep!' "'".grep_term."'"
   redraw!
 
@@ -34,7 +34,7 @@ fun! s:ListRequirers()
         let module_path = module_path . '/index'
       elseif match(module_path, '\/$') != -1
         let module_path = module_path . 'index'
-      elseif match(module_path, 'index\(\.jsx\?\)\?$') == -1
+      elseif match(module_path, 'index\(\.[tj]sx\?\)\?$') == -1
         let module_path_with_explicit_index = module_path . '/index'
       endif
 
@@ -84,7 +84,7 @@ fun! VjsRequireComplete(findstart, base)
 
     let g:js_require_complete_matches = map(
           \ systemlist(cmd),
-          \ {i, val -> substitute(val, '\(\/index\)\?.jsx\?$', '', '')}
+          \ {i, val -> substitute(val, '\(\/index\)\?.[tj]sx\?$', '', '')}
           \ )
 
     return start
@@ -204,7 +204,7 @@ fun! s:ExtractVariable()
   let @s = ''
 endf
 
-autocmd FileType {javascript,javascript.jsx} setlocal completefunc=VjsRequireComplete
+autocmd FileType {javascript,javascript.jsx,typescript} setlocal completefunc=VjsRequireComplete
 com VjsLintFix call s:LintFix()
 com VjsListRoutes call s:ListExpressRoutes()
 com VjsListRequirers call s:ListRequirers()

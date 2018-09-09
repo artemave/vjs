@@ -1,3 +1,3 @@
 const fs = require('fs')
-const stuff = require('./stuff')
+import stuff from "./stuff"
 let b = 5
