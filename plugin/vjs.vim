@@ -18,13 +18,14 @@ endf
 
 fun! s:ListRequirers()
   let grep_term = '(require\(.*\)\|^import)'
-  execute 'silent grep!' "'".grep_term."'"
+  execute 'silent lgrep!' "'".grep_term."'"
   redraw!
 
-  let results = getqflist()
-  call setqflist([])
+  let raw_results = getloclist(0)
+  let result_entries = []
+  let current_file_full_path = expand('%:p:r')
 
-  for require in results
+  for require in raw_results
     let match = matchlist(require.text, "['\"]".'\(\.\.\?\/.*\)'."['\"]")
     if len(match) > 0
       let module_path = match[1]
@@ -40,15 +41,15 @@ fun! s:ListRequirers()
 
       let module_base = fnamemodify(bufname(require.bufnr), ':p:h')
 
-      let current_file_full_path = expand('%:p:r')
       let module_full_path = fnamemodify(module_base . '/' . module_path, ':p:r')
       let module_full_path_with_explicit_index = fnamemodify(module_base . '/' . module_path_with_explicit_index, ':p:r')
 
       if module_full_path == current_file_full_path || module_full_path_with_explicit_index == current_file_full_path
-        caddexpr bufname(require.bufnr) . ':' . require.lnum . ':' .require.text
+        call add(result_entries, require)
       endif
     endif
   endfor
+  call setqflist([], 'r', {'items': result_entries, 'title': 'Dependencies of '.expand('%')})
   copen
 endf
 
@@ -141,22 +142,20 @@ fun! s:ListExpressRoutes()
     call add(g:collected_match_results, a:match)
   endf
 
-  fun! AddMatchToQuickFix(i, line_number)
+  fun! ToQuickFixEntry(i, line_number)
     let match = g:collected_match_results[a:i]
     let match = split(match, "\n")
     let match = map(match, function('StripLeadingSpaces'))
     let match = join(match, '')
     let match = substitute(match, '[ \t]', nr2char(160), 'g')
 
-    let expr = printf('%s:%s:%s', expand("%"), a:line_number, match)
-    caddexpr expr
+    return {'filename': expand('%'), 'lnum': a:line_number, 'text': match}
   endf
 
   let g:collected_match_results = []
   let rx = '\w\+\.\(get\|post\|put\|delete\|patch\|head\|options\|use\)(\_s*['."'".'"`][^'."'".'"`]\+['."'".'"`]'
   let starting_pos = getpos('.')
 
-  call setqflist([])
   call cursor(1, 1)
 
   let line_numbers = []
@@ -165,9 +164,11 @@ fun! s:ListExpressRoutes()
   endwhile
 
   call FindAndCallForEachMatch(rx, 'CollectMatchResults')
-  call map(line_numbers, function('AddMatchToQuickFix'))
 
   call setpos('.', starting_pos)
+
+  let entries = map(line_numbers, function('ToQuickFixEntry'))
+  call setqflist([], 'r', {'title': 'Express routes', 'items': entries})
   copen
 
   " hide filename and linenumber
