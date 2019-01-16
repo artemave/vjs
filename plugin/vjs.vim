@@ -205,7 +205,7 @@ fun! s:ExtractVariable()
   let @s = ''
 endf
 
-autocmd FileType {javascript,javascript.jsx,typescript} setlocal completefunc=VjsRequireComplete
+autocmd FileType {javascript,javascript.jsx,typescript} setlocal omnifunc=VjsRequireComplete
 com VjsLintFix call s:LintFix()
 com VjsListRoutes call s:ListExpressRoutes()
 com VjsListRequirers call s:ListRequirers()

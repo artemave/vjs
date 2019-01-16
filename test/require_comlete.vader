@@ -5,7 +5,7 @@ Execute:
 
 Do (require sibling):
   i
-  const blah = require('bl\<C-X>\<C-U>\<cr>
+  const blah = require('bl\<C-X>\<C-O>\<cr>
 
 Expect:
   const blah = require('./blah
@@ -13,14 +13,14 @@ Expect:
 
 Do (require from parent folder):
   i
-  const blops = require('bl\<C-X>\<C-U>\<Down>\<cr>
+  const blops = require('bl\<C-X>\<C-O>\<Down>\<cr>
 
 Expect:
   const blops = require('../blops
 
 Do (require index.js):
   i
-  const package = require('pa\<C-X>\<C-U>\<cr>
+  const package = require('pa\<C-X>\<C-O>\<cr>
 
 Expect:
   const package = require('../package
@@ -31,7 +31,7 @@ Execute (regression: require file with no common file ancestor AND that is close
 
 Do:
   i
-  const package = require('blo\<C-X>\<C-U>\<cr>
+  const package = require('blo\<C-X>\<C-O>\<cr>
 
 Expect:
   const package = require('../../../../test/fixtures/blops

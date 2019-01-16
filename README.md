@@ -8,7 +8,7 @@ Vim plugin that brings along a bunch of helper functions to make development of 
 
 Namely:
 
-- autocomplete commons js requires
+- autocomplete `require`/`import` paths
 - list files that require current file
 - list express routes
 - fix linting errors
@@ -27,7 +27,7 @@ Plugin 'artemave/vjs'
 
 ## Usage
 
-Vjs registers "user defined completion" (`CTRL-X-u`) which gives you this:
+Vjs registers an `omnifunc` for `require`/`import` path completion - `CTRL-X CTRL-O` - which gives you this:
 
 ![2018-03-12 23 40 39](https://user-images.githubusercontent.com/23721/38147456-b25bad1a-3452-11e8-984f-f609de469211.gif)
 
