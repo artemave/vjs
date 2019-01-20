@@ -199,6 +199,9 @@ fun! s:ExtractVariable()
 
   normal Oconst 
   normal "vp
+  " something in my vim is moving the cursor at the beginning of the line
+  " after paste - hence `normal $`
+  normal $
   normal a = 
   normal "sp
 

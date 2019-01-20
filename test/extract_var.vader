@@ -1,63 +1,70 @@
-" Before:
-"   set shiftwidth=2
+Before:
+  set shiftwidth=2
 
-" Given javascript:
-"   function blah () {
-"     if (s()) {
-"       return 1
-"     }
-"   }
+Given javascript:
+  function blah () {
+    if (s()) {
+      return 1
+    }
+  }
 
-" Do:
-"   j
-"   fs
-"   vf)
-"   :'<,'>VjsExtractVariable\<CR>
-"   thing\<CR>
+Do:
+  j
+  fs
+  vf)
+  :'<,'>VjsExtractVariable\<CR>
+  thing\<CR>
 
-" Expect:
-"   function blah () {
-"     const thing = s()
-"     if (thing) {
-"       return 1
-"     }
-"   }
+Expect:
+  function blah () {
+    const thing = s()
+    if (thing) {
+      return 1
+    }
+  }
 
-" Given javascript:
-"   const fs = require('fs')
+Given javascript:
+  const fs = require('fs')
 
-"   const phoenixApiSchema = fs.readFileSync(`${__dirname}/phoenix-api.graphqls`, {encoding: "utf8"})
+  const phoenixApiSchema = fs.readFileSync(`${__dirname}/phoenix-api.graphqls`, {encoding: "utf8"})
 
-" Do:
-"   2j
-"   ff
-"   vg_
-"   :'<,'>VjsExtractVariable\<CR>
-"   thing\<CR>
-"   ==
+Do:
+  2j
+  ff
+  vg_
+  :'<,'>VjsExtractVariable\<CR>
+  thing\<CR>
+  ==
 
-" Expect:
-"   const fs = require('fs')
+Expect:
+  const fs = require('fs')
 
-"   const thing = fs.readFileSync(`${__dirname}/phoenix-api.graphqls`, {encoding: "utf8"})
-"   const phoenixApiSchema = thing
+  const thing = fs.readFileSync(`${__dirname}/phoenix-api.graphqls`, {encoding: "utf8"})
+  const phoenixApiSchema = thing
 
-" Given javascript:
-"   f({
-"     stuff: 1,
-"     blah: 'two'
-"   })
+Given javascript:
+  const fs = require('fs')
 
-" Do:
-"   $v
-"   3j
-"   F}
-"   :'<,'>VjsExtractVariable\<CR>
-"   thing\<CR>
+  fun(() => {
+    f({
+      stuff: 1,
+      blah: 'two'
+    })
+  })
 
-" Expect:
-"   const thing = {
-"     stuff: 1,
-"     blah: 'two'
-"   }
-"   f(thing)
+Do:
+  3j
+  $v%
+  :'<,'>VjsExtractVariable\<CR>
+  thing\<CR>
+
+Expect:
+  const fs = require('fs')
+
+  fun(() => {
+    const thing = {
+      stuff: 1,
+      blah: 'two'
+    }
+    f(thing)
+  })

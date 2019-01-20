@@ -12,6 +12,7 @@ Namely:
 - list files that require current file
 - list express routes
 - fix linting errors
+- extract variable
 
 For testing related goodies check out [vigun](https://github.com/artemave/vigun).
 
