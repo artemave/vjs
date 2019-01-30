@@ -197,13 +197,8 @@ fun! s:ExtractVariable()
     normal "vP
   endif
 
-  normal Oconst 
-  normal "vp
-  " something in my vim is moving the cursor at the beginning of the line
-  " after paste - hence `normal $`
-  normal $
-  normal a = 
-  normal "sp
+  let new_lines = split(repeat(' ', indent(line('.'))) ."const ". @v ." = ". @s, "\n")
+  call append(line('.') - 1, new_lines)
 
   let @s = ''
 endf
