@@ -68,3 +68,37 @@ Expect:
     }
     f(thing)
   })
+
+Given javascript:
+  const fs = require('fs')
+
+  fun(() => {
+    f({
+      stuff: 1,
+      blah: {
+        d: 5
+      }
+    })
+  })
+
+Do:
+  6j
+  va}
+  :'<,'>VjsExtractVariable\<CR>
+  thing\<CR>
+
+Expect:
+  const fs = require('fs')
+
+  fun(() => {
+    const thing = {
+      d: 5
+    }
+    f({
+      stuff: 1,
+      blah: thing
+    })
+  })
+
+" Execute:
+"   call LogAllMessages()

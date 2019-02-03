@@ -197,10 +197,34 @@ fun! s:ExtractVariable()
     normal "vP
   endif
 
-  let new_lines = split(repeat(' ', indent(line('.'))) ."const ". @v ." = ". @s, "\n")
-  call append(line('.') - 1, new_lines)
+  " send buffer content and line('.') to js
+  let code = join(getline(1,'$'), "\n")
+  let context = {'current_indent_base': indent(line('.'))}
+  let message = {'code': code, 'current_line': line('.'), 'query': 'findStatementStart', 'context': context}
 
-  let @s = ''
+  if exists('g:vjs_test_env')
+    let response = system(s:s_path.'/js_language_server.js --single-run', json_encode(message))
+    call InsertVarDeclaration(0, response)
+  else
+    let channel = job_getchannel(s:check_js_job)
+    call ch_sendraw(channel, json_encode(message) . nr2char(10), {'callback': 'InsertVarDeclaration'})
+  endif
+endf
+
+fun! InsertVarDeclaration(channel, response)
+  let message = json_decode(a:response)
+  let new_lines = split(repeat(' ', message.column) ."const ". @v ." = ". @s, "\n")
+  call map(new_lines, {idx, line -> idx > 0 ? substitute(line, "^".repeat(' ', message.context.current_indent_base - message.column), '', '') : line})
+  call append(message.line - 1, new_lines)
+endf
+
+let s:s_path = resolve(expand('<sfile>:p:h:h'))
+if !exists('g:vjs_test_env')
+  let s:check_js_job = job_start(s:s_path.'/js_language_server.js', {'cwd': s:s_path, 'err_cb': 'ErrorCb'})
+endif
+
+fun! ErrorCb(channel, message)
+  echom 'VjsCheckJsIsValid channel error: '.string(a:message)
 endf
 
 autocmd FileType {javascript,javascript.jsx,typescript} setlocal omnifunc=VjsRequireComplete
