@@ -1,4 +1,4 @@
-# Vjs [![CircleCI](https://circleci.com/gh/artemave/vjs.svg?style=svg)](https://circleci.com/gh/artemave/vjs)
+# Vjs <!-- [![CircleCI](https://circleci.com/gh/artemave/vjs.svg?style=svg)](https://circleci.com/gh/artemave/vjs) -->
 
 Essential for javascript productivity.
 
@@ -45,6 +45,10 @@ Vjs comes with no bindings, but does add the following commands:
 **`:VjsLintFix`** - fix js/typescript lint errors. For js it will try `eslint`, `standard` and `prettier` (in that order). Note that it runs asynchronously so vim is never frozen.
 
 ![2018-03-30 19 56 59](https://user-images.githubusercontent.com/23721/38147921-9ff6de22-3454-11e8-810d-596451d3765d.gif)
+
+**`:'<,'>VjsExtractVariable`** - extracts selected code into a variable.
+
+![2019-02-03 22 38 16](https://user-images.githubusercontent.com/23721/52183335-27da2280-2807-11e9-84bd-e51e424d0872.gif)
 
 ### Example bindings
 
