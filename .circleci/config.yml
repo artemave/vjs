@@ -4,8 +4,8 @@ jobs:
      docker:
        - image: circleci/node
      steps:
-       - run: apt-get update
-       - run: apt-get install --yes silversearcher-ag git vim
+       - run: sudo apt-get update
+       - run: sudo apt-get install --yes silversearcher-ag git vim
        - checkout
        - run: git clone https://github.com/junegunn/vader.vim.git
        - run: yarn
