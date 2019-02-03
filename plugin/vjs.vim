@@ -220,7 +220,7 @@ endf
 
 let s:s_path = resolve(expand('<sfile>:p:h:h'))
 if !exists('g:vjs_test_env')
-  let s:check_js_job = job_start(s:s_path.'/js_language_server.js', {'cwd': s:s_path, 'err_cb': 'ErrorCb'})
+  let s:check_js_job = job_start('node dist/js_language_server.js', {'cwd': s:s_path, 'err_cb': 'ErrorCb'})
 endif
 
 fun! ErrorCb(channel, message)

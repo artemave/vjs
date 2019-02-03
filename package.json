@@ -1,4 +1,10 @@
 {
+  "name": "vjs",
+  "version": "0.0.1",
+  "scripts": {
+    "test": "mocha *spec.js && ./run_tests",
+    "build": "noderify js_language_server.js > dist/js_language_server.js"
+  },
   "dependencies": {
     "@babel/parser": "^7.2.3",
     "@babel/traverse": "^7.2.3",
@@ -8,6 +14,7 @@
     "electron": "^4.0.3",
     "electron-mocha": "^6.0.4",
     "eslint": "^5.13.0",
-    "mocha": "^5.2.0"
+    "mocha": "^5.2.0",
+    "noderify": "^4.1.0"
   }
 }
