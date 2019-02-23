@@ -4,15 +4,16 @@ Essential for javascript productivity.
 
 ## What is this?
 
-Vim plugin that brings along a bunch of helper functions to make development of javascript/node programs less painful.
+Vim plugin that brings along a bunch of features to make development of javascript/node programs less painful.
 
 Namely:
 
 - autocomplete `require`/`import` paths
 - list files that require current file
-- list express routes
-- fix linting errors
+- fix linting errors (without blocking vim)
 - extract variable
+- auto generating and keeping up to date `tags` file
+- list Express routes
 
 For testing related goodies check out [vigun](https://github.com/artemave/vigun).
 
@@ -59,6 +60,14 @@ Fixes js/typescript lint errors. For js it will try `eslint`, `standard` and `pr
 Extracts selected code into a variable.
 
 ![2019-02-03 22 38 16](https://user-images.githubusercontent.com/23721/52183335-27da2280-2807-11e9-84bd-e51e424d0872.gif)
+
+### Configuration
+
+`g:vjs_tags_enabled` - enable tags file auto generation. Defaults to `1`.
+
+`g:vjs_tags_ignore` - additional paths to ignore when generating tags file. By default vjs tags all non git ignored js/jsx/mjs files. Array.
+
+`g:vjs_tags_regenerate_at_start` - when vim starts and this is set to `0`, it will update existing tags file rather than regenerating it. Defaults to `1`.
 
 ### Example bindings
 

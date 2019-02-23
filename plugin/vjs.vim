@@ -177,10 +177,18 @@ fun! s:ListExpressRoutes()
 endf
 
 fun! s:ExtractVariable()
+  let [selection_start_line, selection_start_column] = getpos("'<")[1:2]
+  let text_before_selection_start = getline(selection_start_line)[0:selection_start_column - 2]
+  let property_name_match = matchlist(text_before_selection_start, '\(\w\+\) *: *$')
+  let property_name = ''
+  if len(property_name_match) > 1
+    let property_name = property_name_match[1]
+  endif
+
   let [line_end, column_end] = getpos("'>")[1:2]
   let end_of_line_selected = len(getline(line_end)) == column_end
 
-  let @v = input('Variable name: ')
+  let @v = input('Variable name: ', property_name)
   if empty(@v)
     return
   endif
@@ -191,10 +199,15 @@ fun! s:ExtractVariable()
     return
   endif
 
-  if end_of_line_selected == 1
-    normal "vp
+  if @v == property_name
+    let new_line = substitute(getline(selection_start_line), property_name.' *: *', property_name, '')
+    call setline(selection_start_line, new_line)
   else
-    normal "vP
+    if end_of_line_selected == 1
+      normal "vp
+    else
+      normal "vP
+    endif
   endif
 
   " send buffer content and line('.') to js
@@ -203,10 +216,10 @@ fun! s:ExtractVariable()
   let message = {'code': code, 'current_line': line('.'), 'query': 'findStatementStart', 'context': context}
 
   if exists('g:vjs_test_env')
-    let response = system(s:s_path.'/js_language_server.js --single-run', json_encode(message))
+    let response = system(s:s_path.'/js_language_server.js refactoring --single-run', json_encode(message))
     call InsertVarDeclaration(0, response)
   else
-    let channel = job_getchannel(s:check_js_job)
+    let channel = job_getchannel(s:refactoring_server_job)
     call ch_sendraw(channel, json_encode(message) . nr2char(10), {'callback': 'InsertVarDeclaration'})
   endif
 endf
@@ -219,13 +232,58 @@ fun! InsertVarDeclaration(channel, response)
 endf
 
 let s:s_path = resolve(expand('<sfile>:p:h:h'))
-if !exists('g:vjs_test_env')
-  let s:check_js_job = job_start('node dist/js_language_server.js', {'cwd': s:s_path, 'err_cb': 'ErrorCb'})
-endif
 
 fun! ErrorCb(channel, message)
-  echom 'VjsCheckJsIsValid channel error: '.string(a:message)
+  echom 'Vjs language server error: '.string(a:message)
 endf
+
+if !exists('g:vjs_tags_enabled')
+  let g:vjs_tags_enabled = 1
+endif
+
+if !exists('g:vjs_tags_regenerate_at_start')
+  let g:vjs_tags_regenerate_at_start = 1
+endif
+
+if !exists('g:vjs_tags_ignore')
+  let g:vjs_tags_ignore = []
+endif
+
+fun GetServerExecPath()
+  let platform = substitute(system('uname'), '\n', '', '')
+
+  let server_bin = ''
+  if platform == 'Darwin'
+    let server_bin = s:s_path.'/dist/js_language_server'
+  else
+    let server_bin = 'node '.s:s_path.'/dist/js_language_server.js'
+  endif
+  return server_bin
+endf
+
+fun! s:StartJsRefactoringServer()
+  if !exists('g:vjs_test_env') && !exists('s:refactoring_server_job')
+    let s:refactoring_server_job = job_start(GetServerExecPath().' refactoring', {'err_cb': 'ErrorCb'})
+  endif
+endf
+
+fun! s:StartJsTagsServer()
+  if !exists('g:vjs_test_env') && !exists('s:tags_server_job') && g:vjs_tags_enabled == 1
+    let tags_job_cmd = GetServerExecPath().' tags'
+    if g:vjs_tags_regenerate_at_start == 0
+      let tags_job_cmd = tags_job_cmd.' --update'
+    endif
+    for path in g:vjs_tags_ignore
+      let tags_job_cmd = tags_job_cmd.' --ignore '.path
+    endfor
+
+    " without `out_cb` must be present
+    let s:tags_server_job = job_start(tags_job_cmd, {'cwd': getcwd(), 'err_cb': 'ErrorCb', 'out_cb': 'ErrorCb', 'pty': 1})
+  end
+endf
+
+autocmd FileType {javascript,javascript.jsx,typescript} call s:StartJsRefactoringServer()
+autocmd FileType {javascript,javascript.jsx} call s:StartJsTagsServer()
 
 autocmd FileType {javascript,javascript.jsx,typescript} setlocal omnifunc=VjsRequireComplete
 com VjsLintFix call s:LintFix()

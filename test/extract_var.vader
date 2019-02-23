@@ -75,7 +75,7 @@ Given javascript:
   fun(() => {
     f({
       stuff: 1,
-      blah: {
+      "blah": {
         d: 5
       }
     })
@@ -96,7 +96,39 @@ Expect:
     }
     f({
       stuff: 1,
-      blah: thing
+      "blah": thing
+    })
+  })
+
+
+Given javascript:
+  const fs = require('fs')
+
+  fun(() => {
+    f({
+      blah: {
+        d: 5
+      },
+      stuff: 1
+    })
+  })
+
+Do:
+  6j
+  va}
+  :'<,'>VjsExtractVariable\<CR>
+  \<CR>
+
+Expect:
+  const fs = require('fs')
+
+  fun(() => {
+    const blah = {
+      d: 5
+    }
+    f({
+      blah,
+      stuff: 1
     })
   })
 
