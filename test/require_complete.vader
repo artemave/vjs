@@ -20,7 +20,7 @@ Expect:
 
 Do (require index.js):
   i
-  const package = require('pa\<C-X>\<C-O>\<cr>
+  const package = require('pa\<C-X>\<C-O>\<C-N>\<cr>
 
 Expect:
   const package = require('../package

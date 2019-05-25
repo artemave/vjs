@@ -10,7 +10,7 @@ if !executable('ag') || &grepprg !~ '^ag'
   echo "set grepformat=%f:%l:%c:%m"
 endif
 
-fun s:Debug(message)
+fun! s:Debug(message)
   if exists("g:vjs_debug")
     echom a:message
   endif
@@ -263,7 +263,7 @@ endf
 
 fun! s:StartJsRefactoringServer()
   if !exists('g:vjs_test_env') && !exists('s:refactoring_server_job')
-    let s:refactoring_server_job = job_start(GetServerExecPath().' refactoring', {'err_cb': 'ErrorCb'})
+    let s:refactoring_server_job = JobStart(GetServerExecPath().' refactoring', {'err_cb': 'ErrorCb'})
   endif
 endf
 
@@ -278,11 +278,19 @@ fun! s:StartJsTagsServer()
     endfor
 
     " without `out_cb` must be present
-    let s:tags_server_job = job_start(tags_job_cmd, {'cwd': getcwd(), 'err_cb': 'ErrorCb', 'out_cb': 'ErrorCb', 'pty': 1})
+    let s:tags_server_job = JobStart(tags_job_cmd, {'cwd': getcwd(), 'err_cb': 'ErrorCb', 'out_cb': 'ErrorCb', 'pty': 1})
   end
 endf
 
-autocmd FileType {javascript,javascript.jsx,typescript} call s:StartJsRefactoringServer()
+fun! JobStart(cmd, options)
+  if has('nvim')
+    return jobstart(a:cmd, a:options)
+  else
+    return job_start(a:cmd, a:options)
+  endif
+endf
+
+autocmd FileType {javascript,javascript.jsx} call s:StartJsRefactoringServer()
 autocmd FileType {javascript,javascript.jsx} call s:StartJsTagsServer()
 
 autocmd FileType {javascript,javascript.jsx,typescript} setlocal omnifunc=VjsRequireComplete
