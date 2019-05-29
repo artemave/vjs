@@ -56,14 +56,10 @@ endf
 fun! s:LintFix()
   let command = './node_modules/.bin/eslint --fix'
 
-  if &ft == 'typescript'
-    let command = './node_modules/.bin/tslint --fix'
-  else
-    if executable('./node_modules/.bin/standard')
-      let command = './node_modules/.bin/standard --fix'
-    elseif executable('./node_modules/.bin/prettier')
-      let command = './node_modules/.bin/prettier --write'
-    endif
+  if executable('./node_modules/.bin/standard')
+    let command = './node_modules/.bin/standard --fix'
+  elseif executable('./node_modules/.bin/prettier')
+    let command = './node_modules/.bin/prettier --write'
   endif
   :w
   silent let f = system(command.' '.expand('%'))
@@ -219,16 +215,32 @@ fun! s:ExtractVariable()
     let response = system(s:s_path.'/js_language_server.js refactoring --single-run', json_encode(message))
     call InsertVarDeclaration(0, response)
   else
-    let channel = job_getchannel(s:refactoring_server_job)
-    call ch_sendraw(channel, json_encode(message) . nr2char(10), {'callback': 'InsertVarDeclaration'})
+    let channel = JobGetChannel(s:refactoring_server_job)
+    call ChSend(channel, json_encode(message) . nr2char(10))
   endif
 endf
 
-fun! InsertVarDeclaration(channel, response)
+fun! ChSend(channel, msg)
+  if has('nvim')
+    return chansend(a:channel.id, a:msg)
+  else
+    return ch_sendraw(a:channel, a:msg)
+  endif
+endf
+
+fun! JobGetChannel(channel)
+  if has('nvim')
+    return nvim_get_chan_info(a:channel)
+  else
+    return job_getchannel(a:channel)
+  endif
+endf
+
+fun! InsertVarDeclaration(channel, response, ...) abort
   let message = json_decode(a:response)
   let new_lines = split(repeat(' ', message.column) ."const ". @v ." = ". @s, "\n")
   call map(new_lines, {idx, line -> idx > 0 ? substitute(line, "^".repeat(' ', message.context.current_indent_base - message.column), '', '') : line})
-  call append(message.line - 1, new_lines)
+  :undojoin | call append(message.line - 1, new_lines)
 endf
 
 let s:s_path = resolve(expand('<sfile>:p:h:h'))
@@ -263,7 +275,7 @@ endf
 
 fun! s:StartJsRefactoringServer()
   if !exists('g:vjs_test_env') && !exists('s:refactoring_server_job')
-    let s:refactoring_server_job = JobStart(GetServerExecPath().' refactoring', {'err_cb': 'ErrorCb'})
+    let s:refactoring_server_job = JobStart(GetServerExecPath().' refactoring', {'err_cb': 'ErrorCb', 'out_cb': function('InsertVarDeclaration')})
   endif
 endf
 
@@ -284,7 +296,10 @@ endf
 
 fun! JobStart(cmd, options)
   if has('nvim')
-    return jobstart(a:cmd, a:options)
+    let options = a:options
+    let options.on_stdout = options.out_cb
+    let options.on_stderr = options.err_cb
+    return jobstart(a:cmd, options)
   else
     return job_start(a:cmd, a:options)
   endif

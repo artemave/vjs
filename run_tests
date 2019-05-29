@@ -1,3 +1,5 @@
 #!/usr/bin/env bash
 
-vim -Nu ./test/vimrc -c 'Vader! test/**/*.vader'
+test_file=${1:-test/**/*.vader}
+
+vim -Nu ./test/vimrc -c "Vader! $test_file"
