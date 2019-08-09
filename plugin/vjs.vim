@@ -299,6 +299,8 @@ fun! JobStart(cmd, options)
     let options = a:options
     let options.on_stdout = options.out_cb
     let options.on_stderr = options.err_cb
+    let options.stdout_buffered = 1
+    let options.stderr_buffered = 1
     return jobstart(a:cmd, options)
   else
     return job_start(a:cmd, a:options)

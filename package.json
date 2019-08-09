@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "scripts": {
     "test": "mocha *spec.js && ./run_tests",
-    "build": "yarn build:osx && build:linux",
+    "build": "yarn build:osx && yarn build:linux",
     "build:osx": "pkg --target macos --out-path dist js_language_server.js",
     "build:linux": "noderify --filter fsevents --filter spawn-sync js_language_server.js > dist/js_language_server.js"
   },
