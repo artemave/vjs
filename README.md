@@ -25,8 +25,6 @@ Use [a plugin manager](https://github.com/VundleVim/Vundle.vim):
 Plugin 'artemave/vjs'
 ``` 
 
-[ag](https://github.com/ggreer/the_silver_searcher) is required.
-
 ## Usage
 
 #### Complete require paths

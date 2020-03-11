@@ -3,13 +3,6 @@ if exists("g:vjs_loaded")
 endif
 let g:vjs_loaded = 1
 
-if !executable('ag') || &grepprg !~ '^ag'
-  throw "Vjs requies `ag` as `grepprg`"
-  echo "Add this to .vimrc:"
-  echo "set grepprg=ag \--vimgrep"
-  echo "set grepformat=%f:%l:%c:%m"
-endif
-
 fun! s:Debug(message)
   if exists("g:vjs_debug")
     echom a:message
