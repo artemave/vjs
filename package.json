@@ -8,16 +8,15 @@
     "build:linux": "noderify --filter fsevents --filter spawn-sync js_language_server.js > dist/js_language_server.js"
   },
   "dependencies": {
-    "@babel/parser": "^7.2.3",
-    "@babel/traverse": "^7.2.3",
-    "chokidar": "^2.1.0",
+    "@babel/parser": "^7.8.7",
+    "@babel/traverse": "^7.8.6",
     "js-editor-tags": "^0.1.3",
-    "yargs": "^12.0.5"
+    "yargs": "^15.3.0"
   },
   "devDependencies": {
-    "eslint": "^5.13.0",
-    "mocha": "^5.2.0",
-    "noderify": "^4.1.0",
-    "pkg": "^4.3.7"
+    "eslint": "^6.8.0",
+    "mocha": "^7.1.0",
+    "noderify": "^5.0.0",
+    "pkg": "^4.4.4"
   }
 }
