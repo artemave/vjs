@@ -10,7 +10,7 @@ fun! s:Debug(message)
 endf
 
 fun! s:ListRequirers()
-  let grep_term = '(require\(.*\)\|^import)'
+  let grep_term = '(require\(.*\)\|^import )'
   execute 'silent lgrep!' "'".grep_term."'"
   redraw!
 
@@ -59,6 +59,20 @@ fun! s:LintFix()
   checktime
 endf
 
+fun! s:SortByLength(s1, s2)
+  return len(a:s1) == len(a:s2) ? 0 : len(a:s1) > len(a:s2) ? -1 : 1
+endf
+
+fun! s:SearchFilesCmd(base)
+  if executable('rg')
+    return 'rg --files | rg -i '.a:base
+  elseif executable('ag')
+    return 'ag --nogroup --nocolor --hidden -i -g "'.a:base.'"'
+  else
+    return 'find . -type f -path "*'.a:base.'*"'
+  endif
+endf
+
 fun! VjsRequireComplete(findstart, base)
   if a:findstart
     " locate the start of the word
@@ -70,12 +84,12 @@ fun! VjsRequireComplete(findstart, base)
     endwhile
 
     let base = substitute(line[start : end - 1], '^[./]*', '', '')
-    let cmd = 'ag --nogroup --nocolor --hidden -i -g "'.base.'"'
+    let cmd = s:SearchFilesCmd(base)
 
-    let g:js_require_complete_matches = map(
+    let g:js_require_complete_matches = sort(map(
           \ systemlist(cmd),
           \ {i, val -> substitute(val, '\(\/index\)\?.[tj]sx\?$', '', '')}
-          \ )
+          \ ), "s:SortByLength")
 
     return start
   else

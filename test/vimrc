@@ -5,7 +5,7 @@ set rtp+=after
 filetype plugin indent on
 syntax enable
 
-set grepprg=ag\ --vimgrep
+set grepprg=rg\ --vimgrep
 set grepformat=%f:%l:%c:%m
 
 let g:vjs_debug=1
