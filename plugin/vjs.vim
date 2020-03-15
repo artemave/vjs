@@ -11,10 +11,10 @@ endf
 
 fun! s:ListRequirers()
   let grep_term = '(require\(.*\)\|^import )'
-  execute 'silent lgrep!' "'".grep_term."'"
+  execute 'silent grep!' "'".grep_term."'"
   redraw!
 
-  let raw_results = getloclist(0)
+  let raw_results = getqflist()
   let result_entries = []
   let current_file_full_path = expand('%:p:r')
 
@@ -42,7 +42,7 @@ fun! s:ListRequirers()
       endif
     endif
   endfor
-  call setqflist([], 'r', {'items': result_entries, 'title': 'Dependencies of '.expand('%')})
+  call setqflist([], ' ', {'items': result_entries, 'title': 'Modules that import '.expand('%')})
   copen
 endf
 

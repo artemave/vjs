@@ -2,4 +2,9 @@
 
 test_file=${1:-test/**/*.vader}
 
-vim -Nu ./test/vimrc -c "Vader! $test_file"
+if [ -z "$CI" ]; then
+  cmd=vim
+else
+  cmd=./squashfs-root/usr/bin/nvim
+fi
+$cmd -Nu ./test/vimrc -c "Vader! $test_file"
