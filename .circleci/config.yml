@@ -4,9 +4,9 @@ jobs:
      docker:
        - image: circleci/node
      steps:
+       - checkout
        - run: sudo apt-get update
        - run: sudo apt-get install --yes silversearcher-ag git vim
-       - checkout
        - run: sudo curl -LO https://github.com/BurntSushi/ripgrep/releases/download/11.0.2/ripgrep_11.0.2_amd64.deb
        - run: sudo dpkg -i ripgrep_11.0.2_amd64.deb
        - run: sudo curl -LO https://github.com/neovim/neovim/releases/download/stable/nvim.appimage

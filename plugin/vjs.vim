@@ -60,7 +60,7 @@ fun! s:LintFix()
 endf
 
 fun! s:SortByLength(s1, s2)
-  return len(a:s1) == len(a:s2) ? 0 : len(a:s1) > len(a:s2) ? -1 : 1
+  return len(a:s1) == len(a:s2) ? 0 : len(a:s1) > len(a:s2) ? 1 : -1
 endf
 
 fun! s:SearchFilesCmd(base)
@@ -86,10 +86,10 @@ fun! VjsRequireComplete(findstart, base)
     let base = substitute(line[start : end - 1], '^[./]*', '', '')
     let cmd = s:SearchFilesCmd(base)
 
-    let g:js_require_complete_matches = sort(map(
+    let g:js_require_complete_matches = map(
           \ systemlist(cmd),
           \ {i, val -> substitute(val, '\(\/index\)\?.[tj]sx\?$', '', '')}
-          \ ), "s:SortByLength")
+          \ )
 
     return start
   else
@@ -126,7 +126,7 @@ fun! VjsRequireComplete(findstart, base)
         endif
       endif
     endfor
-    return res
+    return sort(res, "s:SortByLength")
   endif
 endf
 
