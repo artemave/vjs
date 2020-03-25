@@ -19,11 +19,12 @@ fun! s:ListRequirers()
   let current_file_full_path = expand('%:p:r')
 
   for require in raw_results
-    let match = matchlist(require.text, "['\"]".'\(\.\.\?\/.*\)'."['\"]")
+    let match = matchlist(require.text, "['\"]".'\(\.\.\?\/.*\|\~.*\)'."['\"]")
     if len(match) > 0
       let module_path = match[1]
       let module_path_with_explicit_index = ''
 
+      " TODO: missing case? require('.')
       if match(module_path, '\.$') != -1
         let module_path = module_path . '/index'
       elseif match(module_path, '\/$') != -1
@@ -32,7 +33,13 @@ fun! s:ListRequirers()
         let module_path_with_explicit_index = module_path . '/index'
       endif
 
-      let module_base = fnamemodify(bufname(require.bufnr), ':p:h')
+      if match(module_path, '^\~') != -1
+        " drop leading `~/`
+        let module_path = module_path[2:]
+        let module_base = getcwd()
+      else
+        let module_base = fnamemodify(bufname(require.bufnr), ':p:h')
+      endif
 
       let module_full_path = fnamemodify(module_base . '/' . module_path, ':p:r')
       let module_full_path_with_explicit_index = fnamemodify(module_base . '/' . module_path_with_explicit_index, ':p:r')
