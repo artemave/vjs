@@ -220,9 +220,9 @@ fun! s:ExtractVariable()
 
   if exists('g:vjs_test_env')
     let response = system(s:s_path.'/js_language_server.js refactoring --single-run', json_encode(message))
-    call InsertVarDeclaration(0, response)
+    call s:InsertVarDeclaration(0, response)
   else
-    let channel = JobGetChannel(s:refactoring_server_job)
+    let channel = s:JobGetChannel(s:refactoring_server_job)
     call ChSend(channel, json_encode(message) . nr2char(10))
   endif
 endf
@@ -235,7 +235,7 @@ fun! ChSend(channel, msg)
   endif
 endf
 
-fun! JobGetChannel(channel)
+fun! s:JobGetChannel(channel)
   if has('nvim')
     return nvim_get_chan_info(a:channel)
   else
@@ -243,7 +243,7 @@ fun! JobGetChannel(channel)
   endif
 endf
 
-fun! InsertVarDeclaration(channel, response, ...) abort
+fun! s:InsertVarDeclaration(channel, response, ...) abort
   let message = json_decode(a:response)
   let new_lines = split(repeat(' ', message.column) ."const ". @v ." = ". @s, "\n")
   call map(new_lines, {idx, line -> idx > 0 ? substitute(line, "^".repeat(' ', message.context.current_indent_base - message.column), '', '') : line})
@@ -252,7 +252,7 @@ endf
 
 let s:s_path = resolve(expand('<sfile>:p:h:h'))
 
-fun! ErrorCb(channel, message)
+fun! s:ErrorCb(channel, message, ...)
   echom 'Vjs language server error: '.string(a:message)
 endf
 
@@ -282,7 +282,7 @@ endf
 
 fun! s:StartJsRefactoringServer()
   if !exists('g:vjs_test_env') && !exists('s:refactoring_server_job')
-    let s:refactoring_server_job = JobStart(GetServerExecPath().' refactoring', {'err_cb': 'ErrorCb', 'out_cb': function('InsertVarDeclaration')})
+    let s:refactoring_server_job = JobStart(GetServerExecPath().' refactoring', {'err_cb': function('s:ErrorCb'), 'out_cb': function('s:InsertVarDeclaration')})
   endif
 endf
 
@@ -297,7 +297,7 @@ fun! s:StartJsTagsServer()
     endfor
 
     " without `out_cb` must be present
-    let s:tags_server_job = JobStart(tags_job_cmd, {'cwd': getcwd(), 'err_cb': 'ErrorCb', 'out_cb': 'ErrorCb', 'pty': 1})
+    let s:tags_server_job = JobStart(tags_job_cmd, {'cwd': getcwd(), 'err_cb': 's:ErrorCb', 'out_cb': 's:ErrorCb', 'pty': 1})
   end
 endf
 
@@ -306,15 +306,15 @@ fun! JobStart(cmd, options)
     let options = a:options
     let options.on_stdout = options.out_cb
     let options.on_stderr = options.err_cb
-    let options.stdout_buffered = 1
-    let options.stderr_buffered = 1
+    " let options.stdout_buffered = v:true
+    " let options.stderr_buffered = v:true
     return jobstart(a:cmd, options)
   else
     return job_start(a:cmd, a:options)
   endif
 endf
 
-autocmd FileType {javascript,javascript.jsx} call s:StartJsRefactoringServer()
+autocmd FileType {javascript,javascript.jsx,typescript} call s:StartJsRefactoringServer()
 autocmd FileType {javascript,javascript.jsx} call s:StartJsTagsServer()
 
 autocmd FileType {javascript,javascript.jsx,typescript} setlocal omnifunc=VjsRequireComplete
