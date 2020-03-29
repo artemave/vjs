@@ -1,0 +1,41 @@
+Before:
+  set shiftwidth=2
+
+Given javascript:
+  function getParentModuleName() {
+    let stack = new Error().stack.split('\n')
+    stack.shift()
+    stack = stack.filter(line => !line.match(__filename))
+    const caller = stack.shift()
+
+    let path2 = caller.split(' ').pop()
+    path2 = path2.replace(/^\(/, '')
+
+    return path
+  }
+
+Do:
+  6j
+  Vj
+  :'<,'>VjsExtractFunction\<CR>
+  thing\<CR>
+
+Expect:
+  function getParentModuleName() {
+    let stack = new Error().stack.split('\n')
+    stack.shift()
+    stack = stack.filter(line => !line.match(__filename))
+    const caller = stack.shift()
+
+    function thing() {
+      let path2 = caller.split(' ').pop()
+      path2 = path2.replace(/^\(/, '')
+    }
+
+    thing()
+
+    return path
+  }
+
+Execute:
+  call LogAllMessages()

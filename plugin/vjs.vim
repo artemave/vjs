@@ -186,6 +186,43 @@ fun! s:ListExpressRoutes()
   syntax match llFileName /^[^|]*|[^|]*| / transparent conceal
 endf
 
+fun! s:ExtractFunction()
+  let [selection_start_line, selection_start_column] = getpos("'<")[1:2]
+  let [line_end, column_end] = getpos("'>")[1:2]
+  let end_of_line_selected = len(getline(line_end)) == column_end || column_end > 999999
+
+  let @v = input('Function name: ')
+  if empty(@v)
+    return
+  endif
+
+  normal gv
+  normal "sx
+  if empty(@s)
+    return
+  endif
+
+  let @v = @v ."()"
+  normal "vp
+  :undojoin | normal ==
+
+  if end_of_line_selected
+    :undojoin | call append(line('.'), '')
+  endif
+
+  let code = join(getline(1,'$'), "\n")
+  let context = {'action': 'extract_function'}
+  let message = {'code': code, 'current_line': line('.'), 'query': 'findStatementStart', 'context': context}
+
+  if exists('g:vjs_test_env')
+    let response = system(s:s_path.'/js_language_server.js refactoring --single-run', json_encode(message))
+    call s:RefactoringResponseHandler(0, response)
+  else
+    let channel = s:JobGetChannel(s:refactoring_server_job)
+    call ChSend(channel, json_encode(message) . nr2char(10))
+  endif
+endf
+
 fun! s:ExtractVariable()
   let [selection_start_line, selection_start_column] = getpos("'<")[1:2]
   let text_before_selection_start = getline(selection_start_line)[0:selection_start_column - 2]
@@ -196,7 +233,7 @@ fun! s:ExtractVariable()
   endif
 
   let [line_end, column_end] = getpos("'>")[1:2]
-  let end_of_line_selected = len(getline(line_end)) == column_end
+  let end_of_line_selected = len(getline(line_end)) == column_end || column_end > 999999
 
   let @v = input('Variable name: ', property_name)
   if empty(@v)
@@ -222,12 +259,12 @@ fun! s:ExtractVariable()
 
   " send buffer content and line('.') to js
   let code = join(getline(1,'$'), "\n")
-  let context = {'current_indent_base': indent(line('.'))}
+  let context = {'current_indent_base': indent(line('.')), 'action': 'extract_variable'}
   let message = {'code': code, 'current_line': line('.'), 'query': 'findStatementStart', 'context': context}
 
   if exists('g:vjs_test_env')
     let response = system(s:s_path.'/js_language_server.js refactoring --single-run', json_encode(message))
-    call s:InsertVarDeclaration(0, response)
+    call s:RefactoringResponseHandler(0, response)
   else
     let channel = s:JobGetChannel(s:refactoring_server_job)
     call ChSend(channel, json_encode(message) . nr2char(10))
@@ -250,10 +287,25 @@ fun! s:JobGetChannel(channel)
   endif
 endf
 
-fun! s:InsertVarDeclaration(channel, response, ...) abort
+fun! s:RefactoringResponseHandler(channel, response, ...) abort
   let message = json_decode(a:response)
-  let new_lines = split(repeat(' ', message.column) ."const ". @v ." = ". @s, "\n")
-  call map(new_lines, {idx, line -> idx > 0 ? substitute(line, "^".repeat(' ', message.context.current_indent_base - message.column), '', '') : line})
+
+  let indent = repeat(' ', message.column)
+
+  if message.context.action == 'extract_variable'
+    let new_lines = split(indent ."const ". @v ." = ". @s, "\n")
+    call map(new_lines, {idx, line -> idx > 0 ? substitute(line, "^".repeat(' ', message.context.current_indent_base - message.column), '', '') : line})
+
+  elseif message.context.action == 'extract_function'
+    let new_lines = ['function '. @v .' {']
+    call extend(new_lines, split(@s, "\n"))
+    call map(new_lines, {_, line -> repeat(' ', &shiftwidth) . line})
+    call extend(new_lines, [indent .'}', ''])
+
+  else
+    throw 'Unknown action '. message.context.action
+  endif
+
   :undojoin | call append(message.line - 1, new_lines)
 endf
 
@@ -289,7 +341,7 @@ endf
 
 fun! s:StartJsRefactoringServer()
   if !exists('g:vjs_test_env') && !exists('s:refactoring_server_job')
-    let s:refactoring_server_job = JobStart(GetServerExecPath().' refactoring', {'err_cb': function('s:ErrorCb'), 'out_cb': function('s:InsertVarDeclaration')})
+    let s:refactoring_server_job = JobStart(GetServerExecPath().' refactoring', {'err_cb': function('s:ErrorCb'), 'out_cb': function('s:RefactoringResponseHandler')})
   endif
 endf
 
@@ -329,3 +381,4 @@ com VjsLintFix call s:LintFix()
 com VjsListRoutes call s:ListExpressRoutes()
 com VjsListRequirers call s:ListRequirers()
 com -range VjsExtractVariable call s:ExtractVariable()
+com -range VjsExtractFunction call s:ExtractFunction()
