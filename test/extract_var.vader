@@ -1,6 +1,3 @@
-Before:
-  set shiftwidth=2
-
 Given javascript:
   function blah () {
     if (s()) {

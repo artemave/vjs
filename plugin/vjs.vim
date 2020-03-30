@@ -202,7 +202,13 @@ fun! s:ExtractFunction()
     return
   endif
 
+  let is_async = match(@s, '\<await ')
+  let context = {'action': 'extract_function', 'is_async': is_async, 'function_name': @v}
+
   let @v = @v ."()"
+  if is_async > -1
+    let @v = 'await '. @v
+  endif
   normal "vp
   :undojoin | normal ==
 
@@ -211,7 +217,6 @@ fun! s:ExtractFunction()
   endif
 
   let code = join(getline(1,'$'), "\n")
-  let context = {'action': 'extract_function'}
   let message = {'code': code, 'current_line': line('.'), 'query': 'findStatementStart', 'context': context}
 
   if exists('g:vjs_test_env')
@@ -297,7 +302,11 @@ fun! s:RefactoringResponseHandler(channel, response, ...) abort
     call map(new_lines, {idx, line -> idx > 0 ? substitute(line, "^".repeat(' ', message.context.current_indent_base - message.column), '', '') : line})
 
   elseif message.context.action == 'extract_function'
-    let new_lines = ['function '. @v .' {']
+    let first_line = 'function '. message.context.function_name .'() {'
+    if message.context.is_async > -1
+      let first_line = 'async '. first_line
+    endif
+    let new_lines = [first_line]
     call extend(new_lines, split(@s, "\n"))
     call map(new_lines, {_, line -> repeat(' ', &shiftwidth) . line})
     call extend(new_lines, [indent .'}', ''])

@@ -1,11 +1,5 @@
-Before:
-  set shiftwidth=2
-
 Given javascript:
   function getParentModuleName() {
-    let stack = new Error().stack.split('\n')
-    stack.shift()
-    stack = stack.filter(line => !line.match(__filename))
     const caller = stack.shift()
 
     let path2 = caller.split(' ').pop()
@@ -15,16 +9,13 @@ Given javascript:
   }
 
 Do:
-  6j
+  3j
   Vj
   :'<,'>VjsExtractFunction\<CR>
   thing\<CR>
 
 Expect:
   function getParentModuleName() {
-    let stack = new Error().stack.split('\n')
-    stack.shift()
-    stack = stack.filter(line => !line.match(__filename))
     const caller = stack.shift()
 
     function thing() {
@@ -37,5 +28,35 @@ Expect:
     return path
   }
 
-Execute:
-  call LogAllMessages()
+Given javascript:
+  async function getParentModuleName() {
+    const caller = stack.shift()
+
+    let path2 = await caller.split(' ').pop()
+    path2 = path2.replace(/^\(/, '')
+
+    return path
+  }
+
+Do:
+  3j
+  Vj
+  :'<,'>VjsExtractFunction\<CR>
+  thing\<CR>
+
+Expect:
+  async function getParentModuleName() {
+    const caller = stack.shift()
+
+    async function thing() {
+      let path2 = await caller.split(' ').pop()
+      path2 = path2.replace(/^\(/, '')
+    }
+
+    await thing()
+
+    return path
+  }
+
+" Execute:
+"   call LogAllMessages()
