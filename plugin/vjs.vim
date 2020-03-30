@@ -187,36 +187,14 @@ fun! s:ListExpressRoutes()
 endf
 
 fun! s:ExtractFunction()
-  let [selection_start_line, selection_start_column] = getpos("'<")[1:2]
-  let [line_end, column_end] = getpos("'>")[1:2]
-  let end_of_line_selected = len(getline(line_end)) == column_end || column_end > 999999
-
+  " TODO: restore @v
   let @v = input('Function name: ')
   if empty(@v)
     return
   endif
 
-  normal gv
-  normal "sx
-  if empty(@s)
-    return
-  endif
-
-  let is_async = match(@s, '\<await ')
-  let context = {'action': 'extract_function', 'is_async': is_async, 'function_name': @v}
-
-  let @v = @v ."()"
-  if is_async > -1
-    let @v = 'await '. @v
-  endif
-  normal "vp
-  :undojoin | normal ==
-
-  if end_of_line_selected
-    :undojoin | call append(line('.'), '')
-  endif
-
   let code = join(getline(1,'$'), "\n")
+  let context = {'action': 'extract_function'}
   let message = {'code': code, 'current_line': line('.'), 'query': 'findStatementStart', 'context': context}
 
   if exists('g:vjs_test_env')
@@ -302,20 +280,36 @@ fun! s:RefactoringResponseHandler(channel, response, ...) abort
     call map(new_lines, {idx, line -> idx > 0 ? substitute(line, "^".repeat(' ', message.context.current_indent_base - message.column), '', '') : line})
 
   elseif message.context.action == 'extract_function'
-    let first_line = 'function '. message.context.function_name .'() {'
-    if message.context.is_async > -1
-      let first_line = 'async '. first_line
+    normal gv
+    normal "sx
+
+    let is_async = match(@s, '\<await ')
+
+    let first_new_line = 'function '. @v .'() {'
+    if is_async > -1
+      let first_new_line = 'async '. first_new_line
     endif
-    let new_lines = [first_line]
+
+    let @v = @v ."()"
+    if is_async > -1
+      let @v = 'await '. @v
+    endif
+    undojoin | normal "vp
+    undojoin | normal ==
+
+    if match(@s, '\n$')
+      undojoin | call append(line('.'), '')
+    endif
+
+    let new_lines = [first_new_line]
     call extend(new_lines, split(@s, "\n"))
     call map(new_lines, {_, line -> repeat(' ', &shiftwidth) . line})
     call extend(new_lines, [indent .'}', ''])
-
   else
     throw 'Unknown action '. message.context.action
   endif
 
-  :undojoin | call append(message.line - 1, new_lines)
+  undojoin | call append(message.line - 1, new_lines)
 endf
 
 let s:s_path = resolve(expand('<sfile>:p:h:h'))
