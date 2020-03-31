@@ -215,34 +215,14 @@ fun! s:ExtractVariable()
     let property_name = property_name_match[1]
   endif
 
-  let [line_end, column_end] = getpos("'>")[1:2]
-  let end_of_line_selected = len(getline(line_end)) == column_end || column_end > 999999
-
   let @v = input('Variable name: ', property_name)
   if empty(@v)
     return
   endif
 
-  normal gv
-  normal "sx
-  if empty(@s)
-    return
-  endif
-
-  if @v == property_name
-    let new_line = substitute(getline(selection_start_line), property_name.' *: *', property_name, '')
-    call setline(selection_start_line, new_line)
-  else
-    if end_of_line_selected == 1
-      normal "vp
-    else
-      normal "vP
-    endif
-  endif
-
   " send buffer content and line('.') to js
   let code = join(getline(1,'$'), "\n")
-  let context = {'current_indent_base': indent(line('.')), 'action': 'extract_variable'}
+  let context = {'property_name': property_name, 'action': 'extract_variable'}
   let message = {'code': code, 'current_line': line('.'), 'query': 'findStatementStart', 'context': context}
 
   if exists('g:vjs_test_env')
@@ -276,8 +256,30 @@ fun! s:RefactoringResponseHandler(channel, response, ...) abort
   let indent = repeat(' ', message.column)
 
   if message.context.action == 'extract_variable'
+    let current_indent_base = indent(line('.'))
+
+    let property_name = message.context.property_name
+
+    let selection_start_line = getpos("'<")[1]
+    let [selection_end_line, selection_end_column] = getpos("'>")[1:2]
+    let last_selected_line_is_selected_until_the_end = selection_end_column > 999999 || len(getline(selection_end_line)) == selection_end_column
+
+    normal gv
+    normal "sx
+
+    if @v == property_name
+      let new_line = substitute(getline(selection_start_line), property_name.' *: *', property_name, '')
+      call setline(selection_start_line, new_line)
+    else
+      if last_selected_line_is_selected_until_the_end
+        undojoin | normal "vp
+      else
+        undojoin | normal "vP
+      endif
+    endif
+
     let new_lines = split(indent ."const ". @v ." = ". @s, "\n")
-    call map(new_lines, {idx, line -> idx > 0 ? substitute(line, "^".repeat(' ', message.context.current_indent_base - message.column), '', '') : line})
+    call map(new_lines, {idx, line -> idx > 0 ? substitute(line, "^".repeat(' ', current_indent_base - message.column), '', '') : line})
 
   elseif message.context.action == 'extract_function'
     normal gv
@@ -297,7 +299,7 @@ fun! s:RefactoringResponseHandler(channel, response, ...) abort
     undojoin | normal "vp
     undojoin | normal ==
 
-    if match(@s, '\n$')
+    if match(@s, '\n$') > -1
       undojoin | call append(line('.'), '')
     endif
 
