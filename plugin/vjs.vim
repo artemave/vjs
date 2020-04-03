@@ -2,7 +2,6 @@ if exists("g:vjs_loaded")
   finish
 endif
 let g:vjs_loaded = 1
-let s:s_path = resolve(expand('<sfile>:p:h:h'))
 
 fun! s:Debug(message)
   if exists("g:vjs_debug")
@@ -187,134 +186,6 @@ fun! s:ListExpressRoutes()
   syntax match llFileName /^[^|]*|[^|]*| / transparent conceal
 endf
 
-fun! s:ExtractFunction()
-  " TODO: restore @v
-  let @v = input('Function name: ')
-  if empty(@v)
-    return
-  endif
-
-  let code = join(getline(1,'$'), "\n")
-  let context = {'action': 'extract_function'}
-  let message = {'code': code, 'current_line': line('.'), 'query': 'findStatementStart', 'context': context}
-
-  if exists('g:vjs_test_env')
-    let response = system(s:s_path.'/js_language_server.js refactoring --single-run', json_encode(message))
-    call s:RefactoringResponseHandler(0, response)
-  else
-    let channel = s:JobGetChannel(s:refactoring_server_job)
-    call s:ChSend(channel, json_encode(message) . nr2char(10))
-  endif
-endf
-
-fun! s:ExtractVariable()
-  let [selection_start_line, selection_start_column] = getpos("'<")[1:2]
-  let text_before_selection_start = getline(selection_start_line)[0:selection_start_column - 2]
-  let property_name_match = matchlist(text_before_selection_start, '\(\w\+\) *: *$')
-  let property_name = ''
-  if len(property_name_match) > 1
-    let property_name = property_name_match[1]
-  endif
-
-  let @v = input('Variable name: ', property_name)
-  if empty(@v)
-    return
-  endif
-
-  " send buffer content and line('.') to js
-  let code = join(getline(1,'$'), "\n")
-  let context = {'property_name': property_name, 'action': 'extract_variable'}
-  let message = {'code': code, 'current_line': line('.'), 'query': 'findStatementStart', 'context': context}
-
-  if exists('g:vjs_test_env')
-    let response = system(s:s_path.'/js_language_server.js refactoring --single-run', json_encode(message))
-    call s:RefactoringResponseHandler(0, response)
-  else
-    let channel = s:JobGetChannel(s:refactoring_server_job)
-    call s:ChSend(channel, json_encode(message) . nr2char(10))
-  endif
-endf
-
-fun! s:RefactoringResponseHandler(channel, response, ...) abort
-  let message = json_decode(a:response)
-
-  let indent = repeat(' ', message.column)
-
-  if message.context.action == 'extract_variable'
-    let current_indent_base = indent(line('.'))
-
-    let property_name = message.context.property_name
-
-    let selection_start_line = getpos("'<")[1]
-    let [selection_end_line, selection_end_column] = getpos("'>")[1:2]
-    let last_selected_line_is_selected_until_the_end = selection_end_column > 999999 || len(getline(selection_end_line)) == selection_end_column
-
-    normal gv
-    normal "sx
-
-    if @v == property_name
-      let new_line = substitute(getline(selection_start_line), property_name.' *: *', property_name, '')
-      call setline(selection_start_line, new_line)
-    else
-      if last_selected_line_is_selected_until_the_end
-        undojoin | normal "vp
-      else
-        undojoin | normal "vP
-      endif
-    endif
-
-    let new_lines = split(indent ."const ". @v ." = ". @s, "\n")
-    call map(new_lines, {idx, line -> idx > 0 ? substitute(line, "^".repeat(' ', current_indent_base - message.column), '', '') : line})
-
-  elseif message.context.action == 'extract_function'
-    normal gv
-    normal "sx
-
-    let is_async = match(@s, '\<await ')
-
-    let first_new_line = 'function '. @v .'() {'
-    if is_async > -1
-      let first_new_line = 'async '. first_new_line
-    endif
-
-    let @v = @v ."()"
-    if is_async > -1
-      let @v = 'await '. @v
-    endif
-    undojoin | normal "vp
-    undojoin | normal ==
-
-    if match(@s, '\n$') > -1
-      undojoin | call append(line('.'), '')
-    endif
-
-    let new_lines = [first_new_line]
-    call extend(new_lines, split(@s, "\n"))
-    call map(new_lines, {_, line -> repeat(' ', &shiftwidth) . line})
-    call extend(new_lines, [indent .'}', ''])
-  else
-    throw 'Unknown action '. message.context.action
-  endif
-
-  undojoin | call append(message.line - 1, new_lines)
-endf
-
-fun! s:ChSend(channel, msg)
-  if has('nvim')
-    return chansend(a:channel.id, a:msg)
-  else
-    return ch_sendraw(a:channel, a:msg)
-  endif
-endf
-
-fun! s:JobGetChannel(channel)
-  if has('nvim')
-    return nvim_get_chan_info(a:channel)
-  else
-    return job_getchannel(a:channel)
-  endif
-endf
-
 fun! s:ErrorCb(channel, message, ...)
   echom 'Vjs language server error: '.string(a:message)
 endf
@@ -331,27 +202,15 @@ if !exists('g:vjs_tags_ignore')
   let g:vjs_tags_ignore = []
 endif
 
-fun s:GetServerExecPath()
-  let platform = substitute(system('uname'), '\n', '', '')
-
-  let server_bin = ''
-  if platform == 'Darwin'
-    let server_bin = s:s_path.'/dist/js_language_server'
-  else
-    let server_bin = 'node '.s:s_path.'/dist/js_language_server.js'
-  endif
-  return server_bin
-endf
-
 fun! s:StartJsRefactoringServer()
   if !exists('g:vjs_test_env') && !exists('s:refactoring_server_job')
-    let s:refactoring_server_job = s:JobStart(s:GetServerExecPath().' refactoring', {'err_cb': function('s:ErrorCb'), 'out_cb': function('s:RefactoringResponseHandler')})
+    let s:refactoring_server_job = s:JobStart(vjs#ipc#GetServerExecPath().' refactoring', {'err_cb': function('s:ErrorCb'), 'out_cb': function('vjs#extract#RefactoringResponseHandler')})
   endif
 endf
 
 fun! s:StartJsTagsServer()
   if !exists('g:vjs_test_env') && !exists('s:tags_server_job') && g:vjs_tags_enabled == 1
-    let tags_job_cmd = s:GetServerExecPath().' tags'
+    let tags_job_cmd = vjs#ipc#GetServerExecPath().' tags'
     if g:vjs_tags_regenerate_at_start == 0
       let tags_job_cmd = tags_job_cmd.' --update'
     endif
@@ -385,5 +244,5 @@ autocmd FileType {javascript,javascript.jsx,typescript} setlocal omnifunc=VjsReq
 com VjsLintFix call s:LintFix()
 com VjsListRoutes call s:ListExpressRoutes()
 com VjsListRequirers call s:ListRequirers()
-com -range VjsExtractVariable call s:ExtractVariable()
-com -range VjsExtractFunction call s:ExtractFunction()
+com -range VjsExtractVariable call vjs#extract#ExtractVariable()
+com -range VjsExtractFunction call vjs#extract#ExtractFunction()
