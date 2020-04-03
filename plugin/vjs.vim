@@ -2,6 +2,7 @@ if exists("g:vjs_loaded")
   finish
 endif
 let g:vjs_loaded = 1
+let s:s_path = resolve(expand('<sfile>:p:h:h'))
 
 fun! s:Debug(message)
   if exists("g:vjs_debug")
@@ -202,7 +203,7 @@ fun! s:ExtractFunction()
     call s:RefactoringResponseHandler(0, response)
   else
     let channel = s:JobGetChannel(s:refactoring_server_job)
-    call ChSend(channel, json_encode(message) . nr2char(10))
+    call s:ChSend(channel, json_encode(message) . nr2char(10))
   endif
 endf
 
@@ -230,23 +231,7 @@ fun! s:ExtractVariable()
     call s:RefactoringResponseHandler(0, response)
   else
     let channel = s:JobGetChannel(s:refactoring_server_job)
-    call ChSend(channel, json_encode(message) . nr2char(10))
-  endif
-endf
-
-fun! ChSend(channel, msg)
-  if has('nvim')
-    return chansend(a:channel.id, a:msg)
-  else
-    return ch_sendraw(a:channel, a:msg)
-  endif
-endf
-
-fun! s:JobGetChannel(channel)
-  if has('nvim')
-    return nvim_get_chan_info(a:channel)
-  else
-    return job_getchannel(a:channel)
+    call s:ChSend(channel, json_encode(message) . nr2char(10))
   endif
 endf
 
@@ -314,7 +299,21 @@ fun! s:RefactoringResponseHandler(channel, response, ...) abort
   undojoin | call append(message.line - 1, new_lines)
 endf
 
-let s:s_path = resolve(expand('<sfile>:p:h:h'))
+fun! s:ChSend(channel, msg)
+  if has('nvim')
+    return chansend(a:channel.id, a:msg)
+  else
+    return ch_sendraw(a:channel, a:msg)
+  endif
+endf
+
+fun! s:JobGetChannel(channel)
+  if has('nvim')
+    return nvim_get_chan_info(a:channel)
+  else
+    return job_getchannel(a:channel)
+  endif
+endf
 
 fun! s:ErrorCb(channel, message, ...)
   echom 'Vjs language server error: '.string(a:message)
@@ -332,7 +331,7 @@ if !exists('g:vjs_tags_ignore')
   let g:vjs_tags_ignore = []
 endif
 
-fun GetServerExecPath()
+fun s:GetServerExecPath()
   let platform = substitute(system('uname'), '\n', '', '')
 
   let server_bin = ''
@@ -346,13 +345,13 @@ endf
 
 fun! s:StartJsRefactoringServer()
   if !exists('g:vjs_test_env') && !exists('s:refactoring_server_job')
-    let s:refactoring_server_job = JobStart(GetServerExecPath().' refactoring', {'err_cb': function('s:ErrorCb'), 'out_cb': function('s:RefactoringResponseHandler')})
+    let s:refactoring_server_job = s:JobStart(s:GetServerExecPath().' refactoring', {'err_cb': function('s:ErrorCb'), 'out_cb': function('s:RefactoringResponseHandler')})
   endif
 endf
 
 fun! s:StartJsTagsServer()
   if !exists('g:vjs_test_env') && !exists('s:tags_server_job') && g:vjs_tags_enabled == 1
-    let tags_job_cmd = GetServerExecPath().' tags'
+    let tags_job_cmd = s:GetServerExecPath().' tags'
     if g:vjs_tags_regenerate_at_start == 0
       let tags_job_cmd = tags_job_cmd.' --update'
     endif
@@ -361,11 +360,11 @@ fun! s:StartJsTagsServer()
     endfor
 
     " without `out_cb` must be present
-    let s:tags_server_job = JobStart(tags_job_cmd, {'cwd': getcwd(), 'err_cb': 's:ErrorCb', 'out_cb': 's:ErrorCb', 'pty': 1})
+    let s:tags_server_job = s:JobStart(tags_job_cmd, {'cwd': getcwd(), 'err_cb': 's:ErrorCb', 'out_cb': 's:ErrorCb', 'pty': 1})
   end
 endf
 
-fun! JobStart(cmd, options)
+fun! s:JobStart(cmd, options)
   if has('nvim')
     let options = a:options
     let options.on_stdout = options.out_cb
@@ -380,8 +379,9 @@ endf
 
 autocmd FileType {javascript,javascript.jsx,typescript} call s:StartJsRefactoringServer()
 autocmd FileType {javascript,javascript.jsx} call s:StartJsTagsServer()
-
+" TODO: how to avoid global name with omnifunc?
 autocmd FileType {javascript,javascript.jsx,typescript} setlocal omnifunc=VjsRequireComplete
+
 com VjsLintFix call s:LintFix()
 com VjsListRoutes call s:ListExpressRoutes()
 com VjsListRequirers call s:ListRequirers()
