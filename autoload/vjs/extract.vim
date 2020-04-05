@@ -9,13 +9,7 @@ fun! vjs#extract#ExtractFunction()
   let context = {'action': 'extract_function'}
   let message = {'code': code, 'current_line': line('.'), 'query': 'findStatementStart', 'context': context}
 
-  if exists('g:vjs_test_env')
-    let response = system(vjs#ipc#GetServerExecPath().' refactoring --single-run', json_encode(message))
-    call vjs#extract#RefactoringResponseHandler(0, response)
-  else
-    let channel = vjs#ipc#JobGetChannel(vjs#ipc#refactoring_server_job)
-    call vjs#ipc#ChSend(channel, json_encode(message) . nr2char(10))
-  endif
+  call vjs#ipc#SendMessage(json_encode(message))
 endf
 
 fun! vjs#extract#ExtractVariable()
@@ -37,13 +31,7 @@ fun! vjs#extract#ExtractVariable()
   let context = {'property_name': property_name, 'action': 'extract_variable'}
   let message = {'code': code, 'current_line': line('.'), 'query': 'findStatementStart', 'context': context}
 
-  if exists('g:vjs_test_env')
-    let response = system(vjs#ipc#GetServerExecPath().' refactoring --single-run', json_encode(message))
-    call vjs#extract#RefactoringResponseHandler(0, response)
-  else
-    let channel = vjs#ipc#JobGetChannel(vjs#ipc#refactoring_server_job)
-    call vjs#ipc#ChSend(channel, json_encode(message) . nr2char(10))
-  endif
+  call vjs#ipc#SendMessage(json_encode(message))
 endf
 
 fun! vjs#extract#RefactoringResponseHandler(channel, response, ...) abort

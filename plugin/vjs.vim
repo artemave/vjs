@@ -186,10 +186,6 @@ fun! s:ListExpressRoutes()
   syntax match llFileName /^[^|]*|[^|]*| / transparent conceal
 endf
 
-fun! s:ErrorCb(channel, message, ...)
-  echom 'Vjs language server error: '.string(a:message)
-endf
-
 if !exists('g:vjs_tags_enabled')
   let g:vjs_tags_enabled = 1
 endif
@@ -202,42 +198,8 @@ if !exists('g:vjs_tags_ignore')
   let g:vjs_tags_ignore = []
 endif
 
-fun! s:StartJsRefactoringServer()
-  if !exists('g:vjs_test_env') && !exists('s:refactoring_server_job')
-    let s:refactoring_server_job = s:JobStart(vjs#ipc#GetServerExecPath().' refactoring', {'err_cb': function('s:ErrorCb'), 'out_cb': function('vjs#extract#RefactoringResponseHandler')})
-  endif
-endf
-
-fun! s:StartJsTagsServer()
-  if !exists('g:vjs_test_env') && !exists('s:tags_server_job') && g:vjs_tags_enabled == 1
-    let tags_job_cmd = vjs#ipc#GetServerExecPath().' tags'
-    if g:vjs_tags_regenerate_at_start == 0
-      let tags_job_cmd = tags_job_cmd.' --update'
-    endif
-    for path in g:vjs_tags_ignore
-      let tags_job_cmd = tags_job_cmd.' --ignore '.path
-    endfor
-
-    " without `out_cb` must be present
-    let s:tags_server_job = s:JobStart(tags_job_cmd, {'cwd': getcwd(), 'err_cb': 's:ErrorCb', 'out_cb': 's:ErrorCb', 'pty': 1})
-  end
-endf
-
-fun! s:JobStart(cmd, options)
-  if has('nvim')
-    let options = a:options
-    let options.on_stdout = options.out_cb
-    let options.on_stderr = options.err_cb
-    " let options.stdout_buffered = v:true
-    " let options.stderr_buffered = v:true
-    return jobstart(a:cmd, options)
-  else
-    return job_start(a:cmd, a:options)
-  endif
-endf
-
-autocmd FileType {javascript,javascript.jsx,typescript} call s:StartJsRefactoringServer()
-autocmd FileType {javascript,javascript.jsx} call s:StartJsTagsServer()
+autocmd FileType {javascript,javascript.jsx,typescript} call vjs#ipc#StartJsRefactoringServer()
+autocmd FileType {javascript,javascript.jsx} call vjs#ipc#StartJsTagsServer()
 " TODO: how to avoid global name with omnifunc?
 autocmd FileType {javascript,javascript.jsx,typescript} setlocal omnifunc=VjsRequireComplete
 
