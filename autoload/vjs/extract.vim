@@ -88,9 +88,9 @@ fun! vjs#extract#RefactoringResponseHandler(channel, response, ...) abort
     endif
     undojoin | normal ==
 
-    let new_lines = [first_new_line]
-    call extend(new_lines, split(@s, "\n"))
+    let new_lines = split(@s, "\n")
     call map(new_lines, {_, line -> repeat(' ', &shiftwidth) . line})
+    call insert(new_lines, indent . first_new_line)
     call extend(new_lines, [indent .'}', ''])
   else
     throw 'Unknown action '. message.context.action
