@@ -118,5 +118,35 @@ Expect:
     return path
   }
 
+" Given javascript (local function with return value):
+"   async function getParentModuleName() {
+"     const caller = stack.shift()
+
+"     let path = await caller.split(' ').pop()
+"     path = path.replace(/^\(/, '')
+
+"     return path
+"   }
+
+" Do:
+"   3j
+"   Vj
+"   :'<,'>VjsExtractFunction\<CR>
+"   thing\<CR>
+
+" Expect:
+"   async function getParentModuleName() {
+"     const caller = stack.shift()
+
+"     function thing() {
+"       let path = await caller.split(' ').pop()
+"       return path.replace(/^\(/, '')
+"     }
+
+"     let path = thing()
+
+"     return path
+"   }
+
 " Execute:
 "   call LogAllMessages()
