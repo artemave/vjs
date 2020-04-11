@@ -1,4 +1,4 @@
-Given javascript:
+Given javascript (local void function):
   function getParentModuleName() {
     const caller = stack.shift()
 
@@ -28,7 +28,35 @@ Expect:
     return path
   }
 
-Given javascript:
+Given javascript (local void function without blank line):
+  function getParentModuleName() {
+    const caller = stack.shift()
+
+    let path2 = caller.split(' ').pop()
+    path2 = path2.replace(/^\(/, '')
+    return path
+  }
+
+Do:
+  3j
+  Vj
+  :'<,'>VjsExtractFunction\<CR>
+  thing\<CR>
+
+Expect:
+  function getParentModuleName() {
+    const caller = stack.shift()
+
+    function thing() {
+      let path2 = caller.split(' ').pop()
+      path2 = path2.replace(/^\(/, '')
+    }
+
+    thing()
+    return path
+  }
+
+Given javascript (async local void function):
   async function getParentModuleName() {
     const caller = stack.shift()
 

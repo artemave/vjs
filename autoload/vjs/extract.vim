@@ -41,12 +41,12 @@ fun! vjs#extract#RefactoringResponseHandler(channel, response, ...) abort
 
   if message.context.action == 'extract_variable'
     let current_indent_base = indent(line('.'))
+    let [selection_end_line, selection_end_column] = getpos("'>")[1:2]
+    let last_selected_line_includes_line_break = selection_end_column > 999999 || len(getline(selection_end_line)) == selection_end_column
 
     let property_name = message.context.property_name
 
     let selection_start_line = getpos("'<")[1]
-    let [selection_end_line, selection_end_column] = getpos("'>")[1:2]
-    let last_selected_line_is_selected_until_the_end = selection_end_column > 999999 || len(getline(selection_end_line)) == selection_end_column
 
     normal gv
     normal "sx
@@ -55,7 +55,7 @@ fun! vjs#extract#RefactoringResponseHandler(channel, response, ...) abort
       let new_line = substitute(getline(selection_start_line), property_name.' *: *', property_name, '')
       call setline(selection_start_line, new_line)
     else
-      if last_selected_line_is_selected_until_the_end
+      if last_selected_line_includes_line_break
         undojoin | normal "vp
       else
         undojoin | normal "vP
@@ -76,16 +76,17 @@ fun! vjs#extract#RefactoringResponseHandler(channel, response, ...) abort
       let first_new_line = 'async '. first_new_line
     endif
 
-    let @v = @v ."()"
+    let @v = @v ."()\n"
     if is_async > -1
       let @v = 'await '. @v
     endif
-    undojoin | normal "vp
-    undojoin | normal ==
 
     if match(@s, '\n$') > -1
-      undojoin | call append(line('.'), '')
+      undojoin | normal "vP
+    else
+      undojoin | normal "vp
     endif
+    undojoin | normal ==
 
     let new_lines = [first_new_line]
     call extend(new_lines, split(@s, "\n"))
