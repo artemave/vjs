@@ -3,7 +3,7 @@
 const {parse} = require('@babel/parser')
 const readline = require('readline')
 const jsEditorTags = require('js-editor-tags')
-const {findStatementStart} = require('./queries')
+const {findStatementStart, findVariablesDefinedWithinSelectionButUsedOutside} = require('./queries')
 const argv = require('yargs')
   .command('refactoring', 'start refactoring server', {
     'single-run': {
@@ -29,7 +29,7 @@ function refactoring() {
 
   rl.on('line', message => {
     try {
-      const {code, current_line, query, context} = JSON.parse(message)
+      const {code, action, start_line, end_line, context = {}} = JSON.parse(message)
       const ast = parse(code, {
         sourceType: 'unambiguous',
         // TODO: pass plugins from argv
@@ -40,13 +40,24 @@ function refactoring() {
           ['decorators', { decoratorsBeforeExport: true }]
         ]
       })
+      context.action = action
 
-      if (query === 'findStatementStart') {
-        const loc = findStatementStart({ast, current_line})
+      if (action === 'extract_variable') {
+        const loc = findStatementStart({ast, current_line: start_line})
         console.info(JSON.stringify(Object.assign({context}, loc)))
         return
+      } else if (action === 'extract_function') {
+        const loc = findStatementStart({ast, current_line: start_line})
+        const [return_value] = findVariablesDefinedWithinSelectionButUsedOutside({ast, start_line, end_line})
+        console.info(
+          JSON.stringify(
+            Object.assign({context}, loc, {return_value})
+          )
+        )
+        return
       }
-      console.error(`unknown query "${query}"`)
+
+      console.error(`unknown action "${action}"`)
     } catch (e) {
       console.error(e)
     }

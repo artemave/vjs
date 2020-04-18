@@ -19,6 +19,31 @@ function findStatementStart({ast, current_line}) {
   return result
 }
 
+function findVariablesDefinedWithinSelectionButUsedOutside({ast, start_line, end_line}) {
+  const result = []
+
+  traverse(ast, {
+    VariableDeclaration({node, scope}) {
+      const {loc, declarations, kind} = node
+
+      if (loc.start.line >= start_line && loc.end.line <= end_line) {
+        const names = declarations.map(({id}) => id.name)
+
+        names.forEach((name) => {
+          scope.bindings[name].referencePaths.forEach(({node}) => {
+            if (node.loc.start.line > end_line) {
+              result.push({kind, name})
+            }
+          })
+        })
+      }
+    }
+  })
+
+  return result
+}
+
 module.exports = {
-  findStatementStart
+  findStatementStart,
+  findVariablesDefinedWithinSelectionButUsedOutside
 }

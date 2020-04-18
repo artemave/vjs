@@ -5,9 +5,11 @@ fun! vjs#extract#ExtractFunction()
     return
   endif
 
+  let selection_start_line = getpos("'<")[1]
+  let selection_end_line = getpos("'>")[1]
+
   let code = join(getline(1,'$'), "\n")
-  let context = {'action': 'extract_function'}
-  let message = {'code': code, 'current_line': line('.'), 'query': 'findStatementStart', 'context': context}
+  let message = {'code': code, 'start_line': selection_start_line, 'end_line': selection_end_line, 'action': 'extract_function'}
 
   call vjs#ipc#SendMessage(json_encode(message))
 endf
@@ -28,8 +30,8 @@ fun! vjs#extract#ExtractVariable()
 
   " send buffer content and line('.') to js
   let code = join(getline(1,'$'), "\n")
-  let context = {'property_name': property_name, 'action': 'extract_variable'}
-  let message = {'code': code, 'current_line': line('.'), 'query': 'findStatementStart', 'context': context}
+  let context = {'property_name': property_name}
+  let message = {'code': code, 'start_line': selection_start_line, 'action': 'extract_variable', 'context': context}
 
   call vjs#ipc#SendMessage(json_encode(message))
 endf
@@ -96,6 +98,10 @@ fun! s:HandleExtractFunctionResponse(message) abort
     let @v = 'await '. @v
   endif
 
+  if has_key(a:message, 'return_value')
+    let @v = a:message.return_value.kind .' '. a:message.return_value.name .' = '. @v
+  endif
+
   if match(@s, '\n$') > -1
     undojoin | normal "vP
   else
@@ -106,6 +112,10 @@ fun! s:HandleExtractFunctionResponse(message) abort
   let new_lines = split(@s, "\n")
   call map(new_lines, {_, line -> repeat(' ', &shiftwidth) . line})
   call insert(new_lines, indent . first_new_line)
+
+  if has_key(a:message, 'return_value')
+    call add(new_lines, indent . repeat(' ', &shiftwidth) .'return '.a:message.return_value.name)
+  endif
   call extend(new_lines, [indent .'}', ''])
 
   return new_lines
