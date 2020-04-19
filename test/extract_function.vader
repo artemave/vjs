@@ -118,7 +118,7 @@ Expect:
     return path
   }
 
-Given javascript (local function with return value):
+Given javascript (local async function with return value):
   async function getParentModuleName() {
     const caller = stack.shift()
 
@@ -148,6 +148,40 @@ Expect:
 
     return path
   }
+
+Given javascript (local function with multiple return values):
+  async function getParentModuleName() {
+    const caller = stack.shift()
+
+    let path = caller.split(' ').pop()
+    const foo = 2
+    path = path.replace(/^\(/, '')
+
+    return path + foo
+  }
+
+Do:
+  3j
+  Vjj
+  :'<,'>VjsExtractFunction\<CR>
+  thing\<CR>
+
+Expect:
+  async function getParentModuleName() {
+    const caller = stack.shift()
+
+    function thing() {
+      let path = caller.split(' ').pop()
+      const foo = 2
+      path = path.replace(/^\(/, '')
+      return {path, foo}
+    }
+
+    let {path, foo} = thing()
+
+    return path + foo
+  }
+
 
 " Execute:
 "   call LogAllMessages()

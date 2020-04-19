@@ -98,8 +98,25 @@ fun! s:HandleExtractFunctionResponse(message) abort
     let @v = 'await '. @v
   endif
 
-  if has_key(a:message, 'return_value')
-    let @v = a:message.return_value.kind .' '. a:message.return_value.name .' = '. @v
+  let return_value_line = ''
+  if len(a:message.return_values) == 1
+    let @v = a:message.return_values[0].kind .' '. a:message.return_values[0].name .' = '. @v
+    let return_value_line = indent . repeat(' ', &shiftwidth) .'return '.a:message.return_values[0].name
+  elseif len(a:message.return_values) > 1
+    let kinds = map(copy(a:message.return_values), {_, v -> v.kind})
+    let non_const_kinds = filter(kinds, 'v:val == "const"')
+
+    let kind = ''
+    if len(non_const_kinds) == 0
+      let kind = 'const'
+    else
+      let kind = 'let'
+    endif
+
+    let names = join(map(copy(a:message.return_values), {_, v -> v.name}), ', ')
+
+    let @v = kind .' {'. names .'} = '. @v
+    let return_value_line = indent . repeat(' ', &shiftwidth) .'return {'. names .'}'
   endif
 
   if match(@s, '\n$') > -1
@@ -113,8 +130,8 @@ fun! s:HandleExtractFunctionResponse(message) abort
   call map(new_lines, {_, line -> repeat(' ', &shiftwidth) . line})
   call insert(new_lines, indent . first_new_line)
 
-  if has_key(a:message, 'return_value')
-    call add(new_lines, indent . repeat(' ', &shiftwidth) .'return '.a:message.return_value.name)
+  if len(return_value_line)
+    call add(new_lines, return_value_line)
   endif
   call extend(new_lines, [indent .'}', ''])
 

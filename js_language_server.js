@@ -48,10 +48,10 @@ function refactoring() {
         return
       } else if (action === 'extract_function') {
         const loc = findStatementStart({ast, current_line: start_line})
-        const [return_value] = findVariablesDefinedWithinSelectionButUsedOutside({ast, start_line, end_line})
+        const return_values = findVariablesDefinedWithinSelectionButUsedOutside({ast, start_line, end_line})
         console.info(
           JSON.stringify(
-            Object.assign({context}, loc, {return_value})
+            Object.assign({context}, loc, {return_values})
           )
         )
         return
