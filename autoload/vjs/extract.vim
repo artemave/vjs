@@ -1,4 +1,4 @@
-fun! vjs#extract#ExtractFunction()
+fun! vjs#extract#ExtractLocalFunction()
   " TODO: restore @v
   let @v = input('Function name: ')
   if empty(@v)

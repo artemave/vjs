@@ -11,7 +11,7 @@ Given javascript (local void function):
 Do:
   3j
   Vj
-  :'<,'>VjsExtractFunction\<CR>
+  :'<,'>VjsExtractLocalFunction\<CR>
   thing\<CR>
 
 Expect:
@@ -40,7 +40,7 @@ Given javascript (local void function without blank line):
 Do:
   3j
   Vj
-  :'<,'>VjsExtractFunction\<CR>
+  :'<,'>VjsExtractLocalFunction\<CR>
   thing\<CR>
 
 Expect:
@@ -70,7 +70,7 @@ Given javascript (local void function with extra indent):
 Do:
   4j
   Vj
-  :'<,'>VjsExtractFunction\<CR>
+  :'<,'>VjsExtractLocalFunction\<CR>
   thing\<CR>
 
 Expect:
@@ -101,7 +101,7 @@ Given javascript (async local void function):
 Do:
   3j
   Vj
-  :'<,'>VjsExtractFunction\<CR>
+  :'<,'>VjsExtractLocalFunction\<CR>
   thing\<CR>
 
 Expect:
@@ -131,7 +131,7 @@ Given javascript (local async function with return value):
 Do:
   3j
   Vj
-  :'<,'>VjsExtractFunction\<CR>
+  :'<,'>VjsExtractLocalFunction\<CR>
   thing\<CR>
 
 Expect:
@@ -163,7 +163,7 @@ Given javascript (local function with multiple return values):
 Do:
   3j
   Vjj
-  :'<,'>VjsExtractFunction\<CR>
+  :'<,'>VjsExtractLocalFunction\<CR>
   thing\<CR>
 
 Expect:
