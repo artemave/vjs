@@ -1,3 +1,19 @@
+fun! vjs#extract#ExtractFunctionOrMethod()
+  " TODO: restore @v
+  let @v = input('Function name: ')
+  if empty(@v)
+    return
+  endif
+
+  let selection_start_line = getpos("'<")[1]
+  let selection_end_line = getpos("'>")[1]
+
+  let code = join(getline(1,'$'), "\n")
+  let message = {'code': code, 'start_line': selection_start_line, 'end_line': selection_end_line, 'action': 'extract_function_or_method'}
+
+  call vjs#ipc#SendMessage(json_encode(message))
+endf
+
 fun! vjs#extract#ExtractLocalFunction()
   " TODO: restore @v
   let @v = input('Function name: ')
@@ -9,7 +25,7 @@ fun! vjs#extract#ExtractLocalFunction()
   let selection_end_line = getpos("'>")[1]
 
   let code = join(getline(1,'$'), "\n")
-  let message = {'code': code, 'start_line': selection_start_line, 'end_line': selection_end_line, 'action': 'extract_function'}
+  let message = {'code': code, 'start_line': selection_start_line, 'end_line': selection_end_line, 'action': 'extract_local_function'}
 
   call vjs#ipc#SendMessage(json_encode(message))
 endf
@@ -41,7 +57,7 @@ fun! vjs#extract#RefactoringResponseHandler(channel, response, ...) abort
 
   if message.context.action == 'extract_variable'
     let new_lines = s:HandleExtractVariableResponse(message)
-  elseif message.context.action == 'extract_function'
+  elseif message.context.action == 'extract_local_function' || message.context.action == 'extract_function_or_method'
     let new_lines = s:HandleExtractFunctionResponse(message)
   else
     throw 'Unknown action '. message.context.action
@@ -88,12 +104,12 @@ fun! s:HandleExtractFunctionResponse(message) abort
 
   let is_async = match(@s, '\<await ')
 
-  let first_new_line = 'function '. @v .'() {'
+  let first_new_line = 'function '. @v .'('. join(a:message.function_arguments, ', ') .') {'
   if is_async > -1
     let first_new_line = 'async '. first_new_line
   endif
 
-  let @v = @v ."()\n"
+  let @v = @v ."(". join(a:message.function_arguments, ', ') .")\n"
   if is_async > -1
     let @v = 'await '. @v
   endif
@@ -127,7 +143,12 @@ fun! s:HandleExtractFunctionResponse(message) abort
   undojoin | normal ==
 
   let new_lines = split(@s, "\n")
-  call map(new_lines, {_, line -> repeat(' ', &shiftwidth) . line})
+  let copy_indent = len(new_lines[0]) - len(substitute(new_lines[0], "^ *", '', ''))
+
+  " remove indent from copied text
+  call map(new_lines, {_, line -> substitute(line, '^'.repeat(' ', copy_indent), '', '') })
+
+  call map(new_lines, {_, line -> len(line) > 0 ? indent . repeat(' ', &shiftwidth) . line : line})
   call insert(new_lines, indent . first_new_line)
 
   if len(return_value_line)

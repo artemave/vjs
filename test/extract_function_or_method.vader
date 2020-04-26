@@ -1,0 +1,45 @@
+Given javascript (void function):
+  const a = 2
+
+  function donc() {
+    return 1
+  }
+
+  function getParentModuleName() {
+    const caller = stack.shift()
+
+    let path2 = caller.split(' ').pop()
+    path2 = path2.replace(/^\(/, '')
+
+    return path
+  }
+
+Do:
+  9j
+  Vj
+  :'<,'>VjsExtractFunctionOrMethod\<CR>
+  thing\<CR>
+
+Expect:
+  const a = 2
+
+  function donc() {
+    return 1
+  }
+
+  function thing(caller) {
+    let path2 = caller.split(' ').pop()
+    path2 = path2.replace(/^\(/, '')
+  }
+
+  function getParentModuleName() {
+    const caller = stack.shift()
+
+    thing(caller)
+
+    return path
+  }
+
+
+" Execute:
+"   call LogAllMessages()
