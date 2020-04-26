@@ -12,6 +12,7 @@ Namely:
 - list files that require current file
 - fix linting errors (without blocking vim)
 - extract variable
+- extract function
 - auto generating and keeping up to date `tags` file
 - list Express routes
 
@@ -19,10 +20,10 @@ For testing related goodies check out [vigun](https://github.com/artemave/vigun)
 
 ## Installation
 
-Use [a plugin manager](https://github.com/VundleVim/Vundle.vim):
+Use [a plugin manager](https://github.com/junegunn/vim-plug):
 
 ```vim script
-Plugin 'artemave/vjs'
+Plug 'artemave/vjs'
 ``` 
 
 ## Usage
@@ -58,6 +59,12 @@ Fixes js/typescript lint errors. For js it will try `eslint`, `standard` and `pr
 Extracts selected code into a variable.
 
 ![2019-02-03 22 38 16](https://user-images.githubusercontent.com/23721/52183335-27da2280-2807-11e9-84bd-e51e424d0872.gif)
+
+#### `:'<,'>VjsExtractFunctionOrMethod`
+
+Extracts selected code into a global function (TODO: or a method if applicable).
+
+![get_current_scope2](https://user-images.githubusercontent.com/23721/80319984-d820b600-8813-11ea-953b-33925c7bb8fa.gif)
 
 ### Configuration
 
