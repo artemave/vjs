@@ -4,7 +4,7 @@ Execute:
   file test/fixtures/deeper/stuff.js
 
 Execute:
-  VjsListRequirers
+  VjsListDependents
   AssertEqual GetQFListFiles(), [
     \ {'lnum': 1, 'fname': 'test/fixtures/blops.js', 'text': "const stuff = require('./deeper/stuff')"},
     \ {'lnum': 2, 'fname': 'test/fixtures/deeper/blah.jsx', 'text': 'import stuff from "./stuff"'},

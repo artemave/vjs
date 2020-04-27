@@ -34,9 +34,9 @@ Vjs registers an `omnifunc` for `require`/`import` path completion - `CTRL-X CTR
 
 Vjs comes with no bindings, but does add the following commands:
 
-#### `:VjsListRequirers`
+#### `:VjsListDependents`
 
-Shows list of modules that require current file in quickfix window. Supports both commonJS and ES6 modules.
+Shows list of modules that require/import current file in quickfix window.
 
 ![2018-03-30 19 51 28](https://user-images.githubusercontent.com/23721/38147735-d9631104-3453-11e8-91fa-67db2bf13055.gif)
 
@@ -76,7 +76,7 @@ Extracts selected code into a global function (TODO: or a method if applicable).
 
 ```vim script
 au FileType {javascript,javascript.jsx} nnoremap <Leader>p :call VjsLintFix<cr>
-au FileType {javascript,javascript.jsx} nnoremap <leader>R :call VjsListRequirers<cr>
+au FileType {javascript,javascript.jsx} nnoremap <leader>R :call VjsListDependents<cr>
 ```
 
 ## Development

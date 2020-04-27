@@ -9,7 +9,7 @@ fun! s:Debug(message)
   endif
 endf
 
-fun! s:ListRequirers()
+fun! s:ListDependents()
   let grep_term = '(require\(.*\)\|^import )'
   execute 'silent grep!' "'".grep_term."'"
   redraw!
@@ -205,7 +205,7 @@ autocmd FileType {javascript,javascript.jsx,typescript} setlocal omnifunc=VjsReq
 
 com VjsLintFix call s:LintFix()
 com VjsListRoutes call s:ListExpressRoutes()
-com VjsListRequirers call s:ListRequirers()
+com VjsListDependents call s:ListDependents()
 com -range VjsExtractVariable call vjs#extract#ExtractVariable()
 com -range VjsExtractLocalFunction call vjs#extract#ExtractLocalFunction()
 com -range VjsExtractFunctionOrMethod call vjs#extract#ExtractFunctionOrMethod()
