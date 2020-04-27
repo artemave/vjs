@@ -38,7 +38,7 @@ Vjs comes with no bindings, but does add the following commands:
 
 Shows list of modules that require/import current file in quickfix window.
 
-![2018-03-30 19 51 28](https://user-images.githubusercontent.com/23721/38147735-d9631104-3453-11e8-91fa-67db2bf13055.gif)
+![vjs_list_dependents](https://user-images.githubusercontent.com/23721/80421625-0f0ece80-88dd-11ea-8057-93ff00adbf3e.gif)
 
 #### `:VjsListRoutes`
 
