@@ -11151,6 +11151,114 @@ function _getQueueContexts() {
   return contexts;
 }
 },
+"AKu2QciJH4p4A5flNqz8o2M5oxAqu0ODArmvHWepGi0=":
+function (require, module, exports, __dirname, __filename) {
+
+
+
+// AST explorer:
+//  - https://lihautan.com/babel-ast-explorer/#?eyJiYWJlbFNldHRpbmdzIjp7InZlcnNpb24iOiI3LjYuMCJ9LCJ0cmVlU2V0dGluZ3MiOnsiaGlkZUVtcHR5Ijp0cnVlLCJoaWRlTG9jYXRpb24iOnRydWUsImhpZGVUeXBlIjp0cnVlLCJoaWRlQ29tbWVudHMiOnRydWV9LCJjb2RlIjoiICAgICAgY29uc3QgYSA9IDJcblxuICAgICAgZnVuY3Rpb24gc3R1ZmYoYWEpIHtcbiAgICAgICAgY29uc3QgYiA9IGFcbiAgICAgICAgY29uc3QgbiA9IDJcblxuICAgICAgICBsZXQgYyA9IGIgKyBuICsgYWFcbiAgICAgICAgd29yayhjKVxuXG4gICAgICAgIHJldHVybiBjICsgM1xuICAgICAgfVxuXG4gICAgICBjb25zdCBkID0gM+KAqFxuXG4ifQ==
+//  - https://astexplorer.net/
+
+const {parse} = require('@babel/parser')
+const readline = require('readline')
+const jsEditorTags = require('js-editor-tags')
+const {
+  findStatementStart,
+  findVariablesDefinedWithinSelectionButUsedOutside,
+  findGlobalScopeStart,
+  findFunctionArguments,
+} = require('./queries')
+const argv = require('yargs')
+  .command('refactoring', 'start refactoring server', {
+    'single-run': {
+      type: 'boolean'
+    }
+  })
+  .command('tags', 'start generate/update tags file server', {
+    update: {
+      type: 'boolean'
+    },
+    ignore: {
+      type: 'array',
+      default: []
+    }
+  })
+  .demandCommand()
+  .argv
+
+function refactoring() {
+  const rl = readline.createInterface({
+    input: process.stdin
+  })
+
+  rl.on('line', message => {
+    try {
+      const {code, action, start_line, end_line, context = {}} = JSON.parse(message)
+      const ast = parse(code, {
+        sourceType: 'unambiguous',
+        // TODO: pass plugins from argv
+        plugins: [
+          'jsx',
+          'typescript',
+          'classProperties',
+          ['decorators', { decoratorsBeforeExport: true }]
+        ]
+      })
+      context.action = action
+
+      if (action === 'extract_variable') {
+        const loc = findStatementStart({ast, current_line: start_line})
+        console.info(JSON.stringify(Object.assign({context}, loc)))
+        return
+
+      } else if (action === 'extract_local_function') {
+        const loc = findStatementStart({ast, current_line: start_line})
+        const return_values = findVariablesDefinedWithinSelectionButUsedOutside({ast, start_line, end_line})
+
+        console.info(
+          JSON.stringify(
+            Object.assign({context, function_arguments: [], return_values}, loc)
+          )
+        )
+        return
+
+      } else if (action === 'extract_function_or_method') {
+        const loc = findGlobalScopeStart({ast, current_line: start_line})
+        const return_values = findVariablesDefinedWithinSelectionButUsedOutside({ast, start_line, end_line})
+        const function_arguments = findFunctionArguments({ast, start_line, end_line})
+
+        console.info(
+          JSON.stringify(
+            Object.assign({context, return_values, function_arguments}, loc)
+          )
+        )
+        return
+      }
+
+      console.error(`unknown action "${action}"`)
+    } catch (e) {
+      console.error(e)
+    }
+
+    if (argv.single_run) {
+      rl.close()
+    }
+  })
+}
+
+switch (argv._[0]) {
+case 'refactoring':
+  refactoring()
+  break
+case 'tags':
+  jsEditorTags({watch: true, ignore: argv.ignore})
+  break
+default:
+  throw new Error(`Unknown command ${argv._[0]}`)
+}
+
+},
 "AO1UdbCLSiOYNrxdZnv680P08kEs12FtKq83vd2FgsI=":
 function (require, module, exports, __dirname, __filename) {
 /* -*- Mode: js; js-indent-level: 2; -*- */
@@ -15182,6 +15290,127 @@ function baseIsNative(value) {
 }
 
 module.exports = baseIsNative;
+
+},
+"I/9XGk9mhRqw+ywX6Ou+7jarWW+psPGMz6lLZ+KV1I4=":
+function (require, module, exports, __dirname, __filename) {
+const traverse = require('@babel/traverse').default
+
+function findStatementStart({ast, current_line}) {
+  let result = {
+    line: 1, column: 0
+  }
+
+  traverse(ast, {
+    Statement({node}) {
+      const {loc} = node
+      if (loc.start.line <= current_line && loc.end.line >= current_line) {
+        if (result.line < loc.start.line) {
+          result = loc.start
+        }
+      }
+    }
+  })
+
+  return result
+}
+
+function findVariablesDefinedWithinSelectionButUsedOutside({ast, start_line, end_line}) {
+  const result = {}
+
+  traverse(ast, {
+    VariableDeclaration({node, scope}) {
+      const {loc, declarations, kind} = node
+
+      if (loc.start.line >= start_line && loc.end.line <= end_line) {
+        const names = declarations.map(({id}) => id.name)
+
+        names.forEach((name) => {
+          scope.bindings[name].referencePaths.forEach(({node}) => {
+            if (node.loc.start.line > end_line) {
+              result[name] = kind
+            }
+          })
+        })
+      }
+    }
+  })
+
+  return Object.entries(result).map(([name, kind]) => {
+    return { name, kind }
+  })
+}
+
+function findGlobalScopeStart({ast, current_line}) {
+  let result = {
+    line: 1, column: 0
+  }
+
+  traverse(ast, {
+    Statement(path) {
+      const {loc} = path.node
+
+      if (loc.start.line <= current_line && loc.end.line >= current_line) {
+        result = {
+          line: loc.start.line,
+          column: loc.start.column
+        }
+        path.stop()
+      }
+    }
+  })
+
+  return result
+}
+
+function findFunctionArguments({ast, start_line, end_line}) {
+  const result = []
+  let currentScopePath
+
+  traverse(ast, {
+    Scope(path) {
+      const loc = path.node.loc
+
+      if (!currentScopePath) {
+        currentScopePath = path
+      } else {
+        if (start_line >= loc.start.line && end_line <= loc.end.line) {
+          const currentScopePathLoc = currentScopePath.node.loc
+
+          if (loc.start.line >= currentScopePathLoc.start.line && loc.end.line <= currentScopePathLoc.end.line) {
+            currentScopePath = path
+          }
+        }
+      }
+    }
+  })
+
+  for (let path = currentScopePath; path.parentPath; path = path.parentPath) {
+    for (const [name, binding] of Object.entries(path.scope.bindings)) {
+      const bindingLoc = binding.identifier.loc
+      if (bindingLoc.start.line >= start_line && bindingLoc.start.line <= end_line) {
+        continue
+      }
+
+      for (const referencePath of binding.referencePaths) {
+        const loc = referencePath.node.loc
+
+        if (loc.start.line >= start_line && loc.end.line <= end_line) {
+          result.push(name)
+        }
+      }
+    }
+  }
+
+  return [...new Set(result)]
+}
+
+module.exports = {
+  findStatementStart,
+  findVariablesDefinedWithinSelectionButUsedOutside,
+  findGlobalScopeStart,
+  findFunctionArguments,
+}
 
 },
 "I1O6kfl69OLdfqOo4FlIobwDCfGero/Db1HYCpTkd4c=":
@@ -23151,114 +23380,6 @@ function stringTemplate(formatter, code, opts) {
     return formatter.unwrap((0, _populate.default)(metadata, replacements));
   };
 }
-},
-"QDqSNDYsJgxRcgj7CNs4HVxoZi4bTAyJnqlx1bqnOO4=":
-function (require, module, exports, __dirname, __filename) {
-
-
-
-// AST explorer:
-//  - https://lihautan.com/babel-ast-explorer/#?eyJiYWJlbFNldHRpbmdzIjp7InZlcnNpb24iOiI3LjYuMCJ9LCJ0cmVlU2V0dGluZ3MiOnsiaGlkZUVtcHR5Ijp0cnVlLCJoaWRlTG9jYXRpb24iOnRydWUsImhpZGVUeXBlIjp0cnVlLCJoaWRlQ29tbWVudHMiOnRydWV9LCJjb2RlIjoiICAgICAgY29uc3QgYSA9IDJcblxuICAgICAgZnVuY3Rpb24gc3R1ZmYoYWEpIHtcbiAgICAgICAgY29uc3QgYiA9IGFcbiAgICAgICAgY29uc3QgbiA9IDJcblxuICAgICAgICBsZXQgYyA9IGIgKyBuICsgYWFcbiAgICAgICAgd29yayhjKVxuXG4gICAgICAgIHJldHVybiBjICsgM1xuICAgICAgfVxuXG4gICAgICBjb25zdCBkID0gM+KAqFxuXG4ifQ==
-//  - https://astexplorer.net/
-
-const {parse} = require('@babel/parser')
-const readline = require('readline')
-const jsEditorTags = require('js-editor-tags')
-const {
-  findStatementStart,
-  findVariablesDefinedWithinSelectionButUsedOutside,
-  findGlobalFunctionStart,
-  findFunctionArguments,
-} = require('./queries')
-const argv = require('yargs')
-  .command('refactoring', 'start refactoring server', {
-    'single-run': {
-      type: 'boolean'
-    }
-  })
-  .command('tags', 'start generate/update tags file server', {
-    update: {
-      type: 'boolean'
-    },
-    ignore: {
-      type: 'array',
-      default: []
-    }
-  })
-  .demandCommand()
-  .argv
-
-function refactoring() {
-  const rl = readline.createInterface({
-    input: process.stdin
-  })
-
-  rl.on('line', message => {
-    try {
-      const {code, action, start_line, end_line, context = {}} = JSON.parse(message)
-      const ast = parse(code, {
-        sourceType: 'unambiguous',
-        // TODO: pass plugins from argv
-        plugins: [
-          'jsx',
-          'typescript',
-          'classProperties',
-          ['decorators', { decoratorsBeforeExport: true }]
-        ]
-      })
-      context.action = action
-
-      if (action === 'extract_variable') {
-        const loc = findStatementStart({ast, current_line: start_line})
-        console.info(JSON.stringify(Object.assign({context}, loc)))
-        return
-
-      } else if (action === 'extract_local_function') {
-        const loc = findStatementStart({ast, current_line: start_line})
-        const return_values = findVariablesDefinedWithinSelectionButUsedOutside({ast, start_line, end_line})
-
-        console.info(
-          JSON.stringify(
-            Object.assign({context, function_arguments: [], return_values}, loc)
-          )
-        )
-        return
-
-      } else if (action === 'extract_function_or_method') {
-        const loc = findGlobalFunctionStart({ast, current_line: start_line})
-        const return_values = findVariablesDefinedWithinSelectionButUsedOutside({ast, start_line, end_line})
-        const function_arguments = findFunctionArguments({ast, start_line, end_line})
-
-        console.info(
-          JSON.stringify(
-            Object.assign({context, return_values, function_arguments}, loc)
-          )
-        )
-        return
-      }
-
-      console.error(`unknown action "${action}"`)
-    } catch (e) {
-      console.error(e)
-    }
-
-    if (argv.single_run) {
-      rl.close()
-    }
-  })
-}
-
-switch (argv._[0]) {
-case 'refactoring':
-  refactoring()
-  break
-case 'tags':
-  jsEditorTags({watch: true, ignore: argv.ignore})
-  break
-default:
-  throw new Error(`Unknown command ${argv._[0]}`)
-}
-
 },
 "QErQYcQLLuwSG+N/hi8c6rp4HFH0FEE8Tb9HjRzRzZw=":
 function (require, module, exports, __dirname, __filename) {
@@ -47461,120 +47582,6 @@ function baseRepeat(string, n) {
 module.exports = baseRepeat;
 
 },
-"h+lm2wLiB+o7njYQz+ATNlTCGF3ma6g+dNah5mJPs0A=":
-function (require, module, exports, __dirname, __filename) {
-const traverse = require('@babel/traverse').default
-
-function findStatementStart({ast, current_line}) {
-  let result = {
-    line: 1, column: 0
-  }
-
-  traverse(ast, {
-    Statement({node}) {
-      const {loc} = node
-      if (loc.start.line <= current_line && loc.end.line >= current_line) {
-        if (result.line < loc.start.line) {
-          result = loc.start
-        }
-      }
-    }
-  })
-
-  return result
-}
-
-function findVariablesDefinedWithinSelectionButUsedOutside({ast, start_line, end_line}) {
-  const result = []
-
-  traverse(ast, {
-    VariableDeclaration({node, scope}) {
-      const {loc, declarations, kind} = node
-
-      if (loc.start.line >= start_line && loc.end.line <= end_line) {
-        const names = declarations.map(({id}) => id.name)
-
-        names.forEach((name) => {
-          scope.bindings[name].referencePaths.forEach(({node}) => {
-            if (node.loc.start.line > end_line) {
-              result.push({kind, name})
-            }
-          })
-        })
-      }
-    }
-  })
-
-  return result
-}
-
-function findGlobalFunctionStart({ast, current_line}) {
-  let result = findStatementStart({ast, current_line})
-
-  traverse(ast, {
-    FunctionDeclaration({node}) {
-      const {loc} = node
-      if (loc.start.line <= current_line && loc.end.line >= current_line) {
-        if (loc.start.line < result.line) {
-          result = loc.start
-        }
-      }
-    }
-  })
-
-  return result
-}
-
-function findFunctionArguments({ast, start_line, end_line}) {
-  const result = []
-  let currentScopePath
-
-  traverse(ast, {
-    Scope(path) {
-      const loc = path.node.loc
-
-      if (!currentScopePath) {
-        currentScopePath = path
-      } else {
-        if (start_line >= loc.start.line && end_line <= loc.end.line) {
-          const currentScopePathLoc = currentScopePath.node.loc
-
-          if (loc.start.line >= currentScopePathLoc.start.line && loc.end.line <= currentScopePathLoc.end.line) {
-            currentScopePath = path
-          }
-        }
-      }
-    }
-  })
-
-  for (let path = currentScopePath; path.parentPath; path = path.parentPath) {
-    for (const [name, binding] of Object.entries(path.scope.bindings)) {
-      const bindingLoc = binding.identifier.loc
-      if (bindingLoc.start.line >= start_line && bindingLoc.start.line <= end_line) {
-        continue
-      }
-
-      for (const referencePath of binding.referencePaths) {
-        const loc = referencePath.node.loc
-
-        if (loc.start.line >= start_line && loc.end.line <= end_line) {
-          result.push(name)
-        }
-      }
-    }
-  }
-
-  return [...new Set(result)]
-}
-
-module.exports = {
-  findStatementStart,
-  findVariablesDefinedWithinSelectionButUsedOutside,
-  findGlobalFunctionStart,
-  findFunctionArguments,
-}
-
-},
 "hATXUkvdqEQix9nF30Vw8tmNnK8hv16imwCs9UvJflA=":
 function (require, module, exports, __dirname, __filename) {
 var baseRest = require('./_baseRest'),
@@ -67305,7 +67312,7 @@ module.exports = cacheHas;
 ,
 {
   "js_language_server.js": [
-    "QDqSNDYsJgxRcgj7CNs4HVxoZi4bTAyJnqlx1bqnOO4=",
+    "AKu2QciJH4p4A5flNqz8o2M5oxAqu0ODArmvHWepGi0=",
     {
       "./queries": "queries.js",
       "@babel/parser": "node_modules/@babel/parser/lib/index.js",
@@ -70268,7 +70275,7 @@ module.exports = cacheHas;
     }
   ],
   "queries.js": [
-    "h+lm2wLiB+o7njYQz+ATNlTCGF3ma6g+dNah5mJPs0A=",
+    "I/9XGk9mhRqw+ywX6Ou+7jarWW+psPGMz6lLZ+KV1I4=",
     {
       "@babel/traverse": "node_modules/@babel/traverse/lib/index.js"
     }
