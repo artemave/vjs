@@ -10,7 +10,7 @@ const jsEditorTags = require('js-editor-tags')
 const {
   findStatementStart,
   findVariablesDefinedWithinSelectionButUsedOutside,
-  findGlobalFunctionStart,
+  findGlobalScopeStart,
   findFunctionArguments,
 } = require('./queries')
 const argv = require('yargs')
@@ -68,7 +68,7 @@ function refactoring() {
         return
 
       } else if (action === 'extract_function_or_method') {
-        const loc = findGlobalFunctionStart({ast, current_line: start_line})
+        const loc = findGlobalScopeStart({ast, current_line: start_line})
         const return_values = findVariablesDefinedWithinSelectionButUsedOutside({ast, start_line, end_line})
         const function_arguments = findFunctionArguments({ast, start_line, end_line})
 

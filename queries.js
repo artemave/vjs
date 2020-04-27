@@ -43,16 +43,21 @@ function findVariablesDefinedWithinSelectionButUsedOutside({ast, start_line, end
   return result
 }
 
-function findGlobalFunctionStart({ast, current_line}) {
-  let result = findStatementStart({ast, current_line})
+function findGlobalScopeStart({ast, current_line}) {
+  let result = {
+    line: 1, column: 0
+  }
 
   traverse(ast, {
-    FunctionDeclaration({node}) {
-      const {loc} = node
+    Statement(path) {
+      const {loc} = path.node
+
       if (loc.start.line <= current_line && loc.end.line >= current_line) {
-        if (loc.start.line < result.line) {
-          result = loc.start
+        result = {
+          line: loc.start.line,
+          column: loc.start.column
         }
+        path.stop()
       }
     }
   })
@@ -105,6 +110,6 @@ function findFunctionArguments({ast, start_line, end_line}) {
 module.exports = {
   findStatementStart,
   findVariablesDefinedWithinSelectionButUsedOutside,
-  findGlobalFunctionStart,
+  findGlobalScopeStart,
   findFunctionArguments,
 }
