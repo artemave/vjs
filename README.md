@@ -44,7 +44,7 @@ Shows list of modules that require/import current file in quickfix window.
 
 Shows list of express routes of current file in quickfix window.
 
-![2018-03-30 19 55 02](https://user-images.githubusercontent.com/23721/38147868-5995de2e-3454-11e8-9f87-8178004862d9.gif)
+![vjs_list_routes](https://user-images.githubusercontent.com/23721/80421959-9d835000-88dd-11ea-87ae-3f65638c7de4.gif)
 
 #### `:VjsLintFix`
 
