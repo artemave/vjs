@@ -36,6 +36,7 @@ describe('findVariablesDefinedWithinSelectionButUsedOutside', function() {
       const b = {}
       b.a = 'stuff'
       bar(b)
+      const mm = b
       let boo = 'stuff'
       d = 3
       `
@@ -44,7 +45,7 @@ describe('findVariablesDefinedWithinSelectionButUsedOutside', function() {
     context('but it is not used outside after the end line', function() {
       it('returns []', function() {
         assert.deepEqual(
-          findVariablesDefinedWithinSelectionButUsedOutside({ast, start_line: 3, end_line: 5}),
+          findVariablesDefinedWithinSelectionButUsedOutside({ast, start_line: 3, end_line: 6}),
           []
         )
       })

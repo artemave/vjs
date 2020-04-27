@@ -20,7 +20,7 @@ function findStatementStart({ast, current_line}) {
 }
 
 function findVariablesDefinedWithinSelectionButUsedOutside({ast, start_line, end_line}) {
-  const result = []
+  const result = {}
 
   traverse(ast, {
     VariableDeclaration({node, scope}) {
@@ -32,7 +32,7 @@ function findVariablesDefinedWithinSelectionButUsedOutside({ast, start_line, end
         names.forEach((name) => {
           scope.bindings[name].referencePaths.forEach(({node}) => {
             if (node.loc.start.line > end_line) {
-              result.push({kind, name})
+              result[name] = kind
             }
           })
         })
@@ -40,7 +40,9 @@ function findVariablesDefinedWithinSelectionButUsedOutside({ast, start_line, end
     }
   })
 
-  return result
+  return Object.entries(result).map(([name, kind]) => {
+    return { name, kind }
+  })
 }
 
 function findGlobalScopeStart({ast, current_line}) {
