@@ -30,7 +30,7 @@ Plug 'artemave/vjs'
 
 Vjs registers an `omnifunc` for `require`/`import` path completion - `CTRL-X CTRL-O` - which gives you this:
 
-![2018-03-12 23 40 39](https://user-images.githubusercontent.com/23721/80413735-38752d80-88d0-11ea-8030-de1b17ee4796.gif)
+<img src="https://user-images.githubusercontent.com/23721/80413735-38752d80-88d0-11ea-8030-de1b17ee4796.gif" loading="lazy">
 
 Vjs comes with no bindings, but does add the following commands:
 
