@@ -55,7 +55,7 @@ Extracts selected code into a variable.
 
 Extracts selected code into a global function (TODO: or a method if applicable).
 
-![get_current_scope2](https://user-images.githubusercontent.com/23721/80319984-d820b600-8813-11ea-953b-33925c7bb8fa.gif)
+![vjs_extract_function](https://user-images.githubusercontent.com/23721/80576556-b38c3000-8a05-11ea-8be8-5b1b18e5ac87.gif)
 
 ### Configuration
 
