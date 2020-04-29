@@ -7,8 +7,7 @@ Vim plugin that brings about a bunch of powertricks for writing Javascript:
 Namely:
 
 - autocomplete `require`/`import` paths
-- list files that require current file
-- fix linting errors (without blocking vim)
+- list files that require/import current file
 - extract variable
 - extract function
 - auto generating and keeping up to date `tags` file
@@ -46,17 +45,11 @@ Shows list of express routes of current file in quickfix window.
 
 ![vjs_list_routes](https://user-images.githubusercontent.com/23721/80421959-9d835000-88dd-11ea-87ae-3f65638c7de4.gif)
 
-#### `:VjsLintFix`
-
-Fixes js/typescript lint errors. For js it will try `eslint`, `standard` and `prettier` (in that order). Note that it runs asynchronously so vim is never frozen.
-
-![2018-03-30 19 56 59](https://user-images.githubusercontent.com/23721/38147921-9ff6de22-3454-11e8-810d-596451d3765d.gif)
-
 #### `:'<,'>VjsExtractVariable`
 
 Extracts selected code into a variable.
 
-![2019-02-03 22 38 16](https://user-images.githubusercontent.com/23721/52183335-27da2280-2807-11e9-84bd-e51e424d0872.gif)
+![vjs_extract_variable](https://user-images.githubusercontent.com/23721/80576166-01ecff00-8a05-11ea-8826-01ae86e227e1.gif)
 
 #### `:'<,'>VjsExtractFunctionOrMethod`
 
