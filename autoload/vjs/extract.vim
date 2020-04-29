@@ -11,7 +11,7 @@ fun! vjs#extract#ExtractFunctionOrMethod()
   let code = join(getline(1,'$'), "\n")
   let message = {'code': code, 'start_line': selection_start_line, 'end_line': selection_end_line, 'action': 'extract_function_or_method'}
 
-  call vjs#ipc#SendMessage(json_encode(message))
+  call vjs#ipc#SendMessage(message)
 endf
 
 fun! vjs#extract#ExtractLocalFunction()
@@ -27,7 +27,7 @@ fun! vjs#extract#ExtractLocalFunction()
   let code = join(getline(1,'$'), "\n")
   let message = {'code': code, 'start_line': selection_start_line, 'end_line': selection_end_line, 'action': 'extract_local_function'}
 
-  call vjs#ipc#SendMessage(json_encode(message))
+  call vjs#ipc#SendMessage(message)
 endf
 
 fun! vjs#extract#ExtractVariable()
@@ -49,7 +49,7 @@ fun! vjs#extract#ExtractVariable()
   let context = {'property_name': property_name}
   let message = {'code': code, 'start_line': selection_start_line, 'action': 'extract_variable', 'context': context}
 
-  call vjs#ipc#SendMessage(json_encode(message))
+  call vjs#ipc#SendMessage(message)
 endf
 
 fun! vjs#extract#RefactoringResponseHandler(channel, response, ...) abort

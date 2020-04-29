@@ -1,10 +1,12 @@
 fun! vjs#ipc#SendMessage(message)
+  let a:message.filetype = &filetype
+
   if exists('g:vjs_test_env')
-    let response = system(s:GetServerExecPath().' refactoring --single-run', a:message)
+    let response = system(s:GetServerExecPath().' refactoring --single-run', json_encode(a:message))
     call vjs#extract#RefactoringResponseHandler(0, response)
   else
     let channel = s:JobGetChannel(s:refactoring_server_job)
-    call s:ChSend(channel, a:message . nr2char(10))
+    call s:ChSend(channel, json_encode(a:message) . nr2char(10))
   endif
 endf
 
@@ -24,7 +26,6 @@ fun! vjs#ipc#StartJsTagsServer()
       let tags_job_cmd = tags_job_cmd.' --ignore '.path
     endfor
 
-    " without `out_cb` must be present
     let s:tags_server_job = s:JobStart(tags_job_cmd, {'cwd': getcwd(), 'err_cb': 's:ErrorCb', 'out_cb': 's:ErrorCb', 'pty': 1})
   end
 endf

@@ -38,16 +38,49 @@ function refactoring() {
 
   rl.on('line', message => {
     try {
-      const {code, action, start_line, end_line, context = {}} = JSON.parse(message)
+      const {code, action, filetype, start_line, end_line, context = {}} = JSON.parse(message)
+
+      const plugins = [
+        'jsx',
+        'classProperties',
+        'asyncGenerators',
+        'bigInt',
+        'classPrivateProperties',
+        'classPrivateMethods',
+        'doExpressions',
+        'dynamicImport',
+        'exportDefaultFrom',
+        'exportNamespaceFrom',
+        'functionBind',
+        'functionSent',
+        'importMeta',
+        'logicalAssignment',
+        'nullishCoalescingOperator',
+        'numericSeparator',
+        'objectRestSpread',
+        'optionalCatchBinding',
+        'optionalChaining',
+        'partialApplication',
+        'throwExpressions',
+        'topLevelAwait',
+        ['decorators', { decoratorsBeforeExport: true }]
+      ]
+
+      if (filetype === 'typescript') {
+        plugins.push('typescript')
+      } else {
+        plugins.push('flow', 'flowComments')
+      }
+
       const ast = parse(code, {
+        allowImportExportEverywhere: true,
+        allowAwaitOutsideFunction: true,
+        errorRecovery: true,
+        allowSuperOutsideMethod: true,
+        allowUndeclaredExports: true,
         sourceType: 'unambiguous',
         // TODO: pass plugins from argv
-        plugins: [
-          'jsx',
-          'typescript',
-          'classProperties',
-          ['decorators', { decoratorsBeforeExport: true }]
-        ]
+        plugins
       })
       context.action = action
 
