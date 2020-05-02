@@ -1,8 +1,8 @@
 const assert = require('assert').strict
 const {parse} = require('@babel/parser')
-const {findFunctionArguments} = require('./queries')
+const {findGlobalFunctionArguments} = require('./queries')
 
-describe('findFunctionArguments', function() {
+describe('findGlobalFunctionArguments', function() {
   let ast, code
 
   beforeEach(function() {
@@ -37,7 +37,7 @@ describe('findFunctionArguments', function() {
     })
 
     it('returns line before outer function start', function() {
-      assert.deepEqual(findFunctionArguments({ast, start_line: 11, end_line: 12}), ['x', 'b', 'n'])
+      assert.deepEqual(findGlobalFunctionArguments({ast, start_line: 11, end_line: 12}), ['x', 'b', 'n'])
     })
   })
 
@@ -62,7 +62,7 @@ describe('findFunctionArguments', function() {
     })
 
     it('returns line before outer function start', function() {
-      assert.deepEqual(findFunctionArguments({ast, start_line: 10, end_line: 11}), ['caller'])
+      assert.deepEqual(findGlobalFunctionArguments({ast, start_line: 10, end_line: 11}), ['caller'])
     })
   })
 })

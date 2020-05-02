@@ -11,7 +11,8 @@ const {
   findStatementStart,
   findVariablesDefinedWithinSelectionButUsedOutside,
   findGlobalScopeStart,
-  findFunctionArguments,
+  findGlobalFunctionArguments,
+  determineExtractedFunctionType,
 } = require('./queries')
 const argv = require('yargs')
   .command('refactoring', 'start refactoring server', {
@@ -79,7 +80,6 @@ function refactoring() {
         allowSuperOutsideMethod: true,
         allowUndeclaredExports: true,
         sourceType: 'unambiguous',
-        // TODO: pass plugins from argv
         plugins
       })
       context.action = action
@@ -101,15 +101,17 @@ function refactoring() {
         return
 
       } else if (action === 'extract_function_or_method') {
-        const loc = findGlobalScopeStart({ast, current_line: start_line})
         const return_values = findVariablesDefinedWithinSelectionButUsedOutside({ast, start_line, end_line})
-        const function_arguments = findFunctionArguments({ast, start_line, end_line})
+        const type = determineExtractedFunctionType({ast, start_line, end_line})
 
-        console.info(
-          JSON.stringify(
-            Object.assign({context, return_values, function_arguments}, loc)
-          )
-        )
+        const response = {context, type, return_values}
+        if (type == 'function') {
+          Object.assign(response, findGlobalScopeStart({ast, current_line: start_line}))
+          response.function_arguments = findGlobalFunctionArguments({ast, start_line, end_line})
+        // } else {
+        }
+
+        console.info(JSON.stringify(response))
         return
       }
 

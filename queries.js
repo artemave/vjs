@@ -1,4 +1,5 @@
 const traverse = require('@babel/traverse').default
+const t = require('@babel/types')
 
 function findStatementStart({ast, current_line}) {
   let result = {
@@ -67,7 +68,7 @@ function findGlobalScopeStart({ast, current_line}) {
   return result
 }
 
-function findFunctionArguments({ast, start_line, end_line}) {
+function findGlobalFunctionArguments({ast, start_line, end_line}) {
   const result = []
   let currentScopePath
 
@@ -109,9 +110,46 @@ function findFunctionArguments({ast, start_line, end_line}) {
   return [...new Set(result)]
 }
 
+function determineExtractedFunctionType({ast, start_line, end_line}) {
+  let thisPath
+
+  traverse(ast, {
+    ThisExpression(path) {
+      const {start, end} = path.node.loc
+      if (start_line <= start.line && end.line <= end_line) {
+        thisPath = path
+        path.stop()
+      }
+    },
+  })
+
+  if (!thisPath) {
+    return 'function'
+  }
+
+  for (let path = thisPath.parentPath; path.parentPath; path = path.parentPath) {
+    if (t.isObjectMethod(path.node)) {
+      return 'objectMethod'
+    } else if (t.isClassMethod(path.node)) {
+      return 'classMethod'
+    } else if (t.isFunctionDeclaration(path.node)) {
+      return 'unboundFunction'
+    } else if (t.isFunctionExpression(path.node)) {
+      if (path.parent.type === 'ObjectProperty') {
+        return 'objectMethod'
+      } else {
+        return 'unboundFunction'
+      }
+    }
+  }
+
+  throw 'Could not determine scope for "this"'
+}
+
 module.exports = {
   findStatementStart,
   findVariablesDefinedWithinSelectionButUsedOutside,
   findGlobalScopeStart,
-  findFunctionArguments,
+  findGlobalFunctionArguments,
+  determineExtractedFunctionType,
 }
