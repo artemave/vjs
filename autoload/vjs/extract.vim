@@ -159,7 +159,12 @@ fun! s:HandleExtractFunctionResponse(message) abort
   if len(return_value_line)
     call add(new_lines, return_value_line)
   endif
-  call extend(new_lines, [indent .'}', ''])
+
+  let closing_bracket = '}'
+  if a:message.type == 'objectMethod'
+    let closing_bracket = closing_bracket. ','
+  endif
+  call extend(new_lines, [indent .closing_bracket, ''])
 
   return new_lines
 endf

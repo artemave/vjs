@@ -71,6 +71,7 @@ function findGlobalScopeStart({ast, current_line}) {
 function findGlobalFunctionArguments({ast, start_line, end_line}) {
   const result = []
   let currentScopePath
+  let globalScope
 
   traverse(ast, {
     Scope(path) {
@@ -78,6 +79,7 @@ function findGlobalFunctionArguments({ast, start_line, end_line}) {
 
       if (!currentScopePath) {
         currentScopePath = path
+        globalScope = path.scope
       } else {
         if (start_line >= loc.start.line && end_line <= loc.end.line) {
           const currentScopePathLoc = currentScopePath.node.loc
@@ -90,8 +92,16 @@ function findGlobalFunctionArguments({ast, start_line, end_line}) {
     }
   })
 
+  const isGlobalBinding = (binding) => {
+    return Object.values(globalScope.bindings).find(b => b === binding)
+  }
+
   for (let path = currentScopePath; path.parentPath; path = path.parentPath) {
     for (const [name, binding] of Object.entries(path.scope.bindings)) {
+      if (isGlobalBinding(binding)) {
+        continue
+      }
+
       const bindingLoc = binding.identifier.loc
       if (bindingLoc.start.line >= start_line && bindingLoc.start.line <= end_line) {
         continue
@@ -151,18 +161,21 @@ function findMethodScopeStart({ast, current_line}) {
     line: 1, column: 0
   }
 
-  traverse(ast, {
-    ClassMethod(path) {
-      const {loc} = path.node
+  const handler = (path) => {
+    const {loc} = path.node
 
-      if (loc.start.line <= current_line && loc.end.line >= current_line) {
-        result = {
-          line: loc.start.line,
-          column: loc.start.column
-        }
-        path.stop()
+    if (loc.start.line <= current_line && loc.end.line >= current_line) {
+      result = {
+        line: loc.start.line,
+        column: loc.start.column
       }
+      path.stop()
     }
+  }
+
+  traverse(ast, {
+    ClassMethod: handler,
+    ObjectMethod: handler,
   })
 
   return result

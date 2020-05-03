@@ -65,4 +65,28 @@ describe('findGlobalFunctionArguments', function() {
       assert.deepEqual(findGlobalFunctionArguments({ast, start_line: 10, end_line: 11}), ['caller'])
     })
   })
+
+  context('part of the current scope selected', function() {
+    before(function() {
+      code = `
+        import {foo} from 'bar'
+
+        const aaa = {
+          stuff(aa) {
+            const b = a
+            const n = 2
+
+            const c = this.aaa
+            foo(work(c, b, n))
+
+            return c + 3
+          }
+        }
+      `
+    })
+
+    it.only('returns line before outer function start', function() {
+      assert.deepEqual(findGlobalFunctionArguments({ast, start_line: 9, end_line: 10}), ['b', 'n'])
+    })
+  })
 })
