@@ -176,6 +176,17 @@ function findMethodScopeStart({ast, current_line}) {
   traverse(ast, {
     ClassMethod: handler,
     ObjectMethod: handler,
+    FunctionExpression(path) {
+      const {loc} = path.node
+
+      if (path.parent.type === 'ObjectProperty' && loc.start.line <= current_line && loc.end.line >= current_line) {
+        result = {
+          line: path.parent.loc.start.line,
+          column: path.parent.loc.start.column
+        }
+        path.stop()
+      }
+    }
   })
 
   return result

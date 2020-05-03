@@ -147,5 +147,58 @@ Expect:
 
   const d = 3
 
+Given javascript (object function expression):
+  import {foo} from 'bar'
+
+  const aaa = {
+    stuff: function(aa) {
+      const b = a
+      const n = 2
+
+      const c = this.aaa
+      foo(work(c, b, n))
+
+      return c + 3
+    }
+  }
+
+  function asdf() {
+    const x = 5
+  }
+
+  const d = 3
+
+Do:
+  7j
+  Vj
+  :'<,'>VjsExtractFunctionOrMethod\<CR>
+  thing\<CR>
+
+Expect:
+  import {foo} from 'bar'
+
+  const aaa = {
+    thing(b, n) {
+      const c = this.aaa
+      foo(work(c, b, n))
+      return c
+    },
+
+    stuff: function(aa) {
+      const b = a
+      const n = 2
+
+      const c = this.thing(b, n)
+
+      return c + 3
+    }
+  }
+
+  function asdf() {
+    const x = 5
+  }
+
+  const d = 3
+
 " Execute:
 "   call LogAllMessages()

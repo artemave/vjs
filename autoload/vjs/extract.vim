@@ -164,7 +164,7 @@ fun! s:HandleExtractFunctionResponse(message) abort
   if a:message.type == 'objectMethod'
     let closing_bracket = closing_bracket. ','
   endif
-  call extend(new_lines, [indent .closing_bracket, ''])
+  call extend(new_lines, [indent . closing_bracket, ''])
 
   return new_lines
 endf

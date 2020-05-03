@@ -64,4 +64,32 @@ describe('findMethodScopeStart', function() {
       assert.equal(findMethodScopeStart({ast, current_line: 12}).line, 7)
     })
   })
+
+  context('inside object function expression', function() {
+    before(function() {
+      code = `
+        import nnn from 'nnn'
+
+        const a = 2
+
+        const aaa = {
+          stuff: function(a) {
+            const b = a
+
+            function foo() {
+              let c = b
+              return c + 3
+            }
+          }
+        }
+
+        const d = 3
+      `
+    })
+
+    it('returns line before outer function start', function() {
+      assert.deepEqual(findMethodScopeStart({ast, current_line: 8}), {line: 7, column: 10})
+      assert.deepEqual(findMethodScopeStart({ast, current_line: 12}), {line: 7, column: 10})
+    })
+  })
 })

@@ -106,12 +106,12 @@ function refactoring() {
         const type = determineExtractedFunctionType({ast, start_line, end_line})
 
         const response = {context, type, return_values}
+        response.function_arguments = findGlobalFunctionArguments({ast, start_line, end_line})
+
         if (type == 'function') {
           Object.assign(response, findGlobalScopeStart({ast, current_line: start_line}))
-          response.function_arguments = findGlobalFunctionArguments({ast, start_line, end_line})
         } else {
           Object.assign(response, findMethodScopeStart({ast, current_line: start_line}))
-          response.function_arguments = findGlobalFunctionArguments({ast, start_line, end_line})
         }
 
         console.info(JSON.stringify(response))
