@@ -13,6 +13,7 @@ const {
   findGlobalScopeStart,
   findGlobalFunctionArguments,
   determineExtractedFunctionType,
+  findMethodScopeStart,
 } = require('./queries')
 const argv = require('yargs')
   .command('refactoring', 'start refactoring server', {
@@ -108,7 +109,9 @@ function refactoring() {
         if (type == 'function') {
           Object.assign(response, findGlobalScopeStart({ast, current_line: start_line}))
           response.function_arguments = findGlobalFunctionArguments({ast, start_line, end_line})
-        // } else {
+        } else {
+          Object.assign(response, findMethodScopeStart({ast, current_line: start_line}))
+          response.function_arguments = findGlobalFunctionArguments({ast, start_line, end_line})
         }
 
         console.info(JSON.stringify(response))

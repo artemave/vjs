@@ -146,10 +146,33 @@ function determineExtractedFunctionType({ast, start_line, end_line}) {
   throw 'Could not determine scope for "this"'
 }
 
+function findMethodScopeStart({ast, current_line}) {
+  let result = {
+    line: 1, column: 0
+  }
+
+  traverse(ast, {
+    ClassMethod(path) {
+      const {loc} = path.node
+
+      if (loc.start.line <= current_line && loc.end.line >= current_line) {
+        result = {
+          line: loc.start.line,
+          column: loc.start.column
+        }
+        path.stop()
+      }
+    }
+  })
+
+  return result
+}
+
 module.exports = {
   findStatementStart,
   findVariablesDefinedWithinSelectionButUsedOutside,
   findGlobalScopeStart,
   findGlobalFunctionArguments,
   determineExtractedFunctionType,
+  findMethodScopeStart,
 }

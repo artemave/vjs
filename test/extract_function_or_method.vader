@@ -40,6 +40,58 @@ Expect:
     return path
   }
 
+Given javascript (class method):
+  import {foo} from 'bar'
+
+  class Aaa {
+    stuff(aa) {
+      const b = a
+      const n = 2
+
+      const c = this.aaa
+      foo(work(c, b, n))
+
+      return c + 3
+    }
+  }
+
+  function asdf() {
+    const x = 5
+  }
+
+  const d = 3
+
+Do:
+  7j
+  Vj
+  :'<,'>VjsExtractFunctionOrMethod\<CR>
+  thing\<CR>
+
+Expect:
+  import {foo} from 'bar'
+
+  class Aaa {
+    thing(b, n) {
+      const c = this.aaa
+      foo(work(c, b, n))
+      return c
+    }
+
+    stuff(aa) {
+      const b = a
+      const n = 2
+
+      const c = this.thing(b, n)
+
+      return c + 3
+    }
+  }
+
+  function asdf() {
+    const x = 5
+  }
+
+  const d = 3
 
 " Execute:
 "   call LogAllMessages()

@@ -104,12 +104,17 @@ fun! s:HandleExtractFunctionResponse(message) abort
 
   let is_async = match(@s, '\<await ')
 
-  let first_new_line = 'function '. @v .'('. join(a:message.function_arguments, ', ') .') {'
+  let declaration = a:message.type == 'function' ? 'function ' : ''
+
+  let first_new_line = declaration. @v .'('. join(a:message.function_arguments, ', ') .') {'
   if is_async > -1
     let first_new_line = 'async '. first_new_line
   endif
 
   let @v = @v ."(". join(a:message.function_arguments, ', ') .")\n"
+  if a:message.type != 'function'
+    let @v = 'this.'. @v
+  endif
   if is_async > -1
     let @v = 'await '. @v
   endif
