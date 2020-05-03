@@ -96,7 +96,7 @@ function refactoring() {
 
         console.info(
           JSON.stringify(
-            Object.assign({context, function_arguments: [], return_values}, loc)
+            Object.assign({context, function_arguments: [], return_values, type: 'function'}, loc)
           )
         )
         return

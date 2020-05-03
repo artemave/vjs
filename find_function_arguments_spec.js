@@ -85,7 +85,7 @@ describe('findGlobalFunctionArguments', function() {
       `
     })
 
-    it.only('returns line before outer function start', function() {
+    it('returns line before outer function start', function() {
       assert.deepEqual(findGlobalFunctionArguments({ast, start_line: 9, end_line: 10}), ['b', 'n'])
     })
   })
