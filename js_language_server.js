@@ -108,7 +108,7 @@ function refactoring() {
         const response = {context, type, return_values}
         response.function_arguments = findGlobalFunctionArguments({ast, start_line, end_line})
 
-        if (type == 'function') {
+        if (type === 'function' || type === 'unboundFunction') {
           Object.assign(response, findGlobalScopeStart({ast, current_line: start_line}))
         } else {
           Object.assign(response, findMethodScopeStart({ast, current_line: start_line}))
@@ -118,9 +118,9 @@ function refactoring() {
         return
       }
 
-      console.error(`unknown action "${action}"`)
+      console.error(JSON.stringify({error: `unknown action "${action}"`}))
     } catch (e) {
-      console.error(e)
+      console.error(JSON.stringify({error: e}))
     }
 
     if (argv.single_run) {

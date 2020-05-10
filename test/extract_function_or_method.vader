@@ -200,5 +200,48 @@ Expect:
 
   const d = 3
 
+Given javascript (object arrow function expression):
+  import {foo} from 'bar'
+
+  function b() {
+    const aaa = {
+      stuff: a => {
+        const b = a
+        const n = 2
+
+        const c = this.aaa
+        foo(work(c, b, n))
+        return c + 3
+      }
+    }
+  }
+
+Do:
+  8j
+  Vj
+  :'<,'>VjsExtractFunctionOrMethod\<CR>
+  thing\<CR>
+
+Expect (dunno why the indentation is wrong - it works for real):
+  import {foo} from 'bar'
+
+  function thing(b, n) {
+    const c = this.aaa
+    foo(work(c, b, n))
+    return c
+  }
+
+  function b() {
+    const aaa = {
+      stuff: a => {
+        const b = a
+        const n = 2
+
+      const c = thing.call(this, b, n)
+        return c + 3
+      }
+    }
+  }
+
 " Execute:
 "   call LogAllMessages()

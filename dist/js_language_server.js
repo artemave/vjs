@@ -1730,6 +1730,324 @@ function tsPrintClassMemberModifiers(node, isField) {
   }
 }
 },
+"/jy6XSNJu36slf3cKdkc9wkmcOKwOMDTW8le0kkpM0c=":
+function (require, module, exports, __dirname, __filename) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.validate = validate;
+exports.typeIs = typeIs;
+exports.validateType = validateType;
+exports.validateOptional = validateOptional;
+exports.validateOptionalType = validateOptionalType;
+exports.arrayOf = arrayOf;
+exports.arrayOfType = arrayOfType;
+exports.validateArrayOfType = validateArrayOfType;
+exports.assertEach = assertEach;
+exports.assertOneOf = assertOneOf;
+exports.assertNodeType = assertNodeType;
+exports.assertNodeOrValueType = assertNodeOrValueType;
+exports.assertValueType = assertValueType;
+exports.assertShape = assertShape;
+exports.assertOptionalChainStart = assertOptionalChainStart;
+exports.chain = chain;
+exports.default = defineType;
+exports.NODE_PARENT_VALIDATIONS = exports.DEPRECATED_KEYS = exports.BUILDER_KEYS = exports.NODE_FIELDS = exports.FLIPPED_ALIAS_KEYS = exports.ALIAS_KEYS = exports.VISITOR_KEYS = void 0;
+
+var _is = _interopRequireDefault(require("../validators/is"));
+
+var _validate = require("../validators/validate");
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+const VISITOR_KEYS = {};
+exports.VISITOR_KEYS = VISITOR_KEYS;
+const ALIAS_KEYS = {};
+exports.ALIAS_KEYS = ALIAS_KEYS;
+const FLIPPED_ALIAS_KEYS = {};
+exports.FLIPPED_ALIAS_KEYS = FLIPPED_ALIAS_KEYS;
+const NODE_FIELDS = {};
+exports.NODE_FIELDS = NODE_FIELDS;
+const BUILDER_KEYS = {};
+exports.BUILDER_KEYS = BUILDER_KEYS;
+const DEPRECATED_KEYS = {};
+exports.DEPRECATED_KEYS = DEPRECATED_KEYS;
+const NODE_PARENT_VALIDATIONS = {};
+exports.NODE_PARENT_VALIDATIONS = NODE_PARENT_VALIDATIONS;
+
+function getType(val) {
+  if (Array.isArray(val)) {
+    return "array";
+  } else if (val === null) {
+    return "null";
+  } else {
+    return typeof val;
+  }
+}
+
+function validate(validate) {
+  return {
+    validate
+  };
+}
+
+function typeIs(typeName) {
+  return typeof typeName === "string" ? assertNodeType(typeName) : assertNodeType(...typeName);
+}
+
+function validateType(typeName) {
+  return validate(typeIs(typeName));
+}
+
+function validateOptional(validate) {
+  return {
+    validate,
+    optional: true
+  };
+}
+
+function validateOptionalType(typeName) {
+  return {
+    validate: typeIs(typeName),
+    optional: true
+  };
+}
+
+function arrayOf(elementType) {
+  return chain(assertValueType("array"), assertEach(elementType));
+}
+
+function arrayOfType(typeName) {
+  return arrayOf(typeIs(typeName));
+}
+
+function validateArrayOfType(typeName) {
+  return validate(arrayOfType(typeName));
+}
+
+function assertEach(callback) {
+  function validator(node, key, val) {
+    if (!Array.isArray(val)) return;
+
+    for (let i = 0; i < val.length; i++) {
+      const subkey = `${key}[${i}]`;
+      const v = val[i];
+      callback(node, subkey, v);
+      if (process.env.BABEL_TYPES_8_BREAKING) (0, _validate.validateChild)(node, subkey, v);
+    }
+  }
+
+  validator.each = callback;
+  return validator;
+}
+
+function assertOneOf(...values) {
+  function validate(node, key, val) {
+    if (values.indexOf(val) < 0) {
+      throw new TypeError(`Property ${key} expected value to be one of ${JSON.stringify(values)} but got ${JSON.stringify(val)}`);
+    }
+  }
+
+  validate.oneOf = values;
+  return validate;
+}
+
+function assertNodeType(...types) {
+  function validate(node, key, val) {
+    for (const type of types) {
+      if ((0, _is.default)(type, val)) {
+        (0, _validate.validateChild)(node, key, val);
+        return;
+      }
+    }
+
+    throw new TypeError(`Property ${key} of ${node.type} expected node to be of a type ${JSON.stringify(types)} but instead got ${JSON.stringify(val && val.type)}`);
+  }
+
+  validate.oneOfNodeTypes = types;
+  return validate;
+}
+
+function assertNodeOrValueType(...types) {
+  function validate(node, key, val) {
+    for (const type of types) {
+      if (getType(val) === type || (0, _is.default)(type, val)) {
+        (0, _validate.validateChild)(node, key, val);
+        return;
+      }
+    }
+
+    throw new TypeError(`Property ${key} of ${node.type} expected node to be of a type ${JSON.stringify(types)} but instead got ${JSON.stringify(val && val.type)}`);
+  }
+
+  validate.oneOfNodeOrValueTypes = types;
+  return validate;
+}
+
+function assertValueType(type) {
+  function validate(node, key, val) {
+    const valid = getType(val) === type;
+
+    if (!valid) {
+      throw new TypeError(`Property ${key} expected type of ${type} but got ${getType(val)}`);
+    }
+  }
+
+  validate.type = type;
+  return validate;
+}
+
+function assertShape(shape) {
+  function validate(node, key, val) {
+    const errors = [];
+
+    for (const property of Object.keys(shape)) {
+      try {
+        (0, _validate.validateField)(node, property, val[property], shape[property]);
+      } catch (error) {
+        if (error instanceof TypeError) {
+          errors.push(error.message);
+          continue;
+        }
+
+        throw error;
+      }
+    }
+
+    if (errors.length) {
+      throw new TypeError(`Property ${key} of ${node.type} expected to have the following:\n${errors.join("\n")}`);
+    }
+  }
+
+  validate.shapeOf = shape;
+  return validate;
+}
+
+function assertOptionalChainStart() {
+  function validate(node) {
+    var _current;
+
+    let current = node;
+
+    while (node) {
+      const {
+        type
+      } = current;
+
+      if (type === "OptionalCallExpression") {
+        if (current.optional) return;
+        current = current.callee;
+        continue;
+      }
+
+      if (type === "OptionalMemberExpression") {
+        if (current.optional) return;
+        current = current.object;
+        continue;
+      }
+
+      break;
+    }
+
+    throw new TypeError(`Non-optional ${node.type} must chain from an optional OptionalMemberExpression or OptionalCallExpression. Found chain from ${(_current = current) == null ? void 0 : _current.type}`);
+  }
+
+  return validate;
+}
+
+function chain(...fns) {
+  function validate(...args) {
+    for (const fn of fns) {
+      fn(...args);
+    }
+  }
+
+  validate.chainOf = fns;
+  return validate;
+}
+
+const validTypeOpts = ["aliases", "builder", "deprecatedAlias", "fields", "inherits", "visitor", "validate"];
+const validFieldKeys = ["default", "optional", "validate"];
+
+function defineType(type, opts = {}) {
+  const inherits = opts.inherits && store[opts.inherits] || {};
+  let fields = opts.fields;
+
+  if (!fields) {
+    fields = {};
+
+    if (inherits.fields) {
+      const keys = Object.getOwnPropertyNames(inherits.fields);
+
+      for (const key of keys) {
+        const field = inherits.fields[key];
+        fields[key] = {
+          default: field.default,
+          optional: field.optional,
+          validate: field.validate
+        };
+      }
+    }
+  }
+
+  const visitor = opts.visitor || inherits.visitor || [];
+  const aliases = opts.aliases || inherits.aliases || [];
+  const builder = opts.builder || inherits.builder || opts.visitor || [];
+
+  for (const k of Object.keys(opts)) {
+    if (validTypeOpts.indexOf(k) === -1) {
+      throw new Error(`Unknown type option "${k}" on ${type}`);
+    }
+  }
+
+  if (opts.deprecatedAlias) {
+    DEPRECATED_KEYS[opts.deprecatedAlias] = type;
+  }
+
+  for (const key of visitor.concat(builder)) {
+    fields[key] = fields[key] || {};
+  }
+
+  for (const key of Object.keys(fields)) {
+    const field = fields[key];
+
+    if (field.default !== undefined && builder.indexOf(key) === -1) {
+      field.optional = true;
+    }
+
+    if (field.default === undefined) {
+      field.default = null;
+    } else if (!field.validate && field.default != null) {
+      field.validate = assertValueType(getType(field.default));
+    }
+
+    for (const k of Object.keys(field)) {
+      if (validFieldKeys.indexOf(k) === -1) {
+        throw new Error(`Unknown field key "${k}" on ${type}.${key}`);
+      }
+    }
+  }
+
+  VISITOR_KEYS[type] = opts.visitor = visitor;
+  BUILDER_KEYS[type] = opts.builder = builder;
+  NODE_FIELDS[type] = opts.fields = fields;
+  ALIAS_KEYS[type] = opts.aliases = aliases;
+  aliases.forEach(alias => {
+    FLIPPED_ALIAS_KEYS[alias] = FLIPPED_ALIAS_KEYS[alias] || [];
+    FLIPPED_ALIAS_KEYS[alias].push(type);
+  });
+
+  if (opts.validate) {
+    NODE_PARENT_VALIDATIONS[type] = opts.validate;
+  }
+
+  store[type] = opts;
+}
+
+const store = {};
+},
 "/wytiRFlfgg4krF9Qz6a8UJ8I8ZH6SdrZU2VfJMAZj8=":
 function (require, module, exports, __dirname, __filename) {
 var ListCache = require('./_ListCache'),
@@ -2043,6 +2361,152 @@ function baseAssignIn(object, source) {
 }
 
 module.exports = baseAssignIn;
+
+},
+"0cE9Z7zUZbY6GNLgS6F6ZyCWZHn0FvHGXYG0q/ZTg4c=":
+function (require, module, exports, __dirname, __filename) {
+
+
+
+// AST explorer:
+//  - https://lihautan.com/babel-ast-explorer/#?eyJiYWJlbFNldHRpbmdzIjp7InZlcnNpb24iOiI3LjYuMCJ9LCJ0cmVlU2V0dGluZ3MiOnsiaGlkZUVtcHR5Ijp0cnVlLCJoaWRlTG9jYXRpb24iOnRydWUsImhpZGVUeXBlIjp0cnVlLCJoaWRlQ29tbWVudHMiOnRydWV9LCJjb2RlIjoiICAgICAgY29uc3QgYSA9IDJcblxuICAgICAgZnVuY3Rpb24gc3R1ZmYoYWEpIHtcbiAgICAgICAgY29uc3QgYiA9IGFcbiAgICAgICAgY29uc3QgbiA9IDJcblxuICAgICAgICBsZXQgYyA9IGIgKyBuICsgYWFcbiAgICAgICAgd29yayhjKVxuXG4gICAgICAgIHJldHVybiBjICsgM1xuICAgICAgfVxuXG4gICAgICBjb25zdCBkID0gM+KAqFxuXG4ifQ==
+//  - https://astexplorer.net/
+
+const {parse} = require('@babel/parser')
+const readline = require('readline')
+const jsEditorTags = require('js-editor-tags')
+const {
+  findStatementStart,
+  findVariablesDefinedWithinSelectionButUsedOutside,
+  findGlobalScopeStart,
+  findGlobalFunctionArguments,
+  determineExtractedFunctionType,
+  findMethodScopeStart,
+} = require('./queries')
+const argv = require('yargs')
+  .command('refactoring', 'start refactoring server', {
+    'single-run': {
+      type: 'boolean'
+    }
+  })
+  .command('tags', 'start generate/update tags file server', {
+    update: {
+      type: 'boolean'
+    },
+    ignore: {
+      type: 'array',
+      default: []
+    }
+  })
+  .demandCommand()
+  .argv
+
+function refactoring() {
+  const rl = readline.createInterface({
+    input: process.stdin
+  })
+
+  rl.on('line', message => {
+    try {
+      const {code, action, filetype, start_line, end_line, context = {}} = JSON.parse(message)
+
+      const plugins = [
+        'jsx',
+        'classProperties',
+        'asyncGenerators',
+        'bigInt',
+        'classPrivateProperties',
+        'classPrivateMethods',
+        'doExpressions',
+        'dynamicImport',
+        'exportDefaultFrom',
+        'exportNamespaceFrom',
+        'functionBind',
+        'functionSent',
+        'importMeta',
+        'logicalAssignment',
+        'nullishCoalescingOperator',
+        'numericSeparator',
+        'objectRestSpread',
+        'optionalCatchBinding',
+        'optionalChaining',
+        'partialApplication',
+        'throwExpressions',
+        'topLevelAwait',
+        ['decorators', { decoratorsBeforeExport: true }]
+      ]
+
+      if (filetype === 'typescript') {
+        plugins.push('typescript')
+      } else {
+        plugins.push('flow', 'flowComments')
+      }
+
+      const ast = parse(code, {
+        allowImportExportEverywhere: true,
+        allowAwaitOutsideFunction: true,
+        errorRecovery: true,
+        allowSuperOutsideMethod: true,
+        allowUndeclaredExports: true,
+        sourceType: 'unambiguous',
+        plugins
+      })
+      context.action = action
+
+      if (action === 'extract_variable') {
+        const loc = findStatementStart({ast, current_line: start_line})
+        console.info(JSON.stringify(Object.assign({context}, loc)))
+        return
+
+      } else if (action === 'extract_local_function') {
+        const loc = findStatementStart({ast, current_line: start_line})
+        const return_values = findVariablesDefinedWithinSelectionButUsedOutside({ast, start_line, end_line})
+
+        console.info(
+          JSON.stringify(
+            Object.assign({context, function_arguments: [], return_values, type: 'function'}, loc)
+          )
+        )
+        return
+
+      } else if (action === 'extract_function_or_method') {
+        const return_values = findVariablesDefinedWithinSelectionButUsedOutside({ast, start_line, end_line})
+        const type = determineExtractedFunctionType({ast, start_line, end_line})
+
+        const response = {context, type, return_values}
+        response.function_arguments = findGlobalFunctionArguments({ast, start_line, end_line})
+
+        if (type === 'function' || type === 'unboundFunction') {
+          Object.assign(response, findGlobalScopeStart({ast, current_line: start_line}))
+        } else {
+          Object.assign(response, findMethodScopeStart({ast, current_line: start_line}))
+        }
+
+        console.info(JSON.stringify(response))
+        return
+      }
+
+      console.error(JSON.stringify({error: `unknown action "${action}"`}))
+    } catch (e) {
+      console.error(JSON.stringify({error: e}))
+    }
+
+    if (argv.single_run) {
+      rl.close()
+    }
+  })
+}
+
+switch (argv._[0]) {
+case 'refactoring':
+  refactoring()
+  break
+case 'tags':
+  jsEditorTags({watch: true, ignore: argv.ignore})
+  break
+default:
+  throw new Error(`Unknown command ${argv._[0]}`)
+}
 
 },
 "0d9Ck3r80LzaXiEF0lmmB0kOs2fiuXD1LAq6qXnhM2s=":
@@ -3030,6 +3494,86 @@ function listCacheHas(key) {
 module.exports = listCacheHas;
 
 },
+"2y/HriHGzXBiaruNkLwo8lp+eakIB4CMaHEDGudUkDA=":
+function (require, module, exports, __dirname, __filename) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.isIdentifierStart = isIdentifierStart;
+exports.isIdentifierChar = isIdentifierChar;
+exports.isIdentifierName = isIdentifierName;
+let nonASCIIidentifierStartChars = "\xaa\xb5\xba\xc0-\xd6\xd8-\xf6\xf8-\u02c1\u02c6-\u02d1\u02e0-\u02e4\u02ec\u02ee\u0370-\u0374\u0376\u0377\u037a-\u037d\u037f\u0386\u0388-\u038a\u038c\u038e-\u03a1\u03a3-\u03f5\u03f7-\u0481\u048a-\u052f\u0531-\u0556\u0559\u0560-\u0588\u05d0-\u05ea\u05ef-\u05f2\u0620-\u064a\u066e\u066f\u0671-\u06d3\u06d5\u06e5\u06e6\u06ee\u06ef\u06fa-\u06fc\u06ff\u0710\u0712-\u072f\u074d-\u07a5\u07b1\u07ca-\u07ea\u07f4\u07f5\u07fa\u0800-\u0815\u081a\u0824\u0828\u0840-\u0858\u0860-\u086a\u08a0-\u08b4\u08b6-\u08c7\u0904-\u0939\u093d\u0950\u0958-\u0961\u0971-\u0980\u0985-\u098c\u098f\u0990\u0993-\u09a8\u09aa-\u09b0\u09b2\u09b6-\u09b9\u09bd\u09ce\u09dc\u09dd\u09df-\u09e1\u09f0\u09f1\u09fc\u0a05-\u0a0a\u0a0f\u0a10\u0a13-\u0a28\u0a2a-\u0a30\u0a32\u0a33\u0a35\u0a36\u0a38\u0a39\u0a59-\u0a5c\u0a5e\u0a72-\u0a74\u0a85-\u0a8d\u0a8f-\u0a91\u0a93-\u0aa8\u0aaa-\u0ab0\u0ab2\u0ab3\u0ab5-\u0ab9\u0abd\u0ad0\u0ae0\u0ae1\u0af9\u0b05-\u0b0c\u0b0f\u0b10\u0b13-\u0b28\u0b2a-\u0b30\u0b32\u0b33\u0b35-\u0b39\u0b3d\u0b5c\u0b5d\u0b5f-\u0b61\u0b71\u0b83\u0b85-\u0b8a\u0b8e-\u0b90\u0b92-\u0b95\u0b99\u0b9a\u0b9c\u0b9e\u0b9f\u0ba3\u0ba4\u0ba8-\u0baa\u0bae-\u0bb9\u0bd0\u0c05-\u0c0c\u0c0e-\u0c10\u0c12-\u0c28\u0c2a-\u0c39\u0c3d\u0c58-\u0c5a\u0c60\u0c61\u0c80\u0c85-\u0c8c\u0c8e-\u0c90\u0c92-\u0ca8\u0caa-\u0cb3\u0cb5-\u0cb9\u0cbd\u0cde\u0ce0\u0ce1\u0cf1\u0cf2\u0d04-\u0d0c\u0d0e-\u0d10\u0d12-\u0d3a\u0d3d\u0d4e\u0d54-\u0d56\u0d5f-\u0d61\u0d7a-\u0d7f\u0d85-\u0d96\u0d9a-\u0db1\u0db3-\u0dbb\u0dbd\u0dc0-\u0dc6\u0e01-\u0e30\u0e32\u0e33\u0e40-\u0e46\u0e81\u0e82\u0e84\u0e86-\u0e8a\u0e8c-\u0ea3\u0ea5\u0ea7-\u0eb0\u0eb2\u0eb3\u0ebd\u0ec0-\u0ec4\u0ec6\u0edc-\u0edf\u0f00\u0f40-\u0f47\u0f49-\u0f6c\u0f88-\u0f8c\u1000-\u102a\u103f\u1050-\u1055\u105a-\u105d\u1061\u1065\u1066\u106e-\u1070\u1075-\u1081\u108e\u10a0-\u10c5\u10c7\u10cd\u10d0-\u10fa\u10fc-\u1248\u124a-\u124d\u1250-\u1256\u1258\u125a-\u125d\u1260-\u1288\u128a-\u128d\u1290-\u12b0\u12b2-\u12b5\u12b8-\u12be\u12c0\u12c2-\u12c5\u12c8-\u12d6\u12d8-\u1310\u1312-\u1315\u1318-\u135a\u1380-\u138f\u13a0-\u13f5\u13f8-\u13fd\u1401-\u166c\u166f-\u167f\u1681-\u169a\u16a0-\u16ea\u16ee-\u16f8\u1700-\u170c\u170e-\u1711\u1720-\u1731\u1740-\u1751\u1760-\u176c\u176e-\u1770\u1780-\u17b3\u17d7\u17dc\u1820-\u1878\u1880-\u18a8\u18aa\u18b0-\u18f5\u1900-\u191e\u1950-\u196d\u1970-\u1974\u1980-\u19ab\u19b0-\u19c9\u1a00-\u1a16\u1a20-\u1a54\u1aa7\u1b05-\u1b33\u1b45-\u1b4b\u1b83-\u1ba0\u1bae\u1baf\u1bba-\u1be5\u1c00-\u1c23\u1c4d-\u1c4f\u1c5a-\u1c7d\u1c80-\u1c88\u1c90-\u1cba\u1cbd-\u1cbf\u1ce9-\u1cec\u1cee-\u1cf3\u1cf5\u1cf6\u1cfa\u1d00-\u1dbf\u1e00-\u1f15\u1f18-\u1f1d\u1f20-\u1f45\u1f48-\u1f4d\u1f50-\u1f57\u1f59\u1f5b\u1f5d\u1f5f-\u1f7d\u1f80-\u1fb4\u1fb6-\u1fbc\u1fbe\u1fc2-\u1fc4\u1fc6-\u1fcc\u1fd0-\u1fd3\u1fd6-\u1fdb\u1fe0-\u1fec\u1ff2-\u1ff4\u1ff6-\u1ffc\u2071\u207f\u2090-\u209c\u2102\u2107\u210a-\u2113\u2115\u2118-\u211d\u2124\u2126\u2128\u212a-\u2139\u213c-\u213f\u2145-\u2149\u214e\u2160-\u2188\u2c00-\u2c2e\u2c30-\u2c5e\u2c60-\u2ce4\u2ceb-\u2cee\u2cf2\u2cf3\u2d00-\u2d25\u2d27\u2d2d\u2d30-\u2d67\u2d6f\u2d80-\u2d96\u2da0-\u2da6\u2da8-\u2dae\u2db0-\u2db6\u2db8-\u2dbe\u2dc0-\u2dc6\u2dc8-\u2dce\u2dd0-\u2dd6\u2dd8-\u2dde\u3005-\u3007\u3021-\u3029\u3031-\u3035\u3038-\u303c\u3041-\u3096\u309b-\u309f\u30a1-\u30fa\u30fc-\u30ff\u3105-\u312f\u3131-\u318e\u31a0-\u31bf\u31f0-\u31ff\u3400-\u4dbf\u4e00-\u9ffc\ua000-\ua48c\ua4d0-\ua4fd\ua500-\ua60c\ua610-\ua61f\ua62a\ua62b\ua640-\ua66e\ua67f-\ua69d\ua6a0-\ua6ef\ua717-\ua71f\ua722-\ua788\ua78b-\ua7bf\ua7c2-\ua7ca\ua7f5-\ua801\ua803-\ua805\ua807-\ua80a\ua80c-\ua822\ua840-\ua873\ua882-\ua8b3\ua8f2-\ua8f7\ua8fb\ua8fd\ua8fe\ua90a-\ua925\ua930-\ua946\ua960-\ua97c\ua984-\ua9b2\ua9cf\ua9e0-\ua9e4\ua9e6-\ua9ef\ua9fa-\ua9fe\uaa00-\uaa28\uaa40-\uaa42\uaa44-\uaa4b\uaa60-\uaa76\uaa7a\uaa7e-\uaaaf\uaab1\uaab5\uaab6\uaab9-\uaabd\uaac0\uaac2\uaadb-\uaadd\uaae0-\uaaea\uaaf2-\uaaf4\uab01-\uab06\uab09-\uab0e\uab11-\uab16\uab20-\uab26\uab28-\uab2e\uab30-\uab5a\uab5c-\uab69\uab70-\uabe2\uac00-\ud7a3\ud7b0-\ud7c6\ud7cb-\ud7fb\uf900-\ufa6d\ufa70-\ufad9\ufb00-\ufb06\ufb13-\ufb17\ufb1d\ufb1f-\ufb28\ufb2a-\ufb36\ufb38-\ufb3c\ufb3e\ufb40\ufb41\ufb43\ufb44\ufb46-\ufbb1\ufbd3-\ufd3d\ufd50-\ufd8f\ufd92-\ufdc7\ufdf0-\ufdfb\ufe70-\ufe74\ufe76-\ufefc\uff21-\uff3a\uff41-\uff5a\uff66-\uffbe\uffc2-\uffc7\uffca-\uffcf\uffd2-\uffd7\uffda-\uffdc";
+let nonASCIIidentifierChars = "\u200c\u200d\xb7\u0300-\u036f\u0387\u0483-\u0487\u0591-\u05bd\u05bf\u05c1\u05c2\u05c4\u05c5\u05c7\u0610-\u061a\u064b-\u0669\u0670\u06d6-\u06dc\u06df-\u06e4\u06e7\u06e8\u06ea-\u06ed\u06f0-\u06f9\u0711\u0730-\u074a\u07a6-\u07b0\u07c0-\u07c9\u07eb-\u07f3\u07fd\u0816-\u0819\u081b-\u0823\u0825-\u0827\u0829-\u082d\u0859-\u085b\u08d3-\u08e1\u08e3-\u0903\u093a-\u093c\u093e-\u094f\u0951-\u0957\u0962\u0963\u0966-\u096f\u0981-\u0983\u09bc\u09be-\u09c4\u09c7\u09c8\u09cb-\u09cd\u09d7\u09e2\u09e3\u09e6-\u09ef\u09fe\u0a01-\u0a03\u0a3c\u0a3e-\u0a42\u0a47\u0a48\u0a4b-\u0a4d\u0a51\u0a66-\u0a71\u0a75\u0a81-\u0a83\u0abc\u0abe-\u0ac5\u0ac7-\u0ac9\u0acb-\u0acd\u0ae2\u0ae3\u0ae6-\u0aef\u0afa-\u0aff\u0b01-\u0b03\u0b3c\u0b3e-\u0b44\u0b47\u0b48\u0b4b-\u0b4d\u0b55-\u0b57\u0b62\u0b63\u0b66-\u0b6f\u0b82\u0bbe-\u0bc2\u0bc6-\u0bc8\u0bca-\u0bcd\u0bd7\u0be6-\u0bef\u0c00-\u0c04\u0c3e-\u0c44\u0c46-\u0c48\u0c4a-\u0c4d\u0c55\u0c56\u0c62\u0c63\u0c66-\u0c6f\u0c81-\u0c83\u0cbc\u0cbe-\u0cc4\u0cc6-\u0cc8\u0cca-\u0ccd\u0cd5\u0cd6\u0ce2\u0ce3\u0ce6-\u0cef\u0d00-\u0d03\u0d3b\u0d3c\u0d3e-\u0d44\u0d46-\u0d48\u0d4a-\u0d4d\u0d57\u0d62\u0d63\u0d66-\u0d6f\u0d81-\u0d83\u0dca\u0dcf-\u0dd4\u0dd6\u0dd8-\u0ddf\u0de6-\u0def\u0df2\u0df3\u0e31\u0e34-\u0e3a\u0e47-\u0e4e\u0e50-\u0e59\u0eb1\u0eb4-\u0ebc\u0ec8-\u0ecd\u0ed0-\u0ed9\u0f18\u0f19\u0f20-\u0f29\u0f35\u0f37\u0f39\u0f3e\u0f3f\u0f71-\u0f84\u0f86\u0f87\u0f8d-\u0f97\u0f99-\u0fbc\u0fc6\u102b-\u103e\u1040-\u1049\u1056-\u1059\u105e-\u1060\u1062-\u1064\u1067-\u106d\u1071-\u1074\u1082-\u108d\u108f-\u109d\u135d-\u135f\u1369-\u1371\u1712-\u1714\u1732-\u1734\u1752\u1753\u1772\u1773\u17b4-\u17d3\u17dd\u17e0-\u17e9\u180b-\u180d\u1810-\u1819\u18a9\u1920-\u192b\u1930-\u193b\u1946-\u194f\u19d0-\u19da\u1a17-\u1a1b\u1a55-\u1a5e\u1a60-\u1a7c\u1a7f-\u1a89\u1a90-\u1a99\u1ab0-\u1abd\u1abf\u1ac0\u1b00-\u1b04\u1b34-\u1b44\u1b50-\u1b59\u1b6b-\u1b73\u1b80-\u1b82\u1ba1-\u1bad\u1bb0-\u1bb9\u1be6-\u1bf3\u1c24-\u1c37\u1c40-\u1c49\u1c50-\u1c59\u1cd0-\u1cd2\u1cd4-\u1ce8\u1ced\u1cf4\u1cf7-\u1cf9\u1dc0-\u1df9\u1dfb-\u1dff\u203f\u2040\u2054\u20d0-\u20dc\u20e1\u20e5-\u20f0\u2cef-\u2cf1\u2d7f\u2de0-\u2dff\u302a-\u302f\u3099\u309a\ua620-\ua629\ua66f\ua674-\ua67d\ua69e\ua69f\ua6f0\ua6f1\ua802\ua806\ua80b\ua823-\ua827\ua82c\ua880\ua881\ua8b4-\ua8c5\ua8d0-\ua8d9\ua8e0-\ua8f1\ua8ff-\ua909\ua926-\ua92d\ua947-\ua953\ua980-\ua983\ua9b3-\ua9c0\ua9d0-\ua9d9\ua9e5\ua9f0-\ua9f9\uaa29-\uaa36\uaa43\uaa4c\uaa4d\uaa50-\uaa59\uaa7b-\uaa7d\uaab0\uaab2-\uaab4\uaab7\uaab8\uaabe\uaabf\uaac1\uaaeb-\uaaef\uaaf5\uaaf6\uabe3-\uabea\uabec\uabed\uabf0-\uabf9\ufb1e\ufe00-\ufe0f\ufe20-\ufe2f\ufe33\ufe34\ufe4d-\ufe4f\uff10-\uff19\uff3f";
+const nonASCIIidentifierStart = new RegExp("[" + nonASCIIidentifierStartChars + "]");
+const nonASCIIidentifier = new RegExp("[" + nonASCIIidentifierStartChars + nonASCIIidentifierChars + "]");
+nonASCIIidentifierStartChars = nonASCIIidentifierChars = null;
+const astralIdentifierStartCodes = [0, 11, 2, 25, 2, 18, 2, 1, 2, 14, 3, 13, 35, 122, 70, 52, 268, 28, 4, 48, 48, 31, 14, 29, 6, 37, 11, 29, 3, 35, 5, 7, 2, 4, 43, 157, 19, 35, 5, 35, 5, 39, 9, 51, 157, 310, 10, 21, 11, 7, 153, 5, 3, 0, 2, 43, 2, 1, 4, 0, 3, 22, 11, 22, 10, 30, 66, 18, 2, 1, 11, 21, 11, 25, 71, 55, 7, 1, 65, 0, 16, 3, 2, 2, 2, 28, 43, 28, 4, 28, 36, 7, 2, 27, 28, 53, 11, 21, 11, 18, 14, 17, 111, 72, 56, 50, 14, 50, 14, 35, 349, 41, 7, 1, 79, 28, 11, 0, 9, 21, 107, 20, 28, 22, 13, 52, 76, 44, 33, 24, 27, 35, 30, 0, 3, 0, 9, 34, 4, 0, 13, 47, 15, 3, 22, 0, 2, 0, 36, 17, 2, 24, 85, 6, 2, 0, 2, 3, 2, 14, 2, 9, 8, 46, 39, 7, 3, 1, 3, 21, 2, 6, 2, 1, 2, 4, 4, 0, 19, 0, 13, 4, 159, 52, 19, 3, 21, 2, 31, 47, 21, 1, 2, 0, 185, 46, 42, 3, 37, 47, 21, 0, 60, 42, 14, 0, 72, 26, 230, 43, 117, 63, 32, 7, 3, 0, 3, 7, 2, 1, 2, 23, 16, 0, 2, 0, 95, 7, 3, 38, 17, 0, 2, 0, 29, 0, 11, 39, 8, 0, 22, 0, 12, 45, 20, 0, 35, 56, 264, 8, 2, 36, 18, 0, 50, 29, 113, 6, 2, 1, 2, 37, 22, 0, 26, 5, 2, 1, 2, 31, 15, 0, 328, 18, 190, 0, 80, 921, 103, 110, 18, 195, 2749, 1070, 4050, 582, 8634, 568, 8, 30, 114, 29, 19, 47, 17, 3, 32, 20, 6, 18, 689, 63, 129, 74, 6, 0, 67, 12, 65, 1, 2, 0, 29, 6135, 9, 1237, 43, 8, 8952, 286, 50, 2, 18, 3, 9, 395, 2309, 106, 6, 12, 4, 8, 8, 9, 5991, 84, 2, 70, 2, 1, 3, 0, 3, 1, 3, 3, 2, 11, 2, 0, 2, 6, 2, 64, 2, 3, 3, 7, 2, 6, 2, 27, 2, 3, 2, 4, 2, 0, 4, 6, 2, 339, 3, 24, 2, 24, 2, 30, 2, 24, 2, 30, 2, 24, 2, 30, 2, 24, 2, 30, 2, 24, 2, 7, 2357, 44, 11, 6, 17, 0, 370, 43, 1301, 196, 60, 67, 8, 0, 1205, 3, 2, 26, 2, 1, 2, 0, 3, 0, 2, 9, 2, 3, 2, 0, 2, 0, 7, 0, 5, 0, 2, 0, 2, 0, 2, 2, 2, 1, 2, 0, 3, 0, 2, 0, 2, 0, 2, 0, 2, 0, 2, 1, 2, 0, 3, 3, 2, 6, 2, 3, 2, 3, 2, 0, 2, 9, 2, 16, 6, 2, 2, 4, 2, 16, 4421, 42717, 35, 4148, 12, 221, 3, 5761, 15, 7472, 3104, 541, 1507, 4938];
+const astralIdentifierCodes = [509, 0, 227, 0, 150, 4, 294, 9, 1368, 2, 2, 1, 6, 3, 41, 2, 5, 0, 166, 1, 574, 3, 9, 9, 370, 1, 154, 10, 176, 2, 54, 14, 32, 9, 16, 3, 46, 10, 54, 9, 7, 2, 37, 13, 2, 9, 6, 1, 45, 0, 13, 2, 49, 13, 9, 3, 2, 11, 83, 11, 7, 0, 161, 11, 6, 9, 7, 3, 56, 1, 2, 6, 3, 1, 3, 2, 10, 0, 11, 1, 3, 6, 4, 4, 193, 17, 10, 9, 5, 0, 82, 19, 13, 9, 214, 6, 3, 8, 28, 1, 83, 16, 16, 9, 82, 12, 9, 9, 84, 14, 5, 9, 243, 14, 166, 9, 71, 5, 2, 1, 3, 3, 2, 0, 2, 1, 13, 9, 120, 6, 3, 6, 4, 0, 29, 9, 41, 6, 2, 3, 9, 0, 10, 10, 47, 15, 406, 7, 2, 7, 17, 9, 57, 21, 2, 13, 123, 5, 4, 0, 2, 1, 2, 6, 2, 0, 9, 9, 49, 4, 2, 1, 2, 4, 9, 9, 330, 3, 19306, 9, 135, 4, 60, 6, 26, 9, 1014, 0, 2, 54, 8, 3, 82, 0, 12, 1, 19628, 1, 5319, 4, 4, 5, 9, 7, 3, 6, 31, 3, 149, 2, 1418, 49, 513, 54, 5, 49, 9, 0, 15, 0, 23, 4, 2, 14, 1361, 6, 2, 16, 3, 6, 2, 1, 2, 4, 262, 6, 10, 9, 419, 13, 1495, 6, 110, 6, 6, 9, 4759, 9, 787719, 239];
+
+function isInAstralSet(code, set) {
+  let pos = 0x10000;
+
+  for (let i = 0, length = set.length; i < length; i += 2) {
+    pos += set[i];
+    if (pos > code) return false;
+    pos += set[i + 1];
+    if (pos >= code) return true;
+  }
+
+  return false;
+}
+
+function isIdentifierStart(code) {
+  if (code < 65) return code === 36;
+  if (code <= 90) return true;
+  if (code < 97) return code === 95;
+  if (code <= 122) return true;
+
+  if (code <= 0xffff) {
+    return code >= 0xaa && nonASCIIidentifierStart.test(String.fromCharCode(code));
+  }
+
+  return isInAstralSet(code, astralIdentifierStartCodes);
+}
+
+function isIdentifierChar(code) {
+  if (code < 48) return code === 36;
+  if (code < 58) return true;
+  if (code < 65) return false;
+  if (code <= 90) return true;
+  if (code < 97) return code === 95;
+  if (code <= 122) return true;
+
+  if (code <= 0xffff) {
+    return code >= 0xaa && nonASCIIidentifier.test(String.fromCharCode(code));
+  }
+
+  return isInAstralSet(code, astralIdentifierStartCodes) || isInAstralSet(code, astralIdentifierCodes);
+}
+
+function isIdentifierName(name) {
+  let isFirst = true;
+
+  for (let _i = 0, _Array$from = Array.from(name); _i < _Array$from.length; _i++) {
+    const char = _Array$from[_i];
+    const cp = char.codePointAt(0);
+
+    if (isFirst) {
+      if (!isIdentifierStart(cp)) {
+        return false;
+      }
+
+      isFirst = false;
+    } else if (!isIdentifierChar(cp)) {
+      return false;
+    }
+  }
+
+  return !isFirst;
+}
+},
 "3/lcVkCgtLdpKQEmlAp2g+Dm0p7Fkd9jtylnEvgdnFY=":
 function (require, module, exports, __dirname, __filename) {
 'use strict'
@@ -3556,6 +4100,426 @@ function is(type, node, opts) {
     return (0, _shallowEqual.default)(node, opts);
   }
 }
+},
+"4FfDKohpYXfDzqVmOtDo3hFC5shl1vcB6Z2Kl0NoDFI=":
+function (require, module, exports, __dirname, __filename) {
+"use strict";
+
+var _utils = _interopRequireWildcard(require("./utils"));
+
+var _core = require("./core");
+
+var _es = require("./es2015");
+
+function _getRequireWildcardCache() { if (typeof WeakMap !== "function") return null; var cache = new WeakMap(); _getRequireWildcardCache = function () { return cache; }; return cache; }
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } if (obj === null || typeof obj !== "object" && typeof obj !== "function") { return { default: obj }; } var cache = _getRequireWildcardCache(); if (cache && cache.has(obj)) { return cache.get(obj); } var newObj = {}; var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null; if (desc && (desc.get || desc.set)) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } newObj.default = obj; if (cache) { cache.set(obj, newObj); } return newObj; }
+
+const bool = (0, _utils.assertValueType)("boolean");
+const tSFunctionTypeAnnotationCommon = {
+  returnType: {
+    validate: (0, _utils.assertNodeType)("TSTypeAnnotation", "Noop"),
+    optional: true
+  },
+  typeParameters: {
+    validate: (0, _utils.assertNodeType)("TSTypeParameterDeclaration", "Noop"),
+    optional: true
+  }
+};
+(0, _utils.default)("TSParameterProperty", {
+  aliases: ["LVal"],
+  visitor: ["parameter"],
+  fields: {
+    accessibility: {
+      validate: (0, _utils.assertOneOf)("public", "private", "protected"),
+      optional: true
+    },
+    readonly: {
+      validate: (0, _utils.assertValueType)("boolean"),
+      optional: true
+    },
+    parameter: {
+      validate: (0, _utils.assertNodeType)("Identifier", "AssignmentPattern")
+    }
+  }
+});
+(0, _utils.default)("TSDeclareFunction", {
+  aliases: ["Statement", "Declaration"],
+  visitor: ["id", "typeParameters", "params", "returnType"],
+  fields: Object.assign({}, _core.functionDeclarationCommon, {}, tSFunctionTypeAnnotationCommon)
+});
+(0, _utils.default)("TSDeclareMethod", {
+  visitor: ["decorators", "key", "typeParameters", "params", "returnType"],
+  fields: Object.assign({}, _es.classMethodOrDeclareMethodCommon, {}, tSFunctionTypeAnnotationCommon)
+});
+(0, _utils.default)("TSQualifiedName", {
+  aliases: ["TSEntityName"],
+  visitor: ["left", "right"],
+  fields: {
+    left: (0, _utils.validateType)("TSEntityName"),
+    right: (0, _utils.validateType)("Identifier")
+  }
+});
+const signatureDeclarationCommon = {
+  typeParameters: (0, _utils.validateOptionalType)("TSTypeParameterDeclaration"),
+  parameters: (0, _utils.validateArrayOfType)(["Identifier", "RestElement"]),
+  typeAnnotation: (0, _utils.validateOptionalType)("TSTypeAnnotation")
+};
+const callConstructSignatureDeclaration = {
+  aliases: ["TSTypeElement"],
+  visitor: ["typeParameters", "parameters", "typeAnnotation"],
+  fields: signatureDeclarationCommon
+};
+(0, _utils.default)("TSCallSignatureDeclaration", callConstructSignatureDeclaration);
+(0, _utils.default)("TSConstructSignatureDeclaration", callConstructSignatureDeclaration);
+const namedTypeElementCommon = {
+  key: (0, _utils.validateType)("Expression"),
+  computed: (0, _utils.validate)(bool),
+  optional: (0, _utils.validateOptional)(bool)
+};
+(0, _utils.default)("TSPropertySignature", {
+  aliases: ["TSTypeElement"],
+  visitor: ["key", "typeAnnotation", "initializer"],
+  fields: Object.assign({}, namedTypeElementCommon, {
+    readonly: (0, _utils.validateOptional)(bool),
+    typeAnnotation: (0, _utils.validateOptionalType)("TSTypeAnnotation"),
+    initializer: (0, _utils.validateOptionalType)("Expression")
+  })
+});
+(0, _utils.default)("TSMethodSignature", {
+  aliases: ["TSTypeElement"],
+  visitor: ["key", "typeParameters", "parameters", "typeAnnotation"],
+  fields: Object.assign({}, signatureDeclarationCommon, {}, namedTypeElementCommon)
+});
+(0, _utils.default)("TSIndexSignature", {
+  aliases: ["TSTypeElement"],
+  visitor: ["parameters", "typeAnnotation"],
+  fields: {
+    readonly: (0, _utils.validateOptional)(bool),
+    parameters: (0, _utils.validateArrayOfType)("Identifier"),
+    typeAnnotation: (0, _utils.validateOptionalType)("TSTypeAnnotation")
+  }
+});
+const tsKeywordTypes = ["TSAnyKeyword", "TSBooleanKeyword", "TSBigIntKeyword", "TSNeverKeyword", "TSNullKeyword", "TSNumberKeyword", "TSObjectKeyword", "TSStringKeyword", "TSSymbolKeyword", "TSUndefinedKeyword", "TSUnknownKeyword", "TSVoidKeyword"];
+
+for (const type of tsKeywordTypes) {
+  (0, _utils.default)(type, {
+    aliases: ["TSType", "TSBaseType"],
+    visitor: [],
+    fields: {}
+  });
+}
+
+(0, _utils.default)("TSThisType", {
+  aliases: ["TSType", "TSBaseType"],
+  visitor: [],
+  fields: {}
+});
+const fnOrCtr = {
+  aliases: ["TSType"],
+  visitor: ["typeParameters", "parameters", "typeAnnotation"],
+  fields: signatureDeclarationCommon
+};
+(0, _utils.default)("TSFunctionType", fnOrCtr);
+(0, _utils.default)("TSConstructorType", fnOrCtr);
+(0, _utils.default)("TSTypeReference", {
+  aliases: ["TSType"],
+  visitor: ["typeName", "typeParameters"],
+  fields: {
+    typeName: (0, _utils.validateType)("TSEntityName"),
+    typeParameters: (0, _utils.validateOptionalType)("TSTypeParameterInstantiation")
+  }
+});
+(0, _utils.default)("TSTypePredicate", {
+  aliases: ["TSType"],
+  visitor: ["parameterName", "typeAnnotation"],
+  builder: ["parameterName", "typeAnnotation", "asserts"],
+  fields: {
+    parameterName: (0, _utils.validateType)(["Identifier", "TSThisType"]),
+    typeAnnotation: (0, _utils.validateOptionalType)("TSTypeAnnotation"),
+    asserts: (0, _utils.validateOptional)(bool)
+  }
+});
+(0, _utils.default)("TSTypeQuery", {
+  aliases: ["TSType"],
+  visitor: ["exprName"],
+  fields: {
+    exprName: (0, _utils.validateType)(["TSEntityName", "TSImportType"])
+  }
+});
+(0, _utils.default)("TSTypeLiteral", {
+  aliases: ["TSType"],
+  visitor: ["members"],
+  fields: {
+    members: (0, _utils.validateArrayOfType)("TSTypeElement")
+  }
+});
+(0, _utils.default)("TSArrayType", {
+  aliases: ["TSType"],
+  visitor: ["elementType"],
+  fields: {
+    elementType: (0, _utils.validateType)("TSType")
+  }
+});
+(0, _utils.default)("TSTupleType", {
+  aliases: ["TSType"],
+  visitor: ["elementTypes"],
+  fields: {
+    elementTypes: (0, _utils.validateArrayOfType)("TSType")
+  }
+});
+(0, _utils.default)("TSOptionalType", {
+  aliases: ["TSType"],
+  visitor: ["typeAnnotation"],
+  fields: {
+    typeAnnotation: (0, _utils.validateType)("TSType")
+  }
+});
+(0, _utils.default)("TSRestType", {
+  aliases: ["TSType"],
+  visitor: ["typeAnnotation"],
+  fields: {
+    typeAnnotation: (0, _utils.validateType)("TSType")
+  }
+});
+const unionOrIntersection = {
+  aliases: ["TSType"],
+  visitor: ["types"],
+  fields: {
+    types: (0, _utils.validateArrayOfType)("TSType")
+  }
+};
+(0, _utils.default)("TSUnionType", unionOrIntersection);
+(0, _utils.default)("TSIntersectionType", unionOrIntersection);
+(0, _utils.default)("TSConditionalType", {
+  aliases: ["TSType"],
+  visitor: ["checkType", "extendsType", "trueType", "falseType"],
+  fields: {
+    checkType: (0, _utils.validateType)("TSType"),
+    extendsType: (0, _utils.validateType)("TSType"),
+    trueType: (0, _utils.validateType)("TSType"),
+    falseType: (0, _utils.validateType)("TSType")
+  }
+});
+(0, _utils.default)("TSInferType", {
+  aliases: ["TSType"],
+  visitor: ["typeParameter"],
+  fields: {
+    typeParameter: (0, _utils.validateType)("TSTypeParameter")
+  }
+});
+(0, _utils.default)("TSParenthesizedType", {
+  aliases: ["TSType"],
+  visitor: ["typeAnnotation"],
+  fields: {
+    typeAnnotation: (0, _utils.validateType)("TSType")
+  }
+});
+(0, _utils.default)("TSTypeOperator", {
+  aliases: ["TSType"],
+  visitor: ["typeAnnotation"],
+  fields: {
+    operator: (0, _utils.validate)((0, _utils.assertValueType)("string")),
+    typeAnnotation: (0, _utils.validateType)("TSType")
+  }
+});
+(0, _utils.default)("TSIndexedAccessType", {
+  aliases: ["TSType"],
+  visitor: ["objectType", "indexType"],
+  fields: {
+    objectType: (0, _utils.validateType)("TSType"),
+    indexType: (0, _utils.validateType)("TSType")
+  }
+});
+(0, _utils.default)("TSMappedType", {
+  aliases: ["TSType"],
+  visitor: ["typeParameter", "typeAnnotation"],
+  fields: {
+    readonly: (0, _utils.validateOptional)(bool),
+    typeParameter: (0, _utils.validateType)("TSTypeParameter"),
+    optional: (0, _utils.validateOptional)(bool),
+    typeAnnotation: (0, _utils.validateOptionalType)("TSType")
+  }
+});
+(0, _utils.default)("TSLiteralType", {
+  aliases: ["TSType", "TSBaseType"],
+  visitor: ["literal"],
+  fields: {
+    literal: (0, _utils.validateType)(["NumericLiteral", "StringLiteral", "BooleanLiteral"])
+  }
+});
+(0, _utils.default)("TSExpressionWithTypeArguments", {
+  aliases: ["TSType"],
+  visitor: ["expression", "typeParameters"],
+  fields: {
+    expression: (0, _utils.validateType)("TSEntityName"),
+    typeParameters: (0, _utils.validateOptionalType)("TSTypeParameterInstantiation")
+  }
+});
+(0, _utils.default)("TSInterfaceDeclaration", {
+  aliases: ["Statement", "Declaration"],
+  visitor: ["id", "typeParameters", "extends", "body"],
+  fields: {
+    declare: (0, _utils.validateOptional)(bool),
+    id: (0, _utils.validateType)("Identifier"),
+    typeParameters: (0, _utils.validateOptionalType)("TSTypeParameterDeclaration"),
+    extends: (0, _utils.validateOptional)((0, _utils.arrayOfType)("TSExpressionWithTypeArguments")),
+    body: (0, _utils.validateType)("TSInterfaceBody")
+  }
+});
+(0, _utils.default)("TSInterfaceBody", {
+  visitor: ["body"],
+  fields: {
+    body: (0, _utils.validateArrayOfType)("TSTypeElement")
+  }
+});
+(0, _utils.default)("TSTypeAliasDeclaration", {
+  aliases: ["Statement", "Declaration"],
+  visitor: ["id", "typeParameters", "typeAnnotation"],
+  fields: {
+    declare: (0, _utils.validateOptional)(bool),
+    id: (0, _utils.validateType)("Identifier"),
+    typeParameters: (0, _utils.validateOptionalType)("TSTypeParameterDeclaration"),
+    typeAnnotation: (0, _utils.validateType)("TSType")
+  }
+});
+(0, _utils.default)("TSAsExpression", {
+  aliases: ["Expression"],
+  visitor: ["expression", "typeAnnotation"],
+  fields: {
+    expression: (0, _utils.validateType)("Expression"),
+    typeAnnotation: (0, _utils.validateType)("TSType")
+  }
+});
+(0, _utils.default)("TSTypeAssertion", {
+  aliases: ["Expression"],
+  visitor: ["typeAnnotation", "expression"],
+  fields: {
+    typeAnnotation: (0, _utils.validateType)("TSType"),
+    expression: (0, _utils.validateType)("Expression")
+  }
+});
+(0, _utils.default)("TSEnumDeclaration", {
+  aliases: ["Statement", "Declaration"],
+  visitor: ["id", "members"],
+  fields: {
+    declare: (0, _utils.validateOptional)(bool),
+    const: (0, _utils.validateOptional)(bool),
+    id: (0, _utils.validateType)("Identifier"),
+    members: (0, _utils.validateArrayOfType)("TSEnumMember"),
+    initializer: (0, _utils.validateOptionalType)("Expression")
+  }
+});
+(0, _utils.default)("TSEnumMember", {
+  visitor: ["id", "initializer"],
+  fields: {
+    id: (0, _utils.validateType)(["Identifier", "StringLiteral"]),
+    initializer: (0, _utils.validateOptionalType)("Expression")
+  }
+});
+(0, _utils.default)("TSModuleDeclaration", {
+  aliases: ["Statement", "Declaration"],
+  visitor: ["id", "body"],
+  fields: {
+    declare: (0, _utils.validateOptional)(bool),
+    global: (0, _utils.validateOptional)(bool),
+    id: (0, _utils.validateType)(["Identifier", "StringLiteral"]),
+    body: (0, _utils.validateType)(["TSModuleBlock", "TSModuleDeclaration"])
+  }
+});
+(0, _utils.default)("TSModuleBlock", {
+  aliases: ["Scopable", "Block", "BlockParent"],
+  visitor: ["body"],
+  fields: {
+    body: (0, _utils.validateArrayOfType)("Statement")
+  }
+});
+(0, _utils.default)("TSImportType", {
+  aliases: ["TSType"],
+  visitor: ["argument", "qualifier", "typeParameters"],
+  fields: {
+    argument: (0, _utils.validateType)("StringLiteral"),
+    qualifier: (0, _utils.validateOptionalType)("TSEntityName"),
+    typeParameters: (0, _utils.validateOptionalType)("TSTypeParameterInstantiation")
+  }
+});
+(0, _utils.default)("TSImportEqualsDeclaration", {
+  aliases: ["Statement"],
+  visitor: ["id", "moduleReference"],
+  fields: {
+    isExport: (0, _utils.validate)(bool),
+    id: (0, _utils.validateType)("Identifier"),
+    moduleReference: (0, _utils.validateType)(["TSEntityName", "TSExternalModuleReference"])
+  }
+});
+(0, _utils.default)("TSExternalModuleReference", {
+  visitor: ["expression"],
+  fields: {
+    expression: (0, _utils.validateType)("StringLiteral")
+  }
+});
+(0, _utils.default)("TSNonNullExpression", {
+  aliases: ["Expression"],
+  visitor: ["expression"],
+  fields: {
+    expression: (0, _utils.validateType)("Expression")
+  }
+});
+(0, _utils.default)("TSExportAssignment", {
+  aliases: ["Statement"],
+  visitor: ["expression"],
+  fields: {
+    expression: (0, _utils.validateType)("Expression")
+  }
+});
+(0, _utils.default)("TSNamespaceExportDeclaration", {
+  aliases: ["Statement"],
+  visitor: ["id"],
+  fields: {
+    id: (0, _utils.validateType)("Identifier")
+  }
+});
+(0, _utils.default)("TSTypeAnnotation", {
+  visitor: ["typeAnnotation"],
+  fields: {
+    typeAnnotation: {
+      validate: (0, _utils.assertNodeType)("TSType")
+    }
+  }
+});
+(0, _utils.default)("TSTypeParameterInstantiation", {
+  visitor: ["params"],
+  fields: {
+    params: {
+      validate: (0, _utils.chain)((0, _utils.assertValueType)("array"), (0, _utils.assertEach)((0, _utils.assertNodeType)("TSType")))
+    }
+  }
+});
+(0, _utils.default)("TSTypeParameterDeclaration", {
+  visitor: ["params"],
+  fields: {
+    params: {
+      validate: (0, _utils.chain)((0, _utils.assertValueType)("array"), (0, _utils.assertEach)((0, _utils.assertNodeType)("TSTypeParameter")))
+    }
+  }
+});
+(0, _utils.default)("TSTypeParameter", {
+  builder: ["constraint", "default", "name"],
+  visitor: ["constraint", "default"],
+  fields: {
+    name: {
+      validate: (0, _utils.assertValueType)("string")
+    },
+    constraint: {
+      validate: (0, _utils.assertNodeType)("TSType"),
+      optional: true
+    },
+    default: {
+      validate: (0, _utils.assertNodeType)("TSType"),
+      optional: true
+    }
+  }
+});
 },
 "4JRrDTsOKndu+mGvxKCPeU5t9EVTziZB567VZ9VQ9aw=":
 function (require, module, exports, __dirname, __filename) {
@@ -6276,6 +7240,1458 @@ function cloneTypedArray(typedArray, isDeep) {
 
 module.exports = cloneTypedArray;
 
+},
+"5NoLRCzVmN7qw4MAnXd7PI/1bjME599PRweAKntU9Qg=":
+function (require, module, exports, __dirname, __filename) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.assertArrayExpression = assertArrayExpression;
+exports.assertAssignmentExpression = assertAssignmentExpression;
+exports.assertBinaryExpression = assertBinaryExpression;
+exports.assertInterpreterDirective = assertInterpreterDirective;
+exports.assertDirective = assertDirective;
+exports.assertDirectiveLiteral = assertDirectiveLiteral;
+exports.assertBlockStatement = assertBlockStatement;
+exports.assertBreakStatement = assertBreakStatement;
+exports.assertCallExpression = assertCallExpression;
+exports.assertCatchClause = assertCatchClause;
+exports.assertConditionalExpression = assertConditionalExpression;
+exports.assertContinueStatement = assertContinueStatement;
+exports.assertDebuggerStatement = assertDebuggerStatement;
+exports.assertDoWhileStatement = assertDoWhileStatement;
+exports.assertEmptyStatement = assertEmptyStatement;
+exports.assertExpressionStatement = assertExpressionStatement;
+exports.assertFile = assertFile;
+exports.assertForInStatement = assertForInStatement;
+exports.assertForStatement = assertForStatement;
+exports.assertFunctionDeclaration = assertFunctionDeclaration;
+exports.assertFunctionExpression = assertFunctionExpression;
+exports.assertIdentifier = assertIdentifier;
+exports.assertIfStatement = assertIfStatement;
+exports.assertLabeledStatement = assertLabeledStatement;
+exports.assertStringLiteral = assertStringLiteral;
+exports.assertNumericLiteral = assertNumericLiteral;
+exports.assertNullLiteral = assertNullLiteral;
+exports.assertBooleanLiteral = assertBooleanLiteral;
+exports.assertRegExpLiteral = assertRegExpLiteral;
+exports.assertLogicalExpression = assertLogicalExpression;
+exports.assertMemberExpression = assertMemberExpression;
+exports.assertNewExpression = assertNewExpression;
+exports.assertProgram = assertProgram;
+exports.assertObjectExpression = assertObjectExpression;
+exports.assertObjectMethod = assertObjectMethod;
+exports.assertObjectProperty = assertObjectProperty;
+exports.assertRestElement = assertRestElement;
+exports.assertReturnStatement = assertReturnStatement;
+exports.assertSequenceExpression = assertSequenceExpression;
+exports.assertParenthesizedExpression = assertParenthesizedExpression;
+exports.assertSwitchCase = assertSwitchCase;
+exports.assertSwitchStatement = assertSwitchStatement;
+exports.assertThisExpression = assertThisExpression;
+exports.assertThrowStatement = assertThrowStatement;
+exports.assertTryStatement = assertTryStatement;
+exports.assertUnaryExpression = assertUnaryExpression;
+exports.assertUpdateExpression = assertUpdateExpression;
+exports.assertVariableDeclaration = assertVariableDeclaration;
+exports.assertVariableDeclarator = assertVariableDeclarator;
+exports.assertWhileStatement = assertWhileStatement;
+exports.assertWithStatement = assertWithStatement;
+exports.assertAssignmentPattern = assertAssignmentPattern;
+exports.assertArrayPattern = assertArrayPattern;
+exports.assertArrowFunctionExpression = assertArrowFunctionExpression;
+exports.assertClassBody = assertClassBody;
+exports.assertClassExpression = assertClassExpression;
+exports.assertClassDeclaration = assertClassDeclaration;
+exports.assertExportAllDeclaration = assertExportAllDeclaration;
+exports.assertExportDefaultDeclaration = assertExportDefaultDeclaration;
+exports.assertExportNamedDeclaration = assertExportNamedDeclaration;
+exports.assertExportSpecifier = assertExportSpecifier;
+exports.assertForOfStatement = assertForOfStatement;
+exports.assertImportDeclaration = assertImportDeclaration;
+exports.assertImportDefaultSpecifier = assertImportDefaultSpecifier;
+exports.assertImportNamespaceSpecifier = assertImportNamespaceSpecifier;
+exports.assertImportSpecifier = assertImportSpecifier;
+exports.assertMetaProperty = assertMetaProperty;
+exports.assertClassMethod = assertClassMethod;
+exports.assertObjectPattern = assertObjectPattern;
+exports.assertSpreadElement = assertSpreadElement;
+exports.assertSuper = assertSuper;
+exports.assertTaggedTemplateExpression = assertTaggedTemplateExpression;
+exports.assertTemplateElement = assertTemplateElement;
+exports.assertTemplateLiteral = assertTemplateLiteral;
+exports.assertYieldExpression = assertYieldExpression;
+exports.assertAnyTypeAnnotation = assertAnyTypeAnnotation;
+exports.assertArrayTypeAnnotation = assertArrayTypeAnnotation;
+exports.assertBooleanTypeAnnotation = assertBooleanTypeAnnotation;
+exports.assertBooleanLiteralTypeAnnotation = assertBooleanLiteralTypeAnnotation;
+exports.assertNullLiteralTypeAnnotation = assertNullLiteralTypeAnnotation;
+exports.assertClassImplements = assertClassImplements;
+exports.assertDeclareClass = assertDeclareClass;
+exports.assertDeclareFunction = assertDeclareFunction;
+exports.assertDeclareInterface = assertDeclareInterface;
+exports.assertDeclareModule = assertDeclareModule;
+exports.assertDeclareModuleExports = assertDeclareModuleExports;
+exports.assertDeclareTypeAlias = assertDeclareTypeAlias;
+exports.assertDeclareOpaqueType = assertDeclareOpaqueType;
+exports.assertDeclareVariable = assertDeclareVariable;
+exports.assertDeclareExportDeclaration = assertDeclareExportDeclaration;
+exports.assertDeclareExportAllDeclaration = assertDeclareExportAllDeclaration;
+exports.assertDeclaredPredicate = assertDeclaredPredicate;
+exports.assertExistsTypeAnnotation = assertExistsTypeAnnotation;
+exports.assertFunctionTypeAnnotation = assertFunctionTypeAnnotation;
+exports.assertFunctionTypeParam = assertFunctionTypeParam;
+exports.assertGenericTypeAnnotation = assertGenericTypeAnnotation;
+exports.assertInferredPredicate = assertInferredPredicate;
+exports.assertInterfaceExtends = assertInterfaceExtends;
+exports.assertInterfaceDeclaration = assertInterfaceDeclaration;
+exports.assertInterfaceTypeAnnotation = assertInterfaceTypeAnnotation;
+exports.assertIntersectionTypeAnnotation = assertIntersectionTypeAnnotation;
+exports.assertMixedTypeAnnotation = assertMixedTypeAnnotation;
+exports.assertEmptyTypeAnnotation = assertEmptyTypeAnnotation;
+exports.assertNullableTypeAnnotation = assertNullableTypeAnnotation;
+exports.assertNumberLiteralTypeAnnotation = assertNumberLiteralTypeAnnotation;
+exports.assertNumberTypeAnnotation = assertNumberTypeAnnotation;
+exports.assertObjectTypeAnnotation = assertObjectTypeAnnotation;
+exports.assertObjectTypeInternalSlot = assertObjectTypeInternalSlot;
+exports.assertObjectTypeCallProperty = assertObjectTypeCallProperty;
+exports.assertObjectTypeIndexer = assertObjectTypeIndexer;
+exports.assertObjectTypeProperty = assertObjectTypeProperty;
+exports.assertObjectTypeSpreadProperty = assertObjectTypeSpreadProperty;
+exports.assertOpaqueType = assertOpaqueType;
+exports.assertQualifiedTypeIdentifier = assertQualifiedTypeIdentifier;
+exports.assertStringLiteralTypeAnnotation = assertStringLiteralTypeAnnotation;
+exports.assertStringTypeAnnotation = assertStringTypeAnnotation;
+exports.assertSymbolTypeAnnotation = assertSymbolTypeAnnotation;
+exports.assertThisTypeAnnotation = assertThisTypeAnnotation;
+exports.assertTupleTypeAnnotation = assertTupleTypeAnnotation;
+exports.assertTypeofTypeAnnotation = assertTypeofTypeAnnotation;
+exports.assertTypeAlias = assertTypeAlias;
+exports.assertTypeAnnotation = assertTypeAnnotation;
+exports.assertTypeCastExpression = assertTypeCastExpression;
+exports.assertTypeParameter = assertTypeParameter;
+exports.assertTypeParameterDeclaration = assertTypeParameterDeclaration;
+exports.assertTypeParameterInstantiation = assertTypeParameterInstantiation;
+exports.assertUnionTypeAnnotation = assertUnionTypeAnnotation;
+exports.assertVariance = assertVariance;
+exports.assertVoidTypeAnnotation = assertVoidTypeAnnotation;
+exports.assertEnumDeclaration = assertEnumDeclaration;
+exports.assertEnumBooleanBody = assertEnumBooleanBody;
+exports.assertEnumNumberBody = assertEnumNumberBody;
+exports.assertEnumStringBody = assertEnumStringBody;
+exports.assertEnumSymbolBody = assertEnumSymbolBody;
+exports.assertEnumBooleanMember = assertEnumBooleanMember;
+exports.assertEnumNumberMember = assertEnumNumberMember;
+exports.assertEnumStringMember = assertEnumStringMember;
+exports.assertEnumDefaultedMember = assertEnumDefaultedMember;
+exports.assertJSXAttribute = assertJSXAttribute;
+exports.assertJSXClosingElement = assertJSXClosingElement;
+exports.assertJSXElement = assertJSXElement;
+exports.assertJSXEmptyExpression = assertJSXEmptyExpression;
+exports.assertJSXExpressionContainer = assertJSXExpressionContainer;
+exports.assertJSXSpreadChild = assertJSXSpreadChild;
+exports.assertJSXIdentifier = assertJSXIdentifier;
+exports.assertJSXMemberExpression = assertJSXMemberExpression;
+exports.assertJSXNamespacedName = assertJSXNamespacedName;
+exports.assertJSXOpeningElement = assertJSXOpeningElement;
+exports.assertJSXSpreadAttribute = assertJSXSpreadAttribute;
+exports.assertJSXText = assertJSXText;
+exports.assertJSXFragment = assertJSXFragment;
+exports.assertJSXOpeningFragment = assertJSXOpeningFragment;
+exports.assertJSXClosingFragment = assertJSXClosingFragment;
+exports.assertNoop = assertNoop;
+exports.assertPlaceholder = assertPlaceholder;
+exports.assertV8IntrinsicIdentifier = assertV8IntrinsicIdentifier;
+exports.assertArgumentPlaceholder = assertArgumentPlaceholder;
+exports.assertAwaitExpression = assertAwaitExpression;
+exports.assertBindExpression = assertBindExpression;
+exports.assertClassProperty = assertClassProperty;
+exports.assertOptionalMemberExpression = assertOptionalMemberExpression;
+exports.assertPipelineTopicExpression = assertPipelineTopicExpression;
+exports.assertPipelineBareFunction = assertPipelineBareFunction;
+exports.assertPipelinePrimaryTopicReference = assertPipelinePrimaryTopicReference;
+exports.assertOptionalCallExpression = assertOptionalCallExpression;
+exports.assertClassPrivateProperty = assertClassPrivateProperty;
+exports.assertClassPrivateMethod = assertClassPrivateMethod;
+exports.assertImport = assertImport;
+exports.assertDecorator = assertDecorator;
+exports.assertDoExpression = assertDoExpression;
+exports.assertExportDefaultSpecifier = assertExportDefaultSpecifier;
+exports.assertExportNamespaceSpecifier = assertExportNamespaceSpecifier;
+exports.assertPrivateName = assertPrivateName;
+exports.assertBigIntLiteral = assertBigIntLiteral;
+exports.assertRecordExpression = assertRecordExpression;
+exports.assertTupleExpression = assertTupleExpression;
+exports.assertTSParameterProperty = assertTSParameterProperty;
+exports.assertTSDeclareFunction = assertTSDeclareFunction;
+exports.assertTSDeclareMethod = assertTSDeclareMethod;
+exports.assertTSQualifiedName = assertTSQualifiedName;
+exports.assertTSCallSignatureDeclaration = assertTSCallSignatureDeclaration;
+exports.assertTSConstructSignatureDeclaration = assertTSConstructSignatureDeclaration;
+exports.assertTSPropertySignature = assertTSPropertySignature;
+exports.assertTSMethodSignature = assertTSMethodSignature;
+exports.assertTSIndexSignature = assertTSIndexSignature;
+exports.assertTSAnyKeyword = assertTSAnyKeyword;
+exports.assertTSBooleanKeyword = assertTSBooleanKeyword;
+exports.assertTSBigIntKeyword = assertTSBigIntKeyword;
+exports.assertTSNeverKeyword = assertTSNeverKeyword;
+exports.assertTSNullKeyword = assertTSNullKeyword;
+exports.assertTSNumberKeyword = assertTSNumberKeyword;
+exports.assertTSObjectKeyword = assertTSObjectKeyword;
+exports.assertTSStringKeyword = assertTSStringKeyword;
+exports.assertTSSymbolKeyword = assertTSSymbolKeyword;
+exports.assertTSUndefinedKeyword = assertTSUndefinedKeyword;
+exports.assertTSUnknownKeyword = assertTSUnknownKeyword;
+exports.assertTSVoidKeyword = assertTSVoidKeyword;
+exports.assertTSThisType = assertTSThisType;
+exports.assertTSFunctionType = assertTSFunctionType;
+exports.assertTSConstructorType = assertTSConstructorType;
+exports.assertTSTypeReference = assertTSTypeReference;
+exports.assertTSTypePredicate = assertTSTypePredicate;
+exports.assertTSTypeQuery = assertTSTypeQuery;
+exports.assertTSTypeLiteral = assertTSTypeLiteral;
+exports.assertTSArrayType = assertTSArrayType;
+exports.assertTSTupleType = assertTSTupleType;
+exports.assertTSOptionalType = assertTSOptionalType;
+exports.assertTSRestType = assertTSRestType;
+exports.assertTSUnionType = assertTSUnionType;
+exports.assertTSIntersectionType = assertTSIntersectionType;
+exports.assertTSConditionalType = assertTSConditionalType;
+exports.assertTSInferType = assertTSInferType;
+exports.assertTSParenthesizedType = assertTSParenthesizedType;
+exports.assertTSTypeOperator = assertTSTypeOperator;
+exports.assertTSIndexedAccessType = assertTSIndexedAccessType;
+exports.assertTSMappedType = assertTSMappedType;
+exports.assertTSLiteralType = assertTSLiteralType;
+exports.assertTSExpressionWithTypeArguments = assertTSExpressionWithTypeArguments;
+exports.assertTSInterfaceDeclaration = assertTSInterfaceDeclaration;
+exports.assertTSInterfaceBody = assertTSInterfaceBody;
+exports.assertTSTypeAliasDeclaration = assertTSTypeAliasDeclaration;
+exports.assertTSAsExpression = assertTSAsExpression;
+exports.assertTSTypeAssertion = assertTSTypeAssertion;
+exports.assertTSEnumDeclaration = assertTSEnumDeclaration;
+exports.assertTSEnumMember = assertTSEnumMember;
+exports.assertTSModuleDeclaration = assertTSModuleDeclaration;
+exports.assertTSModuleBlock = assertTSModuleBlock;
+exports.assertTSImportType = assertTSImportType;
+exports.assertTSImportEqualsDeclaration = assertTSImportEqualsDeclaration;
+exports.assertTSExternalModuleReference = assertTSExternalModuleReference;
+exports.assertTSNonNullExpression = assertTSNonNullExpression;
+exports.assertTSExportAssignment = assertTSExportAssignment;
+exports.assertTSNamespaceExportDeclaration = assertTSNamespaceExportDeclaration;
+exports.assertTSTypeAnnotation = assertTSTypeAnnotation;
+exports.assertTSTypeParameterInstantiation = assertTSTypeParameterInstantiation;
+exports.assertTSTypeParameterDeclaration = assertTSTypeParameterDeclaration;
+exports.assertTSTypeParameter = assertTSTypeParameter;
+exports.assertExpression = assertExpression;
+exports.assertBinary = assertBinary;
+exports.assertScopable = assertScopable;
+exports.assertBlockParent = assertBlockParent;
+exports.assertBlock = assertBlock;
+exports.assertStatement = assertStatement;
+exports.assertTerminatorless = assertTerminatorless;
+exports.assertCompletionStatement = assertCompletionStatement;
+exports.assertConditional = assertConditional;
+exports.assertLoop = assertLoop;
+exports.assertWhile = assertWhile;
+exports.assertExpressionWrapper = assertExpressionWrapper;
+exports.assertFor = assertFor;
+exports.assertForXStatement = assertForXStatement;
+exports.assertFunction = assertFunction;
+exports.assertFunctionParent = assertFunctionParent;
+exports.assertPureish = assertPureish;
+exports.assertDeclaration = assertDeclaration;
+exports.assertPatternLike = assertPatternLike;
+exports.assertLVal = assertLVal;
+exports.assertTSEntityName = assertTSEntityName;
+exports.assertLiteral = assertLiteral;
+exports.assertImmutable = assertImmutable;
+exports.assertUserWhitespacable = assertUserWhitespacable;
+exports.assertMethod = assertMethod;
+exports.assertObjectMember = assertObjectMember;
+exports.assertProperty = assertProperty;
+exports.assertUnaryLike = assertUnaryLike;
+exports.assertPattern = assertPattern;
+exports.assertClass = assertClass;
+exports.assertModuleDeclaration = assertModuleDeclaration;
+exports.assertExportDeclaration = assertExportDeclaration;
+exports.assertModuleSpecifier = assertModuleSpecifier;
+exports.assertFlow = assertFlow;
+exports.assertFlowType = assertFlowType;
+exports.assertFlowBaseAnnotation = assertFlowBaseAnnotation;
+exports.assertFlowDeclaration = assertFlowDeclaration;
+exports.assertFlowPredicate = assertFlowPredicate;
+exports.assertEnumBody = assertEnumBody;
+exports.assertEnumMember = assertEnumMember;
+exports.assertJSX = assertJSX;
+exports.assertPrivate = assertPrivate;
+exports.assertTSTypeElement = assertTSTypeElement;
+exports.assertTSType = assertTSType;
+exports.assertTSBaseType = assertTSBaseType;
+exports.assertNumberLiteral = assertNumberLiteral;
+exports.assertRegexLiteral = assertRegexLiteral;
+exports.assertRestProperty = assertRestProperty;
+exports.assertSpreadProperty = assertSpreadProperty;
+
+var _is = _interopRequireDefault(require("../../validators/is"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function assert(type, node, opts) {
+  if (!(0, _is.default)(type, node, opts)) {
+    throw new Error(`Expected type "${type}" with option ${JSON.stringify(opts)}, ` + `but instead got "${node.type}".`);
+  }
+}
+
+function assertArrayExpression(node, opts = {}) {
+  assert("ArrayExpression", node, opts);
+}
+
+function assertAssignmentExpression(node, opts = {}) {
+  assert("AssignmentExpression", node, opts);
+}
+
+function assertBinaryExpression(node, opts = {}) {
+  assert("BinaryExpression", node, opts);
+}
+
+function assertInterpreterDirective(node, opts = {}) {
+  assert("InterpreterDirective", node, opts);
+}
+
+function assertDirective(node, opts = {}) {
+  assert("Directive", node, opts);
+}
+
+function assertDirectiveLiteral(node, opts = {}) {
+  assert("DirectiveLiteral", node, opts);
+}
+
+function assertBlockStatement(node, opts = {}) {
+  assert("BlockStatement", node, opts);
+}
+
+function assertBreakStatement(node, opts = {}) {
+  assert("BreakStatement", node, opts);
+}
+
+function assertCallExpression(node, opts = {}) {
+  assert("CallExpression", node, opts);
+}
+
+function assertCatchClause(node, opts = {}) {
+  assert("CatchClause", node, opts);
+}
+
+function assertConditionalExpression(node, opts = {}) {
+  assert("ConditionalExpression", node, opts);
+}
+
+function assertContinueStatement(node, opts = {}) {
+  assert("ContinueStatement", node, opts);
+}
+
+function assertDebuggerStatement(node, opts = {}) {
+  assert("DebuggerStatement", node, opts);
+}
+
+function assertDoWhileStatement(node, opts = {}) {
+  assert("DoWhileStatement", node, opts);
+}
+
+function assertEmptyStatement(node, opts = {}) {
+  assert("EmptyStatement", node, opts);
+}
+
+function assertExpressionStatement(node, opts = {}) {
+  assert("ExpressionStatement", node, opts);
+}
+
+function assertFile(node, opts = {}) {
+  assert("File", node, opts);
+}
+
+function assertForInStatement(node, opts = {}) {
+  assert("ForInStatement", node, opts);
+}
+
+function assertForStatement(node, opts = {}) {
+  assert("ForStatement", node, opts);
+}
+
+function assertFunctionDeclaration(node, opts = {}) {
+  assert("FunctionDeclaration", node, opts);
+}
+
+function assertFunctionExpression(node, opts = {}) {
+  assert("FunctionExpression", node, opts);
+}
+
+function assertIdentifier(node, opts = {}) {
+  assert("Identifier", node, opts);
+}
+
+function assertIfStatement(node, opts = {}) {
+  assert("IfStatement", node, opts);
+}
+
+function assertLabeledStatement(node, opts = {}) {
+  assert("LabeledStatement", node, opts);
+}
+
+function assertStringLiteral(node, opts = {}) {
+  assert("StringLiteral", node, opts);
+}
+
+function assertNumericLiteral(node, opts = {}) {
+  assert("NumericLiteral", node, opts);
+}
+
+function assertNullLiteral(node, opts = {}) {
+  assert("NullLiteral", node, opts);
+}
+
+function assertBooleanLiteral(node, opts = {}) {
+  assert("BooleanLiteral", node, opts);
+}
+
+function assertRegExpLiteral(node, opts = {}) {
+  assert("RegExpLiteral", node, opts);
+}
+
+function assertLogicalExpression(node, opts = {}) {
+  assert("LogicalExpression", node, opts);
+}
+
+function assertMemberExpression(node, opts = {}) {
+  assert("MemberExpression", node, opts);
+}
+
+function assertNewExpression(node, opts = {}) {
+  assert("NewExpression", node, opts);
+}
+
+function assertProgram(node, opts = {}) {
+  assert("Program", node, opts);
+}
+
+function assertObjectExpression(node, opts = {}) {
+  assert("ObjectExpression", node, opts);
+}
+
+function assertObjectMethod(node, opts = {}) {
+  assert("ObjectMethod", node, opts);
+}
+
+function assertObjectProperty(node, opts = {}) {
+  assert("ObjectProperty", node, opts);
+}
+
+function assertRestElement(node, opts = {}) {
+  assert("RestElement", node, opts);
+}
+
+function assertReturnStatement(node, opts = {}) {
+  assert("ReturnStatement", node, opts);
+}
+
+function assertSequenceExpression(node, opts = {}) {
+  assert("SequenceExpression", node, opts);
+}
+
+function assertParenthesizedExpression(node, opts = {}) {
+  assert("ParenthesizedExpression", node, opts);
+}
+
+function assertSwitchCase(node, opts = {}) {
+  assert("SwitchCase", node, opts);
+}
+
+function assertSwitchStatement(node, opts = {}) {
+  assert("SwitchStatement", node, opts);
+}
+
+function assertThisExpression(node, opts = {}) {
+  assert("ThisExpression", node, opts);
+}
+
+function assertThrowStatement(node, opts = {}) {
+  assert("ThrowStatement", node, opts);
+}
+
+function assertTryStatement(node, opts = {}) {
+  assert("TryStatement", node, opts);
+}
+
+function assertUnaryExpression(node, opts = {}) {
+  assert("UnaryExpression", node, opts);
+}
+
+function assertUpdateExpression(node, opts = {}) {
+  assert("UpdateExpression", node, opts);
+}
+
+function assertVariableDeclaration(node, opts = {}) {
+  assert("VariableDeclaration", node, opts);
+}
+
+function assertVariableDeclarator(node, opts = {}) {
+  assert("VariableDeclarator", node, opts);
+}
+
+function assertWhileStatement(node, opts = {}) {
+  assert("WhileStatement", node, opts);
+}
+
+function assertWithStatement(node, opts = {}) {
+  assert("WithStatement", node, opts);
+}
+
+function assertAssignmentPattern(node, opts = {}) {
+  assert("AssignmentPattern", node, opts);
+}
+
+function assertArrayPattern(node, opts = {}) {
+  assert("ArrayPattern", node, opts);
+}
+
+function assertArrowFunctionExpression(node, opts = {}) {
+  assert("ArrowFunctionExpression", node, opts);
+}
+
+function assertClassBody(node, opts = {}) {
+  assert("ClassBody", node, opts);
+}
+
+function assertClassExpression(node, opts = {}) {
+  assert("ClassExpression", node, opts);
+}
+
+function assertClassDeclaration(node, opts = {}) {
+  assert("ClassDeclaration", node, opts);
+}
+
+function assertExportAllDeclaration(node, opts = {}) {
+  assert("ExportAllDeclaration", node, opts);
+}
+
+function assertExportDefaultDeclaration(node, opts = {}) {
+  assert("ExportDefaultDeclaration", node, opts);
+}
+
+function assertExportNamedDeclaration(node, opts = {}) {
+  assert("ExportNamedDeclaration", node, opts);
+}
+
+function assertExportSpecifier(node, opts = {}) {
+  assert("ExportSpecifier", node, opts);
+}
+
+function assertForOfStatement(node, opts = {}) {
+  assert("ForOfStatement", node, opts);
+}
+
+function assertImportDeclaration(node, opts = {}) {
+  assert("ImportDeclaration", node, opts);
+}
+
+function assertImportDefaultSpecifier(node, opts = {}) {
+  assert("ImportDefaultSpecifier", node, opts);
+}
+
+function assertImportNamespaceSpecifier(node, opts = {}) {
+  assert("ImportNamespaceSpecifier", node, opts);
+}
+
+function assertImportSpecifier(node, opts = {}) {
+  assert("ImportSpecifier", node, opts);
+}
+
+function assertMetaProperty(node, opts = {}) {
+  assert("MetaProperty", node, opts);
+}
+
+function assertClassMethod(node, opts = {}) {
+  assert("ClassMethod", node, opts);
+}
+
+function assertObjectPattern(node, opts = {}) {
+  assert("ObjectPattern", node, opts);
+}
+
+function assertSpreadElement(node, opts = {}) {
+  assert("SpreadElement", node, opts);
+}
+
+function assertSuper(node, opts = {}) {
+  assert("Super", node, opts);
+}
+
+function assertTaggedTemplateExpression(node, opts = {}) {
+  assert("TaggedTemplateExpression", node, opts);
+}
+
+function assertTemplateElement(node, opts = {}) {
+  assert("TemplateElement", node, opts);
+}
+
+function assertTemplateLiteral(node, opts = {}) {
+  assert("TemplateLiteral", node, opts);
+}
+
+function assertYieldExpression(node, opts = {}) {
+  assert("YieldExpression", node, opts);
+}
+
+function assertAnyTypeAnnotation(node, opts = {}) {
+  assert("AnyTypeAnnotation", node, opts);
+}
+
+function assertArrayTypeAnnotation(node, opts = {}) {
+  assert("ArrayTypeAnnotation", node, opts);
+}
+
+function assertBooleanTypeAnnotation(node, opts = {}) {
+  assert("BooleanTypeAnnotation", node, opts);
+}
+
+function assertBooleanLiteralTypeAnnotation(node, opts = {}) {
+  assert("BooleanLiteralTypeAnnotation", node, opts);
+}
+
+function assertNullLiteralTypeAnnotation(node, opts = {}) {
+  assert("NullLiteralTypeAnnotation", node, opts);
+}
+
+function assertClassImplements(node, opts = {}) {
+  assert("ClassImplements", node, opts);
+}
+
+function assertDeclareClass(node, opts = {}) {
+  assert("DeclareClass", node, opts);
+}
+
+function assertDeclareFunction(node, opts = {}) {
+  assert("DeclareFunction", node, opts);
+}
+
+function assertDeclareInterface(node, opts = {}) {
+  assert("DeclareInterface", node, opts);
+}
+
+function assertDeclareModule(node, opts = {}) {
+  assert("DeclareModule", node, opts);
+}
+
+function assertDeclareModuleExports(node, opts = {}) {
+  assert("DeclareModuleExports", node, opts);
+}
+
+function assertDeclareTypeAlias(node, opts = {}) {
+  assert("DeclareTypeAlias", node, opts);
+}
+
+function assertDeclareOpaqueType(node, opts = {}) {
+  assert("DeclareOpaqueType", node, opts);
+}
+
+function assertDeclareVariable(node, opts = {}) {
+  assert("DeclareVariable", node, opts);
+}
+
+function assertDeclareExportDeclaration(node, opts = {}) {
+  assert("DeclareExportDeclaration", node, opts);
+}
+
+function assertDeclareExportAllDeclaration(node, opts = {}) {
+  assert("DeclareExportAllDeclaration", node, opts);
+}
+
+function assertDeclaredPredicate(node, opts = {}) {
+  assert("DeclaredPredicate", node, opts);
+}
+
+function assertExistsTypeAnnotation(node, opts = {}) {
+  assert("ExistsTypeAnnotation", node, opts);
+}
+
+function assertFunctionTypeAnnotation(node, opts = {}) {
+  assert("FunctionTypeAnnotation", node, opts);
+}
+
+function assertFunctionTypeParam(node, opts = {}) {
+  assert("FunctionTypeParam", node, opts);
+}
+
+function assertGenericTypeAnnotation(node, opts = {}) {
+  assert("GenericTypeAnnotation", node, opts);
+}
+
+function assertInferredPredicate(node, opts = {}) {
+  assert("InferredPredicate", node, opts);
+}
+
+function assertInterfaceExtends(node, opts = {}) {
+  assert("InterfaceExtends", node, opts);
+}
+
+function assertInterfaceDeclaration(node, opts = {}) {
+  assert("InterfaceDeclaration", node, opts);
+}
+
+function assertInterfaceTypeAnnotation(node, opts = {}) {
+  assert("InterfaceTypeAnnotation", node, opts);
+}
+
+function assertIntersectionTypeAnnotation(node, opts = {}) {
+  assert("IntersectionTypeAnnotation", node, opts);
+}
+
+function assertMixedTypeAnnotation(node, opts = {}) {
+  assert("MixedTypeAnnotation", node, opts);
+}
+
+function assertEmptyTypeAnnotation(node, opts = {}) {
+  assert("EmptyTypeAnnotation", node, opts);
+}
+
+function assertNullableTypeAnnotation(node, opts = {}) {
+  assert("NullableTypeAnnotation", node, opts);
+}
+
+function assertNumberLiteralTypeAnnotation(node, opts = {}) {
+  assert("NumberLiteralTypeAnnotation", node, opts);
+}
+
+function assertNumberTypeAnnotation(node, opts = {}) {
+  assert("NumberTypeAnnotation", node, opts);
+}
+
+function assertObjectTypeAnnotation(node, opts = {}) {
+  assert("ObjectTypeAnnotation", node, opts);
+}
+
+function assertObjectTypeInternalSlot(node, opts = {}) {
+  assert("ObjectTypeInternalSlot", node, opts);
+}
+
+function assertObjectTypeCallProperty(node, opts = {}) {
+  assert("ObjectTypeCallProperty", node, opts);
+}
+
+function assertObjectTypeIndexer(node, opts = {}) {
+  assert("ObjectTypeIndexer", node, opts);
+}
+
+function assertObjectTypeProperty(node, opts = {}) {
+  assert("ObjectTypeProperty", node, opts);
+}
+
+function assertObjectTypeSpreadProperty(node, opts = {}) {
+  assert("ObjectTypeSpreadProperty", node, opts);
+}
+
+function assertOpaqueType(node, opts = {}) {
+  assert("OpaqueType", node, opts);
+}
+
+function assertQualifiedTypeIdentifier(node, opts = {}) {
+  assert("QualifiedTypeIdentifier", node, opts);
+}
+
+function assertStringLiteralTypeAnnotation(node, opts = {}) {
+  assert("StringLiteralTypeAnnotation", node, opts);
+}
+
+function assertStringTypeAnnotation(node, opts = {}) {
+  assert("StringTypeAnnotation", node, opts);
+}
+
+function assertSymbolTypeAnnotation(node, opts = {}) {
+  assert("SymbolTypeAnnotation", node, opts);
+}
+
+function assertThisTypeAnnotation(node, opts = {}) {
+  assert("ThisTypeAnnotation", node, opts);
+}
+
+function assertTupleTypeAnnotation(node, opts = {}) {
+  assert("TupleTypeAnnotation", node, opts);
+}
+
+function assertTypeofTypeAnnotation(node, opts = {}) {
+  assert("TypeofTypeAnnotation", node, opts);
+}
+
+function assertTypeAlias(node, opts = {}) {
+  assert("TypeAlias", node, opts);
+}
+
+function assertTypeAnnotation(node, opts = {}) {
+  assert("TypeAnnotation", node, opts);
+}
+
+function assertTypeCastExpression(node, opts = {}) {
+  assert("TypeCastExpression", node, opts);
+}
+
+function assertTypeParameter(node, opts = {}) {
+  assert("TypeParameter", node, opts);
+}
+
+function assertTypeParameterDeclaration(node, opts = {}) {
+  assert("TypeParameterDeclaration", node, opts);
+}
+
+function assertTypeParameterInstantiation(node, opts = {}) {
+  assert("TypeParameterInstantiation", node, opts);
+}
+
+function assertUnionTypeAnnotation(node, opts = {}) {
+  assert("UnionTypeAnnotation", node, opts);
+}
+
+function assertVariance(node, opts = {}) {
+  assert("Variance", node, opts);
+}
+
+function assertVoidTypeAnnotation(node, opts = {}) {
+  assert("VoidTypeAnnotation", node, opts);
+}
+
+function assertEnumDeclaration(node, opts = {}) {
+  assert("EnumDeclaration", node, opts);
+}
+
+function assertEnumBooleanBody(node, opts = {}) {
+  assert("EnumBooleanBody", node, opts);
+}
+
+function assertEnumNumberBody(node, opts = {}) {
+  assert("EnumNumberBody", node, opts);
+}
+
+function assertEnumStringBody(node, opts = {}) {
+  assert("EnumStringBody", node, opts);
+}
+
+function assertEnumSymbolBody(node, opts = {}) {
+  assert("EnumSymbolBody", node, opts);
+}
+
+function assertEnumBooleanMember(node, opts = {}) {
+  assert("EnumBooleanMember", node, opts);
+}
+
+function assertEnumNumberMember(node, opts = {}) {
+  assert("EnumNumberMember", node, opts);
+}
+
+function assertEnumStringMember(node, opts = {}) {
+  assert("EnumStringMember", node, opts);
+}
+
+function assertEnumDefaultedMember(node, opts = {}) {
+  assert("EnumDefaultedMember", node, opts);
+}
+
+function assertJSXAttribute(node, opts = {}) {
+  assert("JSXAttribute", node, opts);
+}
+
+function assertJSXClosingElement(node, opts = {}) {
+  assert("JSXClosingElement", node, opts);
+}
+
+function assertJSXElement(node, opts = {}) {
+  assert("JSXElement", node, opts);
+}
+
+function assertJSXEmptyExpression(node, opts = {}) {
+  assert("JSXEmptyExpression", node, opts);
+}
+
+function assertJSXExpressionContainer(node, opts = {}) {
+  assert("JSXExpressionContainer", node, opts);
+}
+
+function assertJSXSpreadChild(node, opts = {}) {
+  assert("JSXSpreadChild", node, opts);
+}
+
+function assertJSXIdentifier(node, opts = {}) {
+  assert("JSXIdentifier", node, opts);
+}
+
+function assertJSXMemberExpression(node, opts = {}) {
+  assert("JSXMemberExpression", node, opts);
+}
+
+function assertJSXNamespacedName(node, opts = {}) {
+  assert("JSXNamespacedName", node, opts);
+}
+
+function assertJSXOpeningElement(node, opts = {}) {
+  assert("JSXOpeningElement", node, opts);
+}
+
+function assertJSXSpreadAttribute(node, opts = {}) {
+  assert("JSXSpreadAttribute", node, opts);
+}
+
+function assertJSXText(node, opts = {}) {
+  assert("JSXText", node, opts);
+}
+
+function assertJSXFragment(node, opts = {}) {
+  assert("JSXFragment", node, opts);
+}
+
+function assertJSXOpeningFragment(node, opts = {}) {
+  assert("JSXOpeningFragment", node, opts);
+}
+
+function assertJSXClosingFragment(node, opts = {}) {
+  assert("JSXClosingFragment", node, opts);
+}
+
+function assertNoop(node, opts = {}) {
+  assert("Noop", node, opts);
+}
+
+function assertPlaceholder(node, opts = {}) {
+  assert("Placeholder", node, opts);
+}
+
+function assertV8IntrinsicIdentifier(node, opts = {}) {
+  assert("V8IntrinsicIdentifier", node, opts);
+}
+
+function assertArgumentPlaceholder(node, opts = {}) {
+  assert("ArgumentPlaceholder", node, opts);
+}
+
+function assertAwaitExpression(node, opts = {}) {
+  assert("AwaitExpression", node, opts);
+}
+
+function assertBindExpression(node, opts = {}) {
+  assert("BindExpression", node, opts);
+}
+
+function assertClassProperty(node, opts = {}) {
+  assert("ClassProperty", node, opts);
+}
+
+function assertOptionalMemberExpression(node, opts = {}) {
+  assert("OptionalMemberExpression", node, opts);
+}
+
+function assertPipelineTopicExpression(node, opts = {}) {
+  assert("PipelineTopicExpression", node, opts);
+}
+
+function assertPipelineBareFunction(node, opts = {}) {
+  assert("PipelineBareFunction", node, opts);
+}
+
+function assertPipelinePrimaryTopicReference(node, opts = {}) {
+  assert("PipelinePrimaryTopicReference", node, opts);
+}
+
+function assertOptionalCallExpression(node, opts = {}) {
+  assert("OptionalCallExpression", node, opts);
+}
+
+function assertClassPrivateProperty(node, opts = {}) {
+  assert("ClassPrivateProperty", node, opts);
+}
+
+function assertClassPrivateMethod(node, opts = {}) {
+  assert("ClassPrivateMethod", node, opts);
+}
+
+function assertImport(node, opts = {}) {
+  assert("Import", node, opts);
+}
+
+function assertDecorator(node, opts = {}) {
+  assert("Decorator", node, opts);
+}
+
+function assertDoExpression(node, opts = {}) {
+  assert("DoExpression", node, opts);
+}
+
+function assertExportDefaultSpecifier(node, opts = {}) {
+  assert("ExportDefaultSpecifier", node, opts);
+}
+
+function assertExportNamespaceSpecifier(node, opts = {}) {
+  assert("ExportNamespaceSpecifier", node, opts);
+}
+
+function assertPrivateName(node, opts = {}) {
+  assert("PrivateName", node, opts);
+}
+
+function assertBigIntLiteral(node, opts = {}) {
+  assert("BigIntLiteral", node, opts);
+}
+
+function assertRecordExpression(node, opts = {}) {
+  assert("RecordExpression", node, opts);
+}
+
+function assertTupleExpression(node, opts = {}) {
+  assert("TupleExpression", node, opts);
+}
+
+function assertTSParameterProperty(node, opts = {}) {
+  assert("TSParameterProperty", node, opts);
+}
+
+function assertTSDeclareFunction(node, opts = {}) {
+  assert("TSDeclareFunction", node, opts);
+}
+
+function assertTSDeclareMethod(node, opts = {}) {
+  assert("TSDeclareMethod", node, opts);
+}
+
+function assertTSQualifiedName(node, opts = {}) {
+  assert("TSQualifiedName", node, opts);
+}
+
+function assertTSCallSignatureDeclaration(node, opts = {}) {
+  assert("TSCallSignatureDeclaration", node, opts);
+}
+
+function assertTSConstructSignatureDeclaration(node, opts = {}) {
+  assert("TSConstructSignatureDeclaration", node, opts);
+}
+
+function assertTSPropertySignature(node, opts = {}) {
+  assert("TSPropertySignature", node, opts);
+}
+
+function assertTSMethodSignature(node, opts = {}) {
+  assert("TSMethodSignature", node, opts);
+}
+
+function assertTSIndexSignature(node, opts = {}) {
+  assert("TSIndexSignature", node, opts);
+}
+
+function assertTSAnyKeyword(node, opts = {}) {
+  assert("TSAnyKeyword", node, opts);
+}
+
+function assertTSBooleanKeyword(node, opts = {}) {
+  assert("TSBooleanKeyword", node, opts);
+}
+
+function assertTSBigIntKeyword(node, opts = {}) {
+  assert("TSBigIntKeyword", node, opts);
+}
+
+function assertTSNeverKeyword(node, opts = {}) {
+  assert("TSNeverKeyword", node, opts);
+}
+
+function assertTSNullKeyword(node, opts = {}) {
+  assert("TSNullKeyword", node, opts);
+}
+
+function assertTSNumberKeyword(node, opts = {}) {
+  assert("TSNumberKeyword", node, opts);
+}
+
+function assertTSObjectKeyword(node, opts = {}) {
+  assert("TSObjectKeyword", node, opts);
+}
+
+function assertTSStringKeyword(node, opts = {}) {
+  assert("TSStringKeyword", node, opts);
+}
+
+function assertTSSymbolKeyword(node, opts = {}) {
+  assert("TSSymbolKeyword", node, opts);
+}
+
+function assertTSUndefinedKeyword(node, opts = {}) {
+  assert("TSUndefinedKeyword", node, opts);
+}
+
+function assertTSUnknownKeyword(node, opts = {}) {
+  assert("TSUnknownKeyword", node, opts);
+}
+
+function assertTSVoidKeyword(node, opts = {}) {
+  assert("TSVoidKeyword", node, opts);
+}
+
+function assertTSThisType(node, opts = {}) {
+  assert("TSThisType", node, opts);
+}
+
+function assertTSFunctionType(node, opts = {}) {
+  assert("TSFunctionType", node, opts);
+}
+
+function assertTSConstructorType(node, opts = {}) {
+  assert("TSConstructorType", node, opts);
+}
+
+function assertTSTypeReference(node, opts = {}) {
+  assert("TSTypeReference", node, opts);
+}
+
+function assertTSTypePredicate(node, opts = {}) {
+  assert("TSTypePredicate", node, opts);
+}
+
+function assertTSTypeQuery(node, opts = {}) {
+  assert("TSTypeQuery", node, opts);
+}
+
+function assertTSTypeLiteral(node, opts = {}) {
+  assert("TSTypeLiteral", node, opts);
+}
+
+function assertTSArrayType(node, opts = {}) {
+  assert("TSArrayType", node, opts);
+}
+
+function assertTSTupleType(node, opts = {}) {
+  assert("TSTupleType", node, opts);
+}
+
+function assertTSOptionalType(node, opts = {}) {
+  assert("TSOptionalType", node, opts);
+}
+
+function assertTSRestType(node, opts = {}) {
+  assert("TSRestType", node, opts);
+}
+
+function assertTSUnionType(node, opts = {}) {
+  assert("TSUnionType", node, opts);
+}
+
+function assertTSIntersectionType(node, opts = {}) {
+  assert("TSIntersectionType", node, opts);
+}
+
+function assertTSConditionalType(node, opts = {}) {
+  assert("TSConditionalType", node, opts);
+}
+
+function assertTSInferType(node, opts = {}) {
+  assert("TSInferType", node, opts);
+}
+
+function assertTSParenthesizedType(node, opts = {}) {
+  assert("TSParenthesizedType", node, opts);
+}
+
+function assertTSTypeOperator(node, opts = {}) {
+  assert("TSTypeOperator", node, opts);
+}
+
+function assertTSIndexedAccessType(node, opts = {}) {
+  assert("TSIndexedAccessType", node, opts);
+}
+
+function assertTSMappedType(node, opts = {}) {
+  assert("TSMappedType", node, opts);
+}
+
+function assertTSLiteralType(node, opts = {}) {
+  assert("TSLiteralType", node, opts);
+}
+
+function assertTSExpressionWithTypeArguments(node, opts = {}) {
+  assert("TSExpressionWithTypeArguments", node, opts);
+}
+
+function assertTSInterfaceDeclaration(node, opts = {}) {
+  assert("TSInterfaceDeclaration", node, opts);
+}
+
+function assertTSInterfaceBody(node, opts = {}) {
+  assert("TSInterfaceBody", node, opts);
+}
+
+function assertTSTypeAliasDeclaration(node, opts = {}) {
+  assert("TSTypeAliasDeclaration", node, opts);
+}
+
+function assertTSAsExpression(node, opts = {}) {
+  assert("TSAsExpression", node, opts);
+}
+
+function assertTSTypeAssertion(node, opts = {}) {
+  assert("TSTypeAssertion", node, opts);
+}
+
+function assertTSEnumDeclaration(node, opts = {}) {
+  assert("TSEnumDeclaration", node, opts);
+}
+
+function assertTSEnumMember(node, opts = {}) {
+  assert("TSEnumMember", node, opts);
+}
+
+function assertTSModuleDeclaration(node, opts = {}) {
+  assert("TSModuleDeclaration", node, opts);
+}
+
+function assertTSModuleBlock(node, opts = {}) {
+  assert("TSModuleBlock", node, opts);
+}
+
+function assertTSImportType(node, opts = {}) {
+  assert("TSImportType", node, opts);
+}
+
+function assertTSImportEqualsDeclaration(node, opts = {}) {
+  assert("TSImportEqualsDeclaration", node, opts);
+}
+
+function assertTSExternalModuleReference(node, opts = {}) {
+  assert("TSExternalModuleReference", node, opts);
+}
+
+function assertTSNonNullExpression(node, opts = {}) {
+  assert("TSNonNullExpression", node, opts);
+}
+
+function assertTSExportAssignment(node, opts = {}) {
+  assert("TSExportAssignment", node, opts);
+}
+
+function assertTSNamespaceExportDeclaration(node, opts = {}) {
+  assert("TSNamespaceExportDeclaration", node, opts);
+}
+
+function assertTSTypeAnnotation(node, opts = {}) {
+  assert("TSTypeAnnotation", node, opts);
+}
+
+function assertTSTypeParameterInstantiation(node, opts = {}) {
+  assert("TSTypeParameterInstantiation", node, opts);
+}
+
+function assertTSTypeParameterDeclaration(node, opts = {}) {
+  assert("TSTypeParameterDeclaration", node, opts);
+}
+
+function assertTSTypeParameter(node, opts = {}) {
+  assert("TSTypeParameter", node, opts);
+}
+
+function assertExpression(node, opts = {}) {
+  assert("Expression", node, opts);
+}
+
+function assertBinary(node, opts = {}) {
+  assert("Binary", node, opts);
+}
+
+function assertScopable(node, opts = {}) {
+  assert("Scopable", node, opts);
+}
+
+function assertBlockParent(node, opts = {}) {
+  assert("BlockParent", node, opts);
+}
+
+function assertBlock(node, opts = {}) {
+  assert("Block", node, opts);
+}
+
+function assertStatement(node, opts = {}) {
+  assert("Statement", node, opts);
+}
+
+function assertTerminatorless(node, opts = {}) {
+  assert("Terminatorless", node, opts);
+}
+
+function assertCompletionStatement(node, opts = {}) {
+  assert("CompletionStatement", node, opts);
+}
+
+function assertConditional(node, opts = {}) {
+  assert("Conditional", node, opts);
+}
+
+function assertLoop(node, opts = {}) {
+  assert("Loop", node, opts);
+}
+
+function assertWhile(node, opts = {}) {
+  assert("While", node, opts);
+}
+
+function assertExpressionWrapper(node, opts = {}) {
+  assert("ExpressionWrapper", node, opts);
+}
+
+function assertFor(node, opts = {}) {
+  assert("For", node, opts);
+}
+
+function assertForXStatement(node, opts = {}) {
+  assert("ForXStatement", node, opts);
+}
+
+function assertFunction(node, opts = {}) {
+  assert("Function", node, opts);
+}
+
+function assertFunctionParent(node, opts = {}) {
+  assert("FunctionParent", node, opts);
+}
+
+function assertPureish(node, opts = {}) {
+  assert("Pureish", node, opts);
+}
+
+function assertDeclaration(node, opts = {}) {
+  assert("Declaration", node, opts);
+}
+
+function assertPatternLike(node, opts = {}) {
+  assert("PatternLike", node, opts);
+}
+
+function assertLVal(node, opts = {}) {
+  assert("LVal", node, opts);
+}
+
+function assertTSEntityName(node, opts = {}) {
+  assert("TSEntityName", node, opts);
+}
+
+function assertLiteral(node, opts = {}) {
+  assert("Literal", node, opts);
+}
+
+function assertImmutable(node, opts = {}) {
+  assert("Immutable", node, opts);
+}
+
+function assertUserWhitespacable(node, opts = {}) {
+  assert("UserWhitespacable", node, opts);
+}
+
+function assertMethod(node, opts = {}) {
+  assert("Method", node, opts);
+}
+
+function assertObjectMember(node, opts = {}) {
+  assert("ObjectMember", node, opts);
+}
+
+function assertProperty(node, opts = {}) {
+  assert("Property", node, opts);
+}
+
+function assertUnaryLike(node, opts = {}) {
+  assert("UnaryLike", node, opts);
+}
+
+function assertPattern(node, opts = {}) {
+  assert("Pattern", node, opts);
+}
+
+function assertClass(node, opts = {}) {
+  assert("Class", node, opts);
+}
+
+function assertModuleDeclaration(node, opts = {}) {
+  assert("ModuleDeclaration", node, opts);
+}
+
+function assertExportDeclaration(node, opts = {}) {
+  assert("ExportDeclaration", node, opts);
+}
+
+function assertModuleSpecifier(node, opts = {}) {
+  assert("ModuleSpecifier", node, opts);
+}
+
+function assertFlow(node, opts = {}) {
+  assert("Flow", node, opts);
+}
+
+function assertFlowType(node, opts = {}) {
+  assert("FlowType", node, opts);
+}
+
+function assertFlowBaseAnnotation(node, opts = {}) {
+  assert("FlowBaseAnnotation", node, opts);
+}
+
+function assertFlowDeclaration(node, opts = {}) {
+  assert("FlowDeclaration", node, opts);
+}
+
+function assertFlowPredicate(node, opts = {}) {
+  assert("FlowPredicate", node, opts);
+}
+
+function assertEnumBody(node, opts = {}) {
+  assert("EnumBody", node, opts);
+}
+
+function assertEnumMember(node, opts = {}) {
+  assert("EnumMember", node, opts);
+}
+
+function assertJSX(node, opts = {}) {
+  assert("JSX", node, opts);
+}
+
+function assertPrivate(node, opts = {}) {
+  assert("Private", node, opts);
+}
+
+function assertTSTypeElement(node, opts = {}) {
+  assert("TSTypeElement", node, opts);
+}
+
+function assertTSType(node, opts = {}) {
+  assert("TSType", node, opts);
+}
+
+function assertTSBaseType(node, opts = {}) {
+  assert("TSBaseType", node, opts);
+}
+
+function assertNumberLiteral(node, opts) {
+  console.trace("The node type NumberLiteral has been renamed to NumericLiteral");
+  assert("NumberLiteral", node, opts);
+}
+
+function assertRegexLiteral(node, opts) {
+  console.trace("The node type RegexLiteral has been renamed to RegExpLiteral");
+  assert("RegexLiteral", node, opts);
+}
+
+function assertRestProperty(node, opts) {
+  console.trace("The node type RestProperty has been renamed to RestElement");
+  assert("RestProperty", node, opts);
+}
+
+function assertSpreadProperty(node, opts) {
+  console.trace("The node type SpreadProperty has been renamed to SpreadElement");
+  assert("SpreadProperty", node, opts);
+}
 },
 "5TQddLwKcacoZ7jW49E/buUazLtUlhrv6DbP8nBFV+s=":
 function (require, module, exports, __dirname, __filename) {
@@ -11151,114 +13567,6 @@ function _getQueueContexts() {
   return contexts;
 }
 },
-"AKu2QciJH4p4A5flNqz8o2M5oxAqu0ODArmvHWepGi0=":
-function (require, module, exports, __dirname, __filename) {
-
-
-
-// AST explorer:
-//  - https://lihautan.com/babel-ast-explorer/#?eyJiYWJlbFNldHRpbmdzIjp7InZlcnNpb24iOiI3LjYuMCJ9LCJ0cmVlU2V0dGluZ3MiOnsiaGlkZUVtcHR5Ijp0cnVlLCJoaWRlTG9jYXRpb24iOnRydWUsImhpZGVUeXBlIjp0cnVlLCJoaWRlQ29tbWVudHMiOnRydWV9LCJjb2RlIjoiICAgICAgY29uc3QgYSA9IDJcblxuICAgICAgZnVuY3Rpb24gc3R1ZmYoYWEpIHtcbiAgICAgICAgY29uc3QgYiA9IGFcbiAgICAgICAgY29uc3QgbiA9IDJcblxuICAgICAgICBsZXQgYyA9IGIgKyBuICsgYWFcbiAgICAgICAgd29yayhjKVxuXG4gICAgICAgIHJldHVybiBjICsgM1xuICAgICAgfVxuXG4gICAgICBjb25zdCBkID0gM+KAqFxuXG4ifQ==
-//  - https://astexplorer.net/
-
-const {parse} = require('@babel/parser')
-const readline = require('readline')
-const jsEditorTags = require('js-editor-tags')
-const {
-  findStatementStart,
-  findVariablesDefinedWithinSelectionButUsedOutside,
-  findGlobalScopeStart,
-  findFunctionArguments,
-} = require('./queries')
-const argv = require('yargs')
-  .command('refactoring', 'start refactoring server', {
-    'single-run': {
-      type: 'boolean'
-    }
-  })
-  .command('tags', 'start generate/update tags file server', {
-    update: {
-      type: 'boolean'
-    },
-    ignore: {
-      type: 'array',
-      default: []
-    }
-  })
-  .demandCommand()
-  .argv
-
-function refactoring() {
-  const rl = readline.createInterface({
-    input: process.stdin
-  })
-
-  rl.on('line', message => {
-    try {
-      const {code, action, start_line, end_line, context = {}} = JSON.parse(message)
-      const ast = parse(code, {
-        sourceType: 'unambiguous',
-        // TODO: pass plugins from argv
-        plugins: [
-          'jsx',
-          'typescript',
-          'classProperties',
-          ['decorators', { decoratorsBeforeExport: true }]
-        ]
-      })
-      context.action = action
-
-      if (action === 'extract_variable') {
-        const loc = findStatementStart({ast, current_line: start_line})
-        console.info(JSON.stringify(Object.assign({context}, loc)))
-        return
-
-      } else if (action === 'extract_local_function') {
-        const loc = findStatementStart({ast, current_line: start_line})
-        const return_values = findVariablesDefinedWithinSelectionButUsedOutside({ast, start_line, end_line})
-
-        console.info(
-          JSON.stringify(
-            Object.assign({context, function_arguments: [], return_values}, loc)
-          )
-        )
-        return
-
-      } else if (action === 'extract_function_or_method') {
-        const loc = findGlobalScopeStart({ast, current_line: start_line})
-        const return_values = findVariablesDefinedWithinSelectionButUsedOutside({ast, start_line, end_line})
-        const function_arguments = findFunctionArguments({ast, start_line, end_line})
-
-        console.info(
-          JSON.stringify(
-            Object.assign({context, return_values, function_arguments}, loc)
-          )
-        )
-        return
-      }
-
-      console.error(`unknown action "${action}"`)
-    } catch (e) {
-      console.error(e)
-    }
-
-    if (argv.single_run) {
-      rl.close()
-    }
-  })
-}
-
-switch (argv._[0]) {
-case 'refactoring':
-  refactoring()
-  break
-case 'tags':
-  jsEditorTags({watch: true, ignore: argv.ignore})
-  break
-default:
-  throw new Error(`Unknown command ${argv._[0]}`)
-}
-
-},
 "AO1UdbCLSiOYNrxdZnv680P08kEs12FtKq83vd2FgsI=":
 function (require, module, exports, __dirname, __filename) {
 /* -*- Mode: js; js-indent-level: 2; -*- */
@@ -12961,6 +15269,110 @@ module.exports = {
 }
 
 },
+"D02WeI+k3FgrBCOoFIdTQp7greL5JzM8T8nU1M4Mqls=":
+function (require, module, exports, __dirname, __filename) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = cloneNode;
+
+var _definitions = require("../definitions");
+
+const has = Function.call.bind(Object.prototype.hasOwnProperty);
+
+function cloneIfNode(obj, deep, withoutLoc) {
+  if (obj && typeof obj.type === "string") {
+    return cloneNode(obj, deep, withoutLoc);
+  }
+
+  return obj;
+}
+
+function cloneIfNodeOrArray(obj, deep, withoutLoc) {
+  if (Array.isArray(obj)) {
+    return obj.map(node => cloneIfNode(node, deep, withoutLoc));
+  }
+
+  return cloneIfNode(obj, deep, withoutLoc);
+}
+
+function cloneNode(node, deep = true, withoutLoc = false) {
+  if (!node) return node;
+  const {
+    type
+  } = node;
+  const newNode = {
+    type
+  };
+
+  if (type === "Identifier") {
+    newNode.name = node.name;
+
+    if (has(node, "optional") && typeof node.optional === "boolean") {
+      newNode.optional = node.optional;
+    }
+
+    if (has(node, "typeAnnotation")) {
+      newNode.typeAnnotation = deep ? cloneIfNodeOrArray(node.typeAnnotation, true, withoutLoc) : node.typeAnnotation;
+    }
+  } else if (!has(_definitions.NODE_FIELDS, type)) {
+    throw new Error(`Unknown node type: "${type}"`);
+  } else {
+    for (const field of Object.keys(_definitions.NODE_FIELDS[type])) {
+      if (has(node, field)) {
+        if (deep) {
+          newNode[field] = type === "File" && field === "comments" ? maybeCloneComments(node.comments, deep, withoutLoc) : cloneIfNodeOrArray(node[field], true, withoutLoc);
+        } else {
+          newNode[field] = node[field];
+        }
+      }
+    }
+  }
+
+  if (has(node, "loc")) {
+    if (withoutLoc) {
+      newNode.loc = null;
+    } else {
+      newNode.loc = node.loc;
+    }
+  }
+
+  if (has(node, "leadingComments")) {
+    newNode.leadingComments = maybeCloneComments(node.leadingComments, deep, withoutLoc);
+  }
+
+  if (has(node, "innerComments")) {
+    newNode.innerComments = maybeCloneComments(node.innerComments, deep, withoutLoc);
+  }
+
+  if (has(node, "trailingComments")) {
+    newNode.trailingComments = maybeCloneComments(node.trailingComments, deep, withoutLoc);
+  }
+
+  if (has(node, "extra")) {
+    newNode.extra = Object.assign({}, node.extra);
+  }
+
+  return newNode;
+}
+
+function cloneCommentsWithoutLoc(comments) {
+  return comments.map(({
+    type,
+    value
+  }) => ({
+    type,
+    value,
+    loc: null
+  }));
+}
+
+function maybeCloneComments(comments, deep, withoutLoc) {
+  return deep && withoutLoc ? cloneCommentsWithoutLoc(comments) : comments;
+}
+},
 "DKcn0VM+nqBtuxUGd3JSkBi5DhBr5KWO12kYXkXBkiI=":
 function (require, module, exports, __dirname, __filename) {
 var MapCache = require('./_MapCache'),
@@ -13023,6 +15435,23 @@ function removeProperties(node, opts = {}) {
   for (const sym of symbols) {
     node[sym] = null;
   }
+}
+},
+"DSt1w20h76qSzjiHxYQ1sGvXROc9GWkIKBe5KIntSDE=":
+function (require, module, exports, __dirname, __filename) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = cloneWithoutLoc;
+
+var _cloneNode = _interopRequireDefault(require("./cloneNode"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function cloneWithoutLoc(node) {
+  return (0, _cloneNode.default)(node, false, true);
 }
 },
 "DYD/Rmf5GvP3XBa5/E/2D74dxUiZD/vYrGP0uu0bU04=":
@@ -15292,127 +17721,6 @@ function baseIsNative(value) {
 module.exports = baseIsNative;
 
 },
-"I/9XGk9mhRqw+ywX6Ou+7jarWW+psPGMz6lLZ+KV1I4=":
-function (require, module, exports, __dirname, __filename) {
-const traverse = require('@babel/traverse').default
-
-function findStatementStart({ast, current_line}) {
-  let result = {
-    line: 1, column: 0
-  }
-
-  traverse(ast, {
-    Statement({node}) {
-      const {loc} = node
-      if (loc.start.line <= current_line && loc.end.line >= current_line) {
-        if (result.line < loc.start.line) {
-          result = loc.start
-        }
-      }
-    }
-  })
-
-  return result
-}
-
-function findVariablesDefinedWithinSelectionButUsedOutside({ast, start_line, end_line}) {
-  const result = {}
-
-  traverse(ast, {
-    VariableDeclaration({node, scope}) {
-      const {loc, declarations, kind} = node
-
-      if (loc.start.line >= start_line && loc.end.line <= end_line) {
-        const names = declarations.map(({id}) => id.name)
-
-        names.forEach((name) => {
-          scope.bindings[name].referencePaths.forEach(({node}) => {
-            if (node.loc.start.line > end_line) {
-              result[name] = kind
-            }
-          })
-        })
-      }
-    }
-  })
-
-  return Object.entries(result).map(([name, kind]) => {
-    return { name, kind }
-  })
-}
-
-function findGlobalScopeStart({ast, current_line}) {
-  let result = {
-    line: 1, column: 0
-  }
-
-  traverse(ast, {
-    Statement(path) {
-      const {loc} = path.node
-
-      if (loc.start.line <= current_line && loc.end.line >= current_line) {
-        result = {
-          line: loc.start.line,
-          column: loc.start.column
-        }
-        path.stop()
-      }
-    }
-  })
-
-  return result
-}
-
-function findFunctionArguments({ast, start_line, end_line}) {
-  const result = []
-  let currentScopePath
-
-  traverse(ast, {
-    Scope(path) {
-      const loc = path.node.loc
-
-      if (!currentScopePath) {
-        currentScopePath = path
-      } else {
-        if (start_line >= loc.start.line && end_line <= loc.end.line) {
-          const currentScopePathLoc = currentScopePath.node.loc
-
-          if (loc.start.line >= currentScopePathLoc.start.line && loc.end.line <= currentScopePathLoc.end.line) {
-            currentScopePath = path
-          }
-        }
-      }
-    }
-  })
-
-  for (let path = currentScopePath; path.parentPath; path = path.parentPath) {
-    for (const [name, binding] of Object.entries(path.scope.bindings)) {
-      const bindingLoc = binding.identifier.loc
-      if (bindingLoc.start.line >= start_line && bindingLoc.start.line <= end_line) {
-        continue
-      }
-
-      for (const referencePath of binding.referencePaths) {
-        const loc = referencePath.node.loc
-
-        if (loc.start.line >= start_line && loc.end.line <= end_line) {
-          result.push(name)
-        }
-      }
-    }
-  }
-
-  return [...new Set(result)]
-}
-
-module.exports = {
-  findStatementStart,
-  findVariablesDefinedWithinSelectionButUsedOutside,
-  findGlobalScopeStart,
-  findFunctionArguments,
-}
-
-},
 "I1O6kfl69OLdfqOo4FlIobwDCfGero/Db1HYCpTkd4c=":
 function (require, module, exports, __dirname, __filename) {
 "use strict";
@@ -17247,6 +19555,31 @@ function isValidES3Identifier(name) {
   return (0, _isValidIdentifier.default)(name) && !RESERVED_WORDS_ES3_ONLY.has(name);
 }
 },
+"KvpfSDJaKEtLU+wHoO/RGr2eKyRpdHQRWzj9Exav+mM=":
+function (require, module, exports, __dirname, __filename) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = isValidIdentifier;
+
+var _helperValidatorIdentifier = require("@babel/helper-validator-identifier");
+
+function isValidIdentifier(name, reserved = true) {
+  if (typeof name !== "string") return false;
+
+  if (reserved) {
+    if ((0, _helperValidatorIdentifier.isKeyword)(name) || (0, _helperValidatorIdentifier.isStrictReservedWord)(name)) {
+      return false;
+    } else if (name === "await") {
+      return false;
+    }
+  }
+
+  return (0, _helperValidatorIdentifier.isIdentifierName)(name);
+}
+},
 "KxC/aKLlcuOS+PWx1HyPvT91nR/IBIK/V7x2hZbshiw=":
 function (require, module, exports, __dirname, __filename) {
 var listCacheClear = require('./_listCacheClear'),
@@ -18028,6 +20361,58 @@ function baseClone(value, bitmask, customizer, key, object, stack) {
 
 module.exports = baseClone;
 
+},
+"LiTXsFGPQdSVO9w9HrT4T3AJxEF9tgJSopmXY/VPqdI=":
+function (require, module, exports, __dirname, __filename) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.NOT_LOCAL_BINDING = exports.BLOCK_SCOPED_SYMBOL = exports.INHERIT_KEYS = exports.UNARY_OPERATORS = exports.STRING_UNARY_OPERATORS = exports.NUMBER_UNARY_OPERATORS = exports.BOOLEAN_UNARY_OPERATORS = exports.ASSIGNMENT_OPERATORS = exports.BINARY_OPERATORS = exports.NUMBER_BINARY_OPERATORS = exports.BOOLEAN_BINARY_OPERATORS = exports.COMPARISON_BINARY_OPERATORS = exports.EQUALITY_BINARY_OPERATORS = exports.BOOLEAN_NUMBER_BINARY_OPERATORS = exports.UPDATE_OPERATORS = exports.LOGICAL_OPERATORS = exports.COMMENT_KEYS = exports.FOR_INIT_KEYS = exports.FLATTENABLE_KEYS = exports.STATEMENT_OR_BLOCK_KEYS = void 0;
+const STATEMENT_OR_BLOCK_KEYS = ["consequent", "body", "alternate"];
+exports.STATEMENT_OR_BLOCK_KEYS = STATEMENT_OR_BLOCK_KEYS;
+const FLATTENABLE_KEYS = ["body", "expressions"];
+exports.FLATTENABLE_KEYS = FLATTENABLE_KEYS;
+const FOR_INIT_KEYS = ["left", "init"];
+exports.FOR_INIT_KEYS = FOR_INIT_KEYS;
+const COMMENT_KEYS = ["leadingComments", "trailingComments", "innerComments"];
+exports.COMMENT_KEYS = COMMENT_KEYS;
+const LOGICAL_OPERATORS = ["||", "&&", "??"];
+exports.LOGICAL_OPERATORS = LOGICAL_OPERATORS;
+const UPDATE_OPERATORS = ["++", "--"];
+exports.UPDATE_OPERATORS = UPDATE_OPERATORS;
+const BOOLEAN_NUMBER_BINARY_OPERATORS = [">", "<", ">=", "<="];
+exports.BOOLEAN_NUMBER_BINARY_OPERATORS = BOOLEAN_NUMBER_BINARY_OPERATORS;
+const EQUALITY_BINARY_OPERATORS = ["==", "===", "!=", "!=="];
+exports.EQUALITY_BINARY_OPERATORS = EQUALITY_BINARY_OPERATORS;
+const COMPARISON_BINARY_OPERATORS = [...EQUALITY_BINARY_OPERATORS, "in", "instanceof"];
+exports.COMPARISON_BINARY_OPERATORS = COMPARISON_BINARY_OPERATORS;
+const BOOLEAN_BINARY_OPERATORS = [...COMPARISON_BINARY_OPERATORS, ...BOOLEAN_NUMBER_BINARY_OPERATORS];
+exports.BOOLEAN_BINARY_OPERATORS = BOOLEAN_BINARY_OPERATORS;
+const NUMBER_BINARY_OPERATORS = ["-", "/", "%", "*", "**", "&", "|", ">>", ">>>", "<<", "^"];
+exports.NUMBER_BINARY_OPERATORS = NUMBER_BINARY_OPERATORS;
+const BINARY_OPERATORS = ["+", ...NUMBER_BINARY_OPERATORS, ...BOOLEAN_BINARY_OPERATORS];
+exports.BINARY_OPERATORS = BINARY_OPERATORS;
+const ASSIGNMENT_OPERATORS = ["=", "+=", ...NUMBER_BINARY_OPERATORS.map(op => op + "="), ...LOGICAL_OPERATORS.map(op => op + "=")];
+exports.ASSIGNMENT_OPERATORS = ASSIGNMENT_OPERATORS;
+const BOOLEAN_UNARY_OPERATORS = ["delete", "!"];
+exports.BOOLEAN_UNARY_OPERATORS = BOOLEAN_UNARY_OPERATORS;
+const NUMBER_UNARY_OPERATORS = ["+", "-", "~"];
+exports.NUMBER_UNARY_OPERATORS = NUMBER_UNARY_OPERATORS;
+const STRING_UNARY_OPERATORS = ["typeof"];
+exports.STRING_UNARY_OPERATORS = STRING_UNARY_OPERATORS;
+const UNARY_OPERATORS = ["void", "throw", ...BOOLEAN_UNARY_OPERATORS, ...NUMBER_UNARY_OPERATORS, ...STRING_UNARY_OPERATORS];
+exports.UNARY_OPERATORS = UNARY_OPERATORS;
+const INHERIT_KEYS = {
+  optional: ["typeAnnotation", "typeParameters", "returnType"],
+  force: ["start", "loc", "end"]
+};
+exports.INHERIT_KEYS = INHERIT_KEYS;
+const BLOCK_SCOPED_SYMBOL = Symbol.for("var used to be block scoped");
+exports.BLOCK_SCOPED_SYMBOL = BLOCK_SCOPED_SYMBOL;
+const NOT_LOCAL_BINDING = Symbol.for("should not be considered a local binding");
+exports.NOT_LOCAL_BINDING = NOT_LOCAL_BINDING;
 },
 "LqAYOKSWnINKH51AbIyCiRlaFciZOP8VNsO90pM9zqg=":
 function (require, module, exports, __dirname, __filename) {
@@ -20060,6 +22445,31 @@ module.exports = function validation (yargs, usage, y18n) {
   return self
 }
 
+},
+"Mgj06LGpsa1j6il907Y1lNdo3pC3BnFzOxhrNPzpQ+A=":
+function (require, module, exports, __dirname, __filename) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = createFlowUnionType;
+
+var _generated = require("../generated");
+
+var _removeTypeDuplicates = _interopRequireDefault(require("../../modifications/flow/removeTypeDuplicates"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function createFlowUnionType(types) {
+  const flattened = (0, _removeTypeDuplicates.default)(types);
+
+  if (flattened.length === 1) {
+    return flattened[0];
+  } else {
+    return (0, _generated.unionTypeAnnotation)(flattened);
+  }
+}
 },
 "Ml74U7m3famQ7mhabPkVoDyNtlLrhj53fyc2VL1eVtU=":
 function (require, module, exports, __dirname, __filename) {
@@ -22356,6 +24766,250 @@ function strictIndexOf(array, value, fromIndex) {
 module.exports = strictIndexOf;
 
 },
+"OfjdE0zX8nOJFlvH5mJS+x6JBk2JBq1H6IWlmTC+LI0=":
+function (require, module, exports, __dirname, __filename) {
+"use strict";
+
+var _utils = _interopRequireWildcard(require("./utils"));
+
+var _es = require("./es2015");
+
+function _getRequireWildcardCache() { if (typeof WeakMap !== "function") return null; var cache = new WeakMap(); _getRequireWildcardCache = function () { return cache; }; return cache; }
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } if (obj === null || typeof obj !== "object" && typeof obj !== "function") { return { default: obj }; } var cache = _getRequireWildcardCache(); if (cache && cache.has(obj)) { return cache.get(obj); } var newObj = {}; var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null; if (desc && (desc.get || desc.set)) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } newObj.default = obj; if (cache) { cache.set(obj, newObj); } return newObj; }
+
+(0, _utils.default)("ArgumentPlaceholder", {});
+(0, _utils.default)("AwaitExpression", {
+  builder: ["argument"],
+  visitor: ["argument"],
+  aliases: ["Expression", "Terminatorless"],
+  fields: {
+    argument: {
+      validate: (0, _utils.assertNodeType)("Expression")
+    }
+  }
+});
+(0, _utils.default)("BindExpression", {
+  visitor: ["object", "callee"],
+  aliases: ["Expression"],
+  fields: !process.env.BABEL_TYPES_8_BREAKING ? {} : {
+    object: {
+      validate: (0, _utils.assertNodeType)("Expression")
+    },
+    callee: {
+      validate: (0, _utils.assertNodeType)("Expression")
+    }
+  }
+});
+(0, _utils.default)("ClassProperty", {
+  visitor: ["key", "value", "typeAnnotation", "decorators"],
+  builder: ["key", "value", "typeAnnotation", "decorators", "computed", "static"],
+  aliases: ["Property"],
+  fields: Object.assign({}, _es.classMethodOrPropertyCommon, {
+    value: {
+      validate: (0, _utils.assertNodeType)("Expression"),
+      optional: true
+    },
+    definite: {
+      validate: (0, _utils.assertValueType)("boolean"),
+      optional: true
+    },
+    typeAnnotation: {
+      validate: (0, _utils.assertNodeType)("TypeAnnotation", "TSTypeAnnotation", "Noop"),
+      optional: true
+    },
+    decorators: {
+      validate: (0, _utils.chain)((0, _utils.assertValueType)("array"), (0, _utils.assertEach)((0, _utils.assertNodeType)("Decorator"))),
+      optional: true
+    },
+    readonly: {
+      validate: (0, _utils.assertValueType)("boolean"),
+      optional: true
+    },
+    declare: {
+      validate: (0, _utils.assertValueType)("boolean"),
+      optional: true
+    }
+  })
+});
+(0, _utils.default)("OptionalMemberExpression", {
+  builder: ["object", "property", "computed", "optional"],
+  visitor: ["object", "property"],
+  aliases: ["Expression"],
+  fields: {
+    object: {
+      validate: (0, _utils.assertNodeType)("Expression")
+    },
+    property: {
+      validate: function () {
+        const normal = (0, _utils.assertNodeType)("Identifier");
+        const computed = (0, _utils.assertNodeType)("Expression");
+        return function (node, key, val) {
+          const validator = node.computed ? computed : normal;
+          validator(node, key, val);
+        };
+      }()
+    },
+    computed: {
+      default: false
+    },
+    optional: {
+      validate: !process.env.BABEL_TYPES_8_BREAKING ? (0, _utils.assertValueType)("boolean") : (0, _utils.chain)((0, _utils.assertValueType)("boolean"), (0, _utils.assertOptionalChainStart)())
+    }
+  }
+});
+(0, _utils.default)("PipelineTopicExpression", {
+  builder: ["expression"],
+  visitor: ["expression"],
+  fields: {
+    expression: {
+      validate: (0, _utils.assertNodeType)("Expression")
+    }
+  }
+});
+(0, _utils.default)("PipelineBareFunction", {
+  builder: ["callee"],
+  visitor: ["callee"],
+  fields: {
+    callee: {
+      validate: (0, _utils.assertNodeType)("Expression")
+    }
+  }
+});
+(0, _utils.default)("PipelinePrimaryTopicReference", {
+  aliases: ["Expression"]
+});
+(0, _utils.default)("OptionalCallExpression", {
+  visitor: ["callee", "arguments", "typeParameters", "typeArguments"],
+  builder: ["callee", "arguments", "optional"],
+  aliases: ["Expression"],
+  fields: {
+    callee: {
+      validate: (0, _utils.assertNodeType)("Expression")
+    },
+    arguments: {
+      validate: (0, _utils.chain)((0, _utils.assertValueType)("array"), (0, _utils.assertEach)((0, _utils.assertNodeType)("Expression", "SpreadElement", "JSXNamespacedName")))
+    },
+    optional: {
+      validate: !process.env.BABEL_TYPES_8_BREAKING ? (0, _utils.assertValueType)("boolean") : (0, _utils.chain)((0, _utils.assertValueType)("boolean"), (0, _utils.assertOptionalChainStart)())
+    },
+    typeArguments: {
+      validate: (0, _utils.assertNodeType)("TypeParameterInstantiation"),
+      optional: true
+    },
+    typeParameters: {
+      validate: (0, _utils.assertNodeType)("TSTypeParameterInstantiation"),
+      optional: true
+    }
+  }
+});
+(0, _utils.default)("ClassPrivateProperty", {
+  visitor: ["key", "value", "decorators"],
+  builder: ["key", "value", "decorators"],
+  aliases: ["Property", "Private"],
+  fields: {
+    key: {
+      validate: (0, _utils.assertNodeType)("PrivateName")
+    },
+    value: {
+      validate: (0, _utils.assertNodeType)("Expression"),
+      optional: true
+    },
+    decorators: {
+      validate: (0, _utils.chain)((0, _utils.assertValueType)("array"), (0, _utils.assertEach)((0, _utils.assertNodeType)("Decorator"))),
+      optional: true
+    }
+  }
+});
+(0, _utils.default)("ClassPrivateMethod", {
+  builder: ["kind", "key", "params", "body", "static"],
+  visitor: ["key", "params", "body", "decorators", "returnType", "typeParameters"],
+  aliases: ["Function", "Scopable", "BlockParent", "FunctionParent", "Method", "Private"],
+  fields: Object.assign({}, _es.classMethodOrDeclareMethodCommon, {
+    key: {
+      validate: (0, _utils.assertNodeType)("PrivateName")
+    },
+    body: {
+      validate: (0, _utils.assertNodeType)("BlockStatement")
+    }
+  })
+});
+(0, _utils.default)("Import", {
+  aliases: ["Expression"]
+});
+(0, _utils.default)("Decorator", {
+  visitor: ["expression"],
+  fields: {
+    expression: {
+      validate: (0, _utils.assertNodeType)("Expression")
+    }
+  }
+});
+(0, _utils.default)("DoExpression", {
+  visitor: ["body"],
+  aliases: ["Expression"],
+  fields: {
+    body: {
+      validate: (0, _utils.assertNodeType)("BlockStatement")
+    }
+  }
+});
+(0, _utils.default)("ExportDefaultSpecifier", {
+  visitor: ["exported"],
+  aliases: ["ModuleSpecifier"],
+  fields: {
+    exported: {
+      validate: (0, _utils.assertNodeType)("Identifier")
+    }
+  }
+});
+(0, _utils.default)("ExportNamespaceSpecifier", {
+  visitor: ["exported"],
+  aliases: ["ModuleSpecifier"],
+  fields: {
+    exported: {
+      validate: (0, _utils.assertNodeType)("Identifier")
+    }
+  }
+});
+(0, _utils.default)("PrivateName", {
+  visitor: ["id"],
+  aliases: ["Private"],
+  fields: {
+    id: {
+      validate: (0, _utils.assertNodeType)("Identifier")
+    }
+  }
+});
+(0, _utils.default)("BigIntLiteral", {
+  builder: ["value"],
+  fields: {
+    value: {
+      validate: (0, _utils.assertValueType)("string")
+    }
+  },
+  aliases: ["Expression", "Pureish", "Literal", "Immutable"]
+});
+(0, _utils.default)("RecordExpression", {
+  visitor: ["properties"],
+  aliases: ["Expression"],
+  fields: {
+    properties: {
+      validate: (0, _utils.chain)((0, _utils.assertValueType)("array"), (0, _utils.assertEach)((0, _utils.assertNodeType)("ObjectProperty", "ObjectMethod", "SpreadElement")))
+    }
+  }
+});
+(0, _utils.default)("TupleExpression", {
+  fields: {
+    elements: {
+      validate: (0, _utils.chain)((0, _utils.assertValueType)("array"), (0, _utils.assertEach)((0, _utils.assertNodeOrValueType)("null", "Expression", "SpreadElement"))),
+      default: []
+    }
+  },
+  visitor: ["elements"],
+  aliases: ["Expression"]
+});
+},
 "Omxdrip0Qo8l8dbeL8KKvdExFyeU0ja3+4g1+BGaUpU=":
 function (require, module, exports, __dirname, __filename) {
 'use strict';
@@ -22957,6 +25611,1227 @@ formatters.j = function (v) {
 	}
 };
 
+},
+"PDYERz/q0ulsiXUFB9U/KsEF45+jy6n5J+giBsHlLQo=":
+function (require, module, exports, __dirname, __filename) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.arrayExpression = exports.ArrayExpression = ArrayExpression;
+exports.assignmentExpression = exports.AssignmentExpression = AssignmentExpression;
+exports.binaryExpression = exports.BinaryExpression = BinaryExpression;
+exports.interpreterDirective = exports.InterpreterDirective = InterpreterDirective;
+exports.directive = exports.Directive = Directive;
+exports.directiveLiteral = exports.DirectiveLiteral = DirectiveLiteral;
+exports.blockStatement = exports.BlockStatement = BlockStatement;
+exports.breakStatement = exports.BreakStatement = BreakStatement;
+exports.callExpression = exports.CallExpression = CallExpression;
+exports.catchClause = exports.CatchClause = CatchClause;
+exports.conditionalExpression = exports.ConditionalExpression = ConditionalExpression;
+exports.continueStatement = exports.ContinueStatement = ContinueStatement;
+exports.debuggerStatement = exports.DebuggerStatement = DebuggerStatement;
+exports.doWhileStatement = exports.DoWhileStatement = DoWhileStatement;
+exports.emptyStatement = exports.EmptyStatement = EmptyStatement;
+exports.expressionStatement = exports.ExpressionStatement = ExpressionStatement;
+exports.file = exports.File = File;
+exports.forInStatement = exports.ForInStatement = ForInStatement;
+exports.forStatement = exports.ForStatement = ForStatement;
+exports.functionDeclaration = exports.FunctionDeclaration = FunctionDeclaration;
+exports.functionExpression = exports.FunctionExpression = FunctionExpression;
+exports.identifier = exports.Identifier = Identifier;
+exports.ifStatement = exports.IfStatement = IfStatement;
+exports.labeledStatement = exports.LabeledStatement = LabeledStatement;
+exports.stringLiteral = exports.StringLiteral = StringLiteral;
+exports.numericLiteral = exports.NumericLiteral = NumericLiteral;
+exports.nullLiteral = exports.NullLiteral = NullLiteral;
+exports.booleanLiteral = exports.BooleanLiteral = BooleanLiteral;
+exports.regExpLiteral = exports.RegExpLiteral = RegExpLiteral;
+exports.logicalExpression = exports.LogicalExpression = LogicalExpression;
+exports.memberExpression = exports.MemberExpression = MemberExpression;
+exports.newExpression = exports.NewExpression = NewExpression;
+exports.program = exports.Program = Program;
+exports.objectExpression = exports.ObjectExpression = ObjectExpression;
+exports.objectMethod = exports.ObjectMethod = ObjectMethod;
+exports.objectProperty = exports.ObjectProperty = ObjectProperty;
+exports.restElement = exports.RestElement = RestElement;
+exports.returnStatement = exports.ReturnStatement = ReturnStatement;
+exports.sequenceExpression = exports.SequenceExpression = SequenceExpression;
+exports.parenthesizedExpression = exports.ParenthesizedExpression = ParenthesizedExpression;
+exports.switchCase = exports.SwitchCase = SwitchCase;
+exports.switchStatement = exports.SwitchStatement = SwitchStatement;
+exports.thisExpression = exports.ThisExpression = ThisExpression;
+exports.throwStatement = exports.ThrowStatement = ThrowStatement;
+exports.tryStatement = exports.TryStatement = TryStatement;
+exports.unaryExpression = exports.UnaryExpression = UnaryExpression;
+exports.updateExpression = exports.UpdateExpression = UpdateExpression;
+exports.variableDeclaration = exports.VariableDeclaration = VariableDeclaration;
+exports.variableDeclarator = exports.VariableDeclarator = VariableDeclarator;
+exports.whileStatement = exports.WhileStatement = WhileStatement;
+exports.withStatement = exports.WithStatement = WithStatement;
+exports.assignmentPattern = exports.AssignmentPattern = AssignmentPattern;
+exports.arrayPattern = exports.ArrayPattern = ArrayPattern;
+exports.arrowFunctionExpression = exports.ArrowFunctionExpression = ArrowFunctionExpression;
+exports.classBody = exports.ClassBody = ClassBody;
+exports.classExpression = exports.ClassExpression = ClassExpression;
+exports.classDeclaration = exports.ClassDeclaration = ClassDeclaration;
+exports.exportAllDeclaration = exports.ExportAllDeclaration = ExportAllDeclaration;
+exports.exportDefaultDeclaration = exports.ExportDefaultDeclaration = ExportDefaultDeclaration;
+exports.exportNamedDeclaration = exports.ExportNamedDeclaration = ExportNamedDeclaration;
+exports.exportSpecifier = exports.ExportSpecifier = ExportSpecifier;
+exports.forOfStatement = exports.ForOfStatement = ForOfStatement;
+exports.importDeclaration = exports.ImportDeclaration = ImportDeclaration;
+exports.importDefaultSpecifier = exports.ImportDefaultSpecifier = ImportDefaultSpecifier;
+exports.importNamespaceSpecifier = exports.ImportNamespaceSpecifier = ImportNamespaceSpecifier;
+exports.importSpecifier = exports.ImportSpecifier = ImportSpecifier;
+exports.metaProperty = exports.MetaProperty = MetaProperty;
+exports.classMethod = exports.ClassMethod = ClassMethod;
+exports.objectPattern = exports.ObjectPattern = ObjectPattern;
+exports.spreadElement = exports.SpreadElement = SpreadElement;
+exports.super = exports.Super = Super;
+exports.taggedTemplateExpression = exports.TaggedTemplateExpression = TaggedTemplateExpression;
+exports.templateElement = exports.TemplateElement = TemplateElement;
+exports.templateLiteral = exports.TemplateLiteral = TemplateLiteral;
+exports.yieldExpression = exports.YieldExpression = YieldExpression;
+exports.anyTypeAnnotation = exports.AnyTypeAnnotation = AnyTypeAnnotation;
+exports.arrayTypeAnnotation = exports.ArrayTypeAnnotation = ArrayTypeAnnotation;
+exports.booleanTypeAnnotation = exports.BooleanTypeAnnotation = BooleanTypeAnnotation;
+exports.booleanLiteralTypeAnnotation = exports.BooleanLiteralTypeAnnotation = BooleanLiteralTypeAnnotation;
+exports.nullLiteralTypeAnnotation = exports.NullLiteralTypeAnnotation = NullLiteralTypeAnnotation;
+exports.classImplements = exports.ClassImplements = ClassImplements;
+exports.declareClass = exports.DeclareClass = DeclareClass;
+exports.declareFunction = exports.DeclareFunction = DeclareFunction;
+exports.declareInterface = exports.DeclareInterface = DeclareInterface;
+exports.declareModule = exports.DeclareModule = DeclareModule;
+exports.declareModuleExports = exports.DeclareModuleExports = DeclareModuleExports;
+exports.declareTypeAlias = exports.DeclareTypeAlias = DeclareTypeAlias;
+exports.declareOpaqueType = exports.DeclareOpaqueType = DeclareOpaqueType;
+exports.declareVariable = exports.DeclareVariable = DeclareVariable;
+exports.declareExportDeclaration = exports.DeclareExportDeclaration = DeclareExportDeclaration;
+exports.declareExportAllDeclaration = exports.DeclareExportAllDeclaration = DeclareExportAllDeclaration;
+exports.declaredPredicate = exports.DeclaredPredicate = DeclaredPredicate;
+exports.existsTypeAnnotation = exports.ExistsTypeAnnotation = ExistsTypeAnnotation;
+exports.functionTypeAnnotation = exports.FunctionTypeAnnotation = FunctionTypeAnnotation;
+exports.functionTypeParam = exports.FunctionTypeParam = FunctionTypeParam;
+exports.genericTypeAnnotation = exports.GenericTypeAnnotation = GenericTypeAnnotation;
+exports.inferredPredicate = exports.InferredPredicate = InferredPredicate;
+exports.interfaceExtends = exports.InterfaceExtends = InterfaceExtends;
+exports.interfaceDeclaration = exports.InterfaceDeclaration = InterfaceDeclaration;
+exports.interfaceTypeAnnotation = exports.InterfaceTypeAnnotation = InterfaceTypeAnnotation;
+exports.intersectionTypeAnnotation = exports.IntersectionTypeAnnotation = IntersectionTypeAnnotation;
+exports.mixedTypeAnnotation = exports.MixedTypeAnnotation = MixedTypeAnnotation;
+exports.emptyTypeAnnotation = exports.EmptyTypeAnnotation = EmptyTypeAnnotation;
+exports.nullableTypeAnnotation = exports.NullableTypeAnnotation = NullableTypeAnnotation;
+exports.numberLiteralTypeAnnotation = exports.NumberLiteralTypeAnnotation = NumberLiteralTypeAnnotation;
+exports.numberTypeAnnotation = exports.NumberTypeAnnotation = NumberTypeAnnotation;
+exports.objectTypeAnnotation = exports.ObjectTypeAnnotation = ObjectTypeAnnotation;
+exports.objectTypeInternalSlot = exports.ObjectTypeInternalSlot = ObjectTypeInternalSlot;
+exports.objectTypeCallProperty = exports.ObjectTypeCallProperty = ObjectTypeCallProperty;
+exports.objectTypeIndexer = exports.ObjectTypeIndexer = ObjectTypeIndexer;
+exports.objectTypeProperty = exports.ObjectTypeProperty = ObjectTypeProperty;
+exports.objectTypeSpreadProperty = exports.ObjectTypeSpreadProperty = ObjectTypeSpreadProperty;
+exports.opaqueType = exports.OpaqueType = OpaqueType;
+exports.qualifiedTypeIdentifier = exports.QualifiedTypeIdentifier = QualifiedTypeIdentifier;
+exports.stringLiteralTypeAnnotation = exports.StringLiteralTypeAnnotation = StringLiteralTypeAnnotation;
+exports.stringTypeAnnotation = exports.StringTypeAnnotation = StringTypeAnnotation;
+exports.symbolTypeAnnotation = exports.SymbolTypeAnnotation = SymbolTypeAnnotation;
+exports.thisTypeAnnotation = exports.ThisTypeAnnotation = ThisTypeAnnotation;
+exports.tupleTypeAnnotation = exports.TupleTypeAnnotation = TupleTypeAnnotation;
+exports.typeofTypeAnnotation = exports.TypeofTypeAnnotation = TypeofTypeAnnotation;
+exports.typeAlias = exports.TypeAlias = TypeAlias;
+exports.typeAnnotation = exports.TypeAnnotation = TypeAnnotation;
+exports.typeCastExpression = exports.TypeCastExpression = TypeCastExpression;
+exports.typeParameter = exports.TypeParameter = TypeParameter;
+exports.typeParameterDeclaration = exports.TypeParameterDeclaration = TypeParameterDeclaration;
+exports.typeParameterInstantiation = exports.TypeParameterInstantiation = TypeParameterInstantiation;
+exports.unionTypeAnnotation = exports.UnionTypeAnnotation = UnionTypeAnnotation;
+exports.variance = exports.Variance = Variance;
+exports.voidTypeAnnotation = exports.VoidTypeAnnotation = VoidTypeAnnotation;
+exports.enumDeclaration = exports.EnumDeclaration = EnumDeclaration;
+exports.enumBooleanBody = exports.EnumBooleanBody = EnumBooleanBody;
+exports.enumNumberBody = exports.EnumNumberBody = EnumNumberBody;
+exports.enumStringBody = exports.EnumStringBody = EnumStringBody;
+exports.enumSymbolBody = exports.EnumSymbolBody = EnumSymbolBody;
+exports.enumBooleanMember = exports.EnumBooleanMember = EnumBooleanMember;
+exports.enumNumberMember = exports.EnumNumberMember = EnumNumberMember;
+exports.enumStringMember = exports.EnumStringMember = EnumStringMember;
+exports.enumDefaultedMember = exports.EnumDefaultedMember = EnumDefaultedMember;
+exports.jSXAttribute = exports.jsxAttribute = exports.JSXAttribute = JSXAttribute;
+exports.jSXClosingElement = exports.jsxClosingElement = exports.JSXClosingElement = JSXClosingElement;
+exports.jSXElement = exports.jsxElement = exports.JSXElement = JSXElement;
+exports.jSXEmptyExpression = exports.jsxEmptyExpression = exports.JSXEmptyExpression = JSXEmptyExpression;
+exports.jSXExpressionContainer = exports.jsxExpressionContainer = exports.JSXExpressionContainer = JSXExpressionContainer;
+exports.jSXSpreadChild = exports.jsxSpreadChild = exports.JSXSpreadChild = JSXSpreadChild;
+exports.jSXIdentifier = exports.jsxIdentifier = exports.JSXIdentifier = JSXIdentifier;
+exports.jSXMemberExpression = exports.jsxMemberExpression = exports.JSXMemberExpression = JSXMemberExpression;
+exports.jSXNamespacedName = exports.jsxNamespacedName = exports.JSXNamespacedName = JSXNamespacedName;
+exports.jSXOpeningElement = exports.jsxOpeningElement = exports.JSXOpeningElement = JSXOpeningElement;
+exports.jSXSpreadAttribute = exports.jsxSpreadAttribute = exports.JSXSpreadAttribute = JSXSpreadAttribute;
+exports.jSXText = exports.jsxText = exports.JSXText = JSXText;
+exports.jSXFragment = exports.jsxFragment = exports.JSXFragment = JSXFragment;
+exports.jSXOpeningFragment = exports.jsxOpeningFragment = exports.JSXOpeningFragment = JSXOpeningFragment;
+exports.jSXClosingFragment = exports.jsxClosingFragment = exports.JSXClosingFragment = JSXClosingFragment;
+exports.noop = exports.Noop = Noop;
+exports.placeholder = exports.Placeholder = Placeholder;
+exports.v8IntrinsicIdentifier = exports.V8IntrinsicIdentifier = V8IntrinsicIdentifier;
+exports.argumentPlaceholder = exports.ArgumentPlaceholder = ArgumentPlaceholder;
+exports.awaitExpression = exports.AwaitExpression = AwaitExpression;
+exports.bindExpression = exports.BindExpression = BindExpression;
+exports.classProperty = exports.ClassProperty = ClassProperty;
+exports.optionalMemberExpression = exports.OptionalMemberExpression = OptionalMemberExpression;
+exports.pipelineTopicExpression = exports.PipelineTopicExpression = PipelineTopicExpression;
+exports.pipelineBareFunction = exports.PipelineBareFunction = PipelineBareFunction;
+exports.pipelinePrimaryTopicReference = exports.PipelinePrimaryTopicReference = PipelinePrimaryTopicReference;
+exports.optionalCallExpression = exports.OptionalCallExpression = OptionalCallExpression;
+exports.classPrivateProperty = exports.ClassPrivateProperty = ClassPrivateProperty;
+exports.classPrivateMethod = exports.ClassPrivateMethod = ClassPrivateMethod;
+exports.import = exports.Import = Import;
+exports.decorator = exports.Decorator = Decorator;
+exports.doExpression = exports.DoExpression = DoExpression;
+exports.exportDefaultSpecifier = exports.ExportDefaultSpecifier = ExportDefaultSpecifier;
+exports.exportNamespaceSpecifier = exports.ExportNamespaceSpecifier = ExportNamespaceSpecifier;
+exports.privateName = exports.PrivateName = PrivateName;
+exports.bigIntLiteral = exports.BigIntLiteral = BigIntLiteral;
+exports.recordExpression = exports.RecordExpression = RecordExpression;
+exports.tupleExpression = exports.TupleExpression = TupleExpression;
+exports.tSParameterProperty = exports.tsParameterProperty = exports.TSParameterProperty = TSParameterProperty;
+exports.tSDeclareFunction = exports.tsDeclareFunction = exports.TSDeclareFunction = TSDeclareFunction;
+exports.tSDeclareMethod = exports.tsDeclareMethod = exports.TSDeclareMethod = TSDeclareMethod;
+exports.tSQualifiedName = exports.tsQualifiedName = exports.TSQualifiedName = TSQualifiedName;
+exports.tSCallSignatureDeclaration = exports.tsCallSignatureDeclaration = exports.TSCallSignatureDeclaration = TSCallSignatureDeclaration;
+exports.tSConstructSignatureDeclaration = exports.tsConstructSignatureDeclaration = exports.TSConstructSignatureDeclaration = TSConstructSignatureDeclaration;
+exports.tSPropertySignature = exports.tsPropertySignature = exports.TSPropertySignature = TSPropertySignature;
+exports.tSMethodSignature = exports.tsMethodSignature = exports.TSMethodSignature = TSMethodSignature;
+exports.tSIndexSignature = exports.tsIndexSignature = exports.TSIndexSignature = TSIndexSignature;
+exports.tSAnyKeyword = exports.tsAnyKeyword = exports.TSAnyKeyword = TSAnyKeyword;
+exports.tSBooleanKeyword = exports.tsBooleanKeyword = exports.TSBooleanKeyword = TSBooleanKeyword;
+exports.tSBigIntKeyword = exports.tsBigIntKeyword = exports.TSBigIntKeyword = TSBigIntKeyword;
+exports.tSNeverKeyword = exports.tsNeverKeyword = exports.TSNeverKeyword = TSNeverKeyword;
+exports.tSNullKeyword = exports.tsNullKeyword = exports.TSNullKeyword = TSNullKeyword;
+exports.tSNumberKeyword = exports.tsNumberKeyword = exports.TSNumberKeyword = TSNumberKeyword;
+exports.tSObjectKeyword = exports.tsObjectKeyword = exports.TSObjectKeyword = TSObjectKeyword;
+exports.tSStringKeyword = exports.tsStringKeyword = exports.TSStringKeyword = TSStringKeyword;
+exports.tSSymbolKeyword = exports.tsSymbolKeyword = exports.TSSymbolKeyword = TSSymbolKeyword;
+exports.tSUndefinedKeyword = exports.tsUndefinedKeyword = exports.TSUndefinedKeyword = TSUndefinedKeyword;
+exports.tSUnknownKeyword = exports.tsUnknownKeyword = exports.TSUnknownKeyword = TSUnknownKeyword;
+exports.tSVoidKeyword = exports.tsVoidKeyword = exports.TSVoidKeyword = TSVoidKeyword;
+exports.tSThisType = exports.tsThisType = exports.TSThisType = TSThisType;
+exports.tSFunctionType = exports.tsFunctionType = exports.TSFunctionType = TSFunctionType;
+exports.tSConstructorType = exports.tsConstructorType = exports.TSConstructorType = TSConstructorType;
+exports.tSTypeReference = exports.tsTypeReference = exports.TSTypeReference = TSTypeReference;
+exports.tSTypePredicate = exports.tsTypePredicate = exports.TSTypePredicate = TSTypePredicate;
+exports.tSTypeQuery = exports.tsTypeQuery = exports.TSTypeQuery = TSTypeQuery;
+exports.tSTypeLiteral = exports.tsTypeLiteral = exports.TSTypeLiteral = TSTypeLiteral;
+exports.tSArrayType = exports.tsArrayType = exports.TSArrayType = TSArrayType;
+exports.tSTupleType = exports.tsTupleType = exports.TSTupleType = TSTupleType;
+exports.tSOptionalType = exports.tsOptionalType = exports.TSOptionalType = TSOptionalType;
+exports.tSRestType = exports.tsRestType = exports.TSRestType = TSRestType;
+exports.tSUnionType = exports.tsUnionType = exports.TSUnionType = TSUnionType;
+exports.tSIntersectionType = exports.tsIntersectionType = exports.TSIntersectionType = TSIntersectionType;
+exports.tSConditionalType = exports.tsConditionalType = exports.TSConditionalType = TSConditionalType;
+exports.tSInferType = exports.tsInferType = exports.TSInferType = TSInferType;
+exports.tSParenthesizedType = exports.tsParenthesizedType = exports.TSParenthesizedType = TSParenthesizedType;
+exports.tSTypeOperator = exports.tsTypeOperator = exports.TSTypeOperator = TSTypeOperator;
+exports.tSIndexedAccessType = exports.tsIndexedAccessType = exports.TSIndexedAccessType = TSIndexedAccessType;
+exports.tSMappedType = exports.tsMappedType = exports.TSMappedType = TSMappedType;
+exports.tSLiteralType = exports.tsLiteralType = exports.TSLiteralType = TSLiteralType;
+exports.tSExpressionWithTypeArguments = exports.tsExpressionWithTypeArguments = exports.TSExpressionWithTypeArguments = TSExpressionWithTypeArguments;
+exports.tSInterfaceDeclaration = exports.tsInterfaceDeclaration = exports.TSInterfaceDeclaration = TSInterfaceDeclaration;
+exports.tSInterfaceBody = exports.tsInterfaceBody = exports.TSInterfaceBody = TSInterfaceBody;
+exports.tSTypeAliasDeclaration = exports.tsTypeAliasDeclaration = exports.TSTypeAliasDeclaration = TSTypeAliasDeclaration;
+exports.tSAsExpression = exports.tsAsExpression = exports.TSAsExpression = TSAsExpression;
+exports.tSTypeAssertion = exports.tsTypeAssertion = exports.TSTypeAssertion = TSTypeAssertion;
+exports.tSEnumDeclaration = exports.tsEnumDeclaration = exports.TSEnumDeclaration = TSEnumDeclaration;
+exports.tSEnumMember = exports.tsEnumMember = exports.TSEnumMember = TSEnumMember;
+exports.tSModuleDeclaration = exports.tsModuleDeclaration = exports.TSModuleDeclaration = TSModuleDeclaration;
+exports.tSModuleBlock = exports.tsModuleBlock = exports.TSModuleBlock = TSModuleBlock;
+exports.tSImportType = exports.tsImportType = exports.TSImportType = TSImportType;
+exports.tSImportEqualsDeclaration = exports.tsImportEqualsDeclaration = exports.TSImportEqualsDeclaration = TSImportEqualsDeclaration;
+exports.tSExternalModuleReference = exports.tsExternalModuleReference = exports.TSExternalModuleReference = TSExternalModuleReference;
+exports.tSNonNullExpression = exports.tsNonNullExpression = exports.TSNonNullExpression = TSNonNullExpression;
+exports.tSExportAssignment = exports.tsExportAssignment = exports.TSExportAssignment = TSExportAssignment;
+exports.tSNamespaceExportDeclaration = exports.tsNamespaceExportDeclaration = exports.TSNamespaceExportDeclaration = TSNamespaceExportDeclaration;
+exports.tSTypeAnnotation = exports.tsTypeAnnotation = exports.TSTypeAnnotation = TSTypeAnnotation;
+exports.tSTypeParameterInstantiation = exports.tsTypeParameterInstantiation = exports.TSTypeParameterInstantiation = TSTypeParameterInstantiation;
+exports.tSTypeParameterDeclaration = exports.tsTypeParameterDeclaration = exports.TSTypeParameterDeclaration = TSTypeParameterDeclaration;
+exports.tSTypeParameter = exports.tsTypeParameter = exports.TSTypeParameter = TSTypeParameter;
+exports.numberLiteral = exports.NumberLiteral = NumberLiteral;
+exports.regexLiteral = exports.RegexLiteral = RegexLiteral;
+exports.restProperty = exports.RestProperty = RestProperty;
+exports.spreadProperty = exports.SpreadProperty = SpreadProperty;
+
+var _builder = _interopRequireDefault(require("../builder"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function ArrayExpression(...args) {
+  return (0, _builder.default)("ArrayExpression", ...args);
+}
+
+function AssignmentExpression(...args) {
+  return (0, _builder.default)("AssignmentExpression", ...args);
+}
+
+function BinaryExpression(...args) {
+  return (0, _builder.default)("BinaryExpression", ...args);
+}
+
+function InterpreterDirective(...args) {
+  return (0, _builder.default)("InterpreterDirective", ...args);
+}
+
+function Directive(...args) {
+  return (0, _builder.default)("Directive", ...args);
+}
+
+function DirectiveLiteral(...args) {
+  return (0, _builder.default)("DirectiveLiteral", ...args);
+}
+
+function BlockStatement(...args) {
+  return (0, _builder.default)("BlockStatement", ...args);
+}
+
+function BreakStatement(...args) {
+  return (0, _builder.default)("BreakStatement", ...args);
+}
+
+function CallExpression(...args) {
+  return (0, _builder.default)("CallExpression", ...args);
+}
+
+function CatchClause(...args) {
+  return (0, _builder.default)("CatchClause", ...args);
+}
+
+function ConditionalExpression(...args) {
+  return (0, _builder.default)("ConditionalExpression", ...args);
+}
+
+function ContinueStatement(...args) {
+  return (0, _builder.default)("ContinueStatement", ...args);
+}
+
+function DebuggerStatement(...args) {
+  return (0, _builder.default)("DebuggerStatement", ...args);
+}
+
+function DoWhileStatement(...args) {
+  return (0, _builder.default)("DoWhileStatement", ...args);
+}
+
+function EmptyStatement(...args) {
+  return (0, _builder.default)("EmptyStatement", ...args);
+}
+
+function ExpressionStatement(...args) {
+  return (0, _builder.default)("ExpressionStatement", ...args);
+}
+
+function File(...args) {
+  return (0, _builder.default)("File", ...args);
+}
+
+function ForInStatement(...args) {
+  return (0, _builder.default)("ForInStatement", ...args);
+}
+
+function ForStatement(...args) {
+  return (0, _builder.default)("ForStatement", ...args);
+}
+
+function FunctionDeclaration(...args) {
+  return (0, _builder.default)("FunctionDeclaration", ...args);
+}
+
+function FunctionExpression(...args) {
+  return (0, _builder.default)("FunctionExpression", ...args);
+}
+
+function Identifier(...args) {
+  return (0, _builder.default)("Identifier", ...args);
+}
+
+function IfStatement(...args) {
+  return (0, _builder.default)("IfStatement", ...args);
+}
+
+function LabeledStatement(...args) {
+  return (0, _builder.default)("LabeledStatement", ...args);
+}
+
+function StringLiteral(...args) {
+  return (0, _builder.default)("StringLiteral", ...args);
+}
+
+function NumericLiteral(...args) {
+  return (0, _builder.default)("NumericLiteral", ...args);
+}
+
+function NullLiteral(...args) {
+  return (0, _builder.default)("NullLiteral", ...args);
+}
+
+function BooleanLiteral(...args) {
+  return (0, _builder.default)("BooleanLiteral", ...args);
+}
+
+function RegExpLiteral(...args) {
+  return (0, _builder.default)("RegExpLiteral", ...args);
+}
+
+function LogicalExpression(...args) {
+  return (0, _builder.default)("LogicalExpression", ...args);
+}
+
+function MemberExpression(...args) {
+  return (0, _builder.default)("MemberExpression", ...args);
+}
+
+function NewExpression(...args) {
+  return (0, _builder.default)("NewExpression", ...args);
+}
+
+function Program(...args) {
+  return (0, _builder.default)("Program", ...args);
+}
+
+function ObjectExpression(...args) {
+  return (0, _builder.default)("ObjectExpression", ...args);
+}
+
+function ObjectMethod(...args) {
+  return (0, _builder.default)("ObjectMethod", ...args);
+}
+
+function ObjectProperty(...args) {
+  return (0, _builder.default)("ObjectProperty", ...args);
+}
+
+function RestElement(...args) {
+  return (0, _builder.default)("RestElement", ...args);
+}
+
+function ReturnStatement(...args) {
+  return (0, _builder.default)("ReturnStatement", ...args);
+}
+
+function SequenceExpression(...args) {
+  return (0, _builder.default)("SequenceExpression", ...args);
+}
+
+function ParenthesizedExpression(...args) {
+  return (0, _builder.default)("ParenthesizedExpression", ...args);
+}
+
+function SwitchCase(...args) {
+  return (0, _builder.default)("SwitchCase", ...args);
+}
+
+function SwitchStatement(...args) {
+  return (0, _builder.default)("SwitchStatement", ...args);
+}
+
+function ThisExpression(...args) {
+  return (0, _builder.default)("ThisExpression", ...args);
+}
+
+function ThrowStatement(...args) {
+  return (0, _builder.default)("ThrowStatement", ...args);
+}
+
+function TryStatement(...args) {
+  return (0, _builder.default)("TryStatement", ...args);
+}
+
+function UnaryExpression(...args) {
+  return (0, _builder.default)("UnaryExpression", ...args);
+}
+
+function UpdateExpression(...args) {
+  return (0, _builder.default)("UpdateExpression", ...args);
+}
+
+function VariableDeclaration(...args) {
+  return (0, _builder.default)("VariableDeclaration", ...args);
+}
+
+function VariableDeclarator(...args) {
+  return (0, _builder.default)("VariableDeclarator", ...args);
+}
+
+function WhileStatement(...args) {
+  return (0, _builder.default)("WhileStatement", ...args);
+}
+
+function WithStatement(...args) {
+  return (0, _builder.default)("WithStatement", ...args);
+}
+
+function AssignmentPattern(...args) {
+  return (0, _builder.default)("AssignmentPattern", ...args);
+}
+
+function ArrayPattern(...args) {
+  return (0, _builder.default)("ArrayPattern", ...args);
+}
+
+function ArrowFunctionExpression(...args) {
+  return (0, _builder.default)("ArrowFunctionExpression", ...args);
+}
+
+function ClassBody(...args) {
+  return (0, _builder.default)("ClassBody", ...args);
+}
+
+function ClassExpression(...args) {
+  return (0, _builder.default)("ClassExpression", ...args);
+}
+
+function ClassDeclaration(...args) {
+  return (0, _builder.default)("ClassDeclaration", ...args);
+}
+
+function ExportAllDeclaration(...args) {
+  return (0, _builder.default)("ExportAllDeclaration", ...args);
+}
+
+function ExportDefaultDeclaration(...args) {
+  return (0, _builder.default)("ExportDefaultDeclaration", ...args);
+}
+
+function ExportNamedDeclaration(...args) {
+  return (0, _builder.default)("ExportNamedDeclaration", ...args);
+}
+
+function ExportSpecifier(...args) {
+  return (0, _builder.default)("ExportSpecifier", ...args);
+}
+
+function ForOfStatement(...args) {
+  return (0, _builder.default)("ForOfStatement", ...args);
+}
+
+function ImportDeclaration(...args) {
+  return (0, _builder.default)("ImportDeclaration", ...args);
+}
+
+function ImportDefaultSpecifier(...args) {
+  return (0, _builder.default)("ImportDefaultSpecifier", ...args);
+}
+
+function ImportNamespaceSpecifier(...args) {
+  return (0, _builder.default)("ImportNamespaceSpecifier", ...args);
+}
+
+function ImportSpecifier(...args) {
+  return (0, _builder.default)("ImportSpecifier", ...args);
+}
+
+function MetaProperty(...args) {
+  return (0, _builder.default)("MetaProperty", ...args);
+}
+
+function ClassMethod(...args) {
+  return (0, _builder.default)("ClassMethod", ...args);
+}
+
+function ObjectPattern(...args) {
+  return (0, _builder.default)("ObjectPattern", ...args);
+}
+
+function SpreadElement(...args) {
+  return (0, _builder.default)("SpreadElement", ...args);
+}
+
+function Super(...args) {
+  return (0, _builder.default)("Super", ...args);
+}
+
+function TaggedTemplateExpression(...args) {
+  return (0, _builder.default)("TaggedTemplateExpression", ...args);
+}
+
+function TemplateElement(...args) {
+  return (0, _builder.default)("TemplateElement", ...args);
+}
+
+function TemplateLiteral(...args) {
+  return (0, _builder.default)("TemplateLiteral", ...args);
+}
+
+function YieldExpression(...args) {
+  return (0, _builder.default)("YieldExpression", ...args);
+}
+
+function AnyTypeAnnotation(...args) {
+  return (0, _builder.default)("AnyTypeAnnotation", ...args);
+}
+
+function ArrayTypeAnnotation(...args) {
+  return (0, _builder.default)("ArrayTypeAnnotation", ...args);
+}
+
+function BooleanTypeAnnotation(...args) {
+  return (0, _builder.default)("BooleanTypeAnnotation", ...args);
+}
+
+function BooleanLiteralTypeAnnotation(...args) {
+  return (0, _builder.default)("BooleanLiteralTypeAnnotation", ...args);
+}
+
+function NullLiteralTypeAnnotation(...args) {
+  return (0, _builder.default)("NullLiteralTypeAnnotation", ...args);
+}
+
+function ClassImplements(...args) {
+  return (0, _builder.default)("ClassImplements", ...args);
+}
+
+function DeclareClass(...args) {
+  return (0, _builder.default)("DeclareClass", ...args);
+}
+
+function DeclareFunction(...args) {
+  return (0, _builder.default)("DeclareFunction", ...args);
+}
+
+function DeclareInterface(...args) {
+  return (0, _builder.default)("DeclareInterface", ...args);
+}
+
+function DeclareModule(...args) {
+  return (0, _builder.default)("DeclareModule", ...args);
+}
+
+function DeclareModuleExports(...args) {
+  return (0, _builder.default)("DeclareModuleExports", ...args);
+}
+
+function DeclareTypeAlias(...args) {
+  return (0, _builder.default)("DeclareTypeAlias", ...args);
+}
+
+function DeclareOpaqueType(...args) {
+  return (0, _builder.default)("DeclareOpaqueType", ...args);
+}
+
+function DeclareVariable(...args) {
+  return (0, _builder.default)("DeclareVariable", ...args);
+}
+
+function DeclareExportDeclaration(...args) {
+  return (0, _builder.default)("DeclareExportDeclaration", ...args);
+}
+
+function DeclareExportAllDeclaration(...args) {
+  return (0, _builder.default)("DeclareExportAllDeclaration", ...args);
+}
+
+function DeclaredPredicate(...args) {
+  return (0, _builder.default)("DeclaredPredicate", ...args);
+}
+
+function ExistsTypeAnnotation(...args) {
+  return (0, _builder.default)("ExistsTypeAnnotation", ...args);
+}
+
+function FunctionTypeAnnotation(...args) {
+  return (0, _builder.default)("FunctionTypeAnnotation", ...args);
+}
+
+function FunctionTypeParam(...args) {
+  return (0, _builder.default)("FunctionTypeParam", ...args);
+}
+
+function GenericTypeAnnotation(...args) {
+  return (0, _builder.default)("GenericTypeAnnotation", ...args);
+}
+
+function InferredPredicate(...args) {
+  return (0, _builder.default)("InferredPredicate", ...args);
+}
+
+function InterfaceExtends(...args) {
+  return (0, _builder.default)("InterfaceExtends", ...args);
+}
+
+function InterfaceDeclaration(...args) {
+  return (0, _builder.default)("InterfaceDeclaration", ...args);
+}
+
+function InterfaceTypeAnnotation(...args) {
+  return (0, _builder.default)("InterfaceTypeAnnotation", ...args);
+}
+
+function IntersectionTypeAnnotation(...args) {
+  return (0, _builder.default)("IntersectionTypeAnnotation", ...args);
+}
+
+function MixedTypeAnnotation(...args) {
+  return (0, _builder.default)("MixedTypeAnnotation", ...args);
+}
+
+function EmptyTypeAnnotation(...args) {
+  return (0, _builder.default)("EmptyTypeAnnotation", ...args);
+}
+
+function NullableTypeAnnotation(...args) {
+  return (0, _builder.default)("NullableTypeAnnotation", ...args);
+}
+
+function NumberLiteralTypeAnnotation(...args) {
+  return (0, _builder.default)("NumberLiteralTypeAnnotation", ...args);
+}
+
+function NumberTypeAnnotation(...args) {
+  return (0, _builder.default)("NumberTypeAnnotation", ...args);
+}
+
+function ObjectTypeAnnotation(...args) {
+  return (0, _builder.default)("ObjectTypeAnnotation", ...args);
+}
+
+function ObjectTypeInternalSlot(...args) {
+  return (0, _builder.default)("ObjectTypeInternalSlot", ...args);
+}
+
+function ObjectTypeCallProperty(...args) {
+  return (0, _builder.default)("ObjectTypeCallProperty", ...args);
+}
+
+function ObjectTypeIndexer(...args) {
+  return (0, _builder.default)("ObjectTypeIndexer", ...args);
+}
+
+function ObjectTypeProperty(...args) {
+  return (0, _builder.default)("ObjectTypeProperty", ...args);
+}
+
+function ObjectTypeSpreadProperty(...args) {
+  return (0, _builder.default)("ObjectTypeSpreadProperty", ...args);
+}
+
+function OpaqueType(...args) {
+  return (0, _builder.default)("OpaqueType", ...args);
+}
+
+function QualifiedTypeIdentifier(...args) {
+  return (0, _builder.default)("QualifiedTypeIdentifier", ...args);
+}
+
+function StringLiteralTypeAnnotation(...args) {
+  return (0, _builder.default)("StringLiteralTypeAnnotation", ...args);
+}
+
+function StringTypeAnnotation(...args) {
+  return (0, _builder.default)("StringTypeAnnotation", ...args);
+}
+
+function SymbolTypeAnnotation(...args) {
+  return (0, _builder.default)("SymbolTypeAnnotation", ...args);
+}
+
+function ThisTypeAnnotation(...args) {
+  return (0, _builder.default)("ThisTypeAnnotation", ...args);
+}
+
+function TupleTypeAnnotation(...args) {
+  return (0, _builder.default)("TupleTypeAnnotation", ...args);
+}
+
+function TypeofTypeAnnotation(...args) {
+  return (0, _builder.default)("TypeofTypeAnnotation", ...args);
+}
+
+function TypeAlias(...args) {
+  return (0, _builder.default)("TypeAlias", ...args);
+}
+
+function TypeAnnotation(...args) {
+  return (0, _builder.default)("TypeAnnotation", ...args);
+}
+
+function TypeCastExpression(...args) {
+  return (0, _builder.default)("TypeCastExpression", ...args);
+}
+
+function TypeParameter(...args) {
+  return (0, _builder.default)("TypeParameter", ...args);
+}
+
+function TypeParameterDeclaration(...args) {
+  return (0, _builder.default)("TypeParameterDeclaration", ...args);
+}
+
+function TypeParameterInstantiation(...args) {
+  return (0, _builder.default)("TypeParameterInstantiation", ...args);
+}
+
+function UnionTypeAnnotation(...args) {
+  return (0, _builder.default)("UnionTypeAnnotation", ...args);
+}
+
+function Variance(...args) {
+  return (0, _builder.default)("Variance", ...args);
+}
+
+function VoidTypeAnnotation(...args) {
+  return (0, _builder.default)("VoidTypeAnnotation", ...args);
+}
+
+function EnumDeclaration(...args) {
+  return (0, _builder.default)("EnumDeclaration", ...args);
+}
+
+function EnumBooleanBody(...args) {
+  return (0, _builder.default)("EnumBooleanBody", ...args);
+}
+
+function EnumNumberBody(...args) {
+  return (0, _builder.default)("EnumNumberBody", ...args);
+}
+
+function EnumStringBody(...args) {
+  return (0, _builder.default)("EnumStringBody", ...args);
+}
+
+function EnumSymbolBody(...args) {
+  return (0, _builder.default)("EnumSymbolBody", ...args);
+}
+
+function EnumBooleanMember(...args) {
+  return (0, _builder.default)("EnumBooleanMember", ...args);
+}
+
+function EnumNumberMember(...args) {
+  return (0, _builder.default)("EnumNumberMember", ...args);
+}
+
+function EnumStringMember(...args) {
+  return (0, _builder.default)("EnumStringMember", ...args);
+}
+
+function EnumDefaultedMember(...args) {
+  return (0, _builder.default)("EnumDefaultedMember", ...args);
+}
+
+function JSXAttribute(...args) {
+  return (0, _builder.default)("JSXAttribute", ...args);
+}
+
+function JSXClosingElement(...args) {
+  return (0, _builder.default)("JSXClosingElement", ...args);
+}
+
+function JSXElement(...args) {
+  return (0, _builder.default)("JSXElement", ...args);
+}
+
+function JSXEmptyExpression(...args) {
+  return (0, _builder.default)("JSXEmptyExpression", ...args);
+}
+
+function JSXExpressionContainer(...args) {
+  return (0, _builder.default)("JSXExpressionContainer", ...args);
+}
+
+function JSXSpreadChild(...args) {
+  return (0, _builder.default)("JSXSpreadChild", ...args);
+}
+
+function JSXIdentifier(...args) {
+  return (0, _builder.default)("JSXIdentifier", ...args);
+}
+
+function JSXMemberExpression(...args) {
+  return (0, _builder.default)("JSXMemberExpression", ...args);
+}
+
+function JSXNamespacedName(...args) {
+  return (0, _builder.default)("JSXNamespacedName", ...args);
+}
+
+function JSXOpeningElement(...args) {
+  return (0, _builder.default)("JSXOpeningElement", ...args);
+}
+
+function JSXSpreadAttribute(...args) {
+  return (0, _builder.default)("JSXSpreadAttribute", ...args);
+}
+
+function JSXText(...args) {
+  return (0, _builder.default)("JSXText", ...args);
+}
+
+function JSXFragment(...args) {
+  return (0, _builder.default)("JSXFragment", ...args);
+}
+
+function JSXOpeningFragment(...args) {
+  return (0, _builder.default)("JSXOpeningFragment", ...args);
+}
+
+function JSXClosingFragment(...args) {
+  return (0, _builder.default)("JSXClosingFragment", ...args);
+}
+
+function Noop(...args) {
+  return (0, _builder.default)("Noop", ...args);
+}
+
+function Placeholder(...args) {
+  return (0, _builder.default)("Placeholder", ...args);
+}
+
+function V8IntrinsicIdentifier(...args) {
+  return (0, _builder.default)("V8IntrinsicIdentifier", ...args);
+}
+
+function ArgumentPlaceholder(...args) {
+  return (0, _builder.default)("ArgumentPlaceholder", ...args);
+}
+
+function AwaitExpression(...args) {
+  return (0, _builder.default)("AwaitExpression", ...args);
+}
+
+function BindExpression(...args) {
+  return (0, _builder.default)("BindExpression", ...args);
+}
+
+function ClassProperty(...args) {
+  return (0, _builder.default)("ClassProperty", ...args);
+}
+
+function OptionalMemberExpression(...args) {
+  return (0, _builder.default)("OptionalMemberExpression", ...args);
+}
+
+function PipelineTopicExpression(...args) {
+  return (0, _builder.default)("PipelineTopicExpression", ...args);
+}
+
+function PipelineBareFunction(...args) {
+  return (0, _builder.default)("PipelineBareFunction", ...args);
+}
+
+function PipelinePrimaryTopicReference(...args) {
+  return (0, _builder.default)("PipelinePrimaryTopicReference", ...args);
+}
+
+function OptionalCallExpression(...args) {
+  return (0, _builder.default)("OptionalCallExpression", ...args);
+}
+
+function ClassPrivateProperty(...args) {
+  return (0, _builder.default)("ClassPrivateProperty", ...args);
+}
+
+function ClassPrivateMethod(...args) {
+  return (0, _builder.default)("ClassPrivateMethod", ...args);
+}
+
+function Import(...args) {
+  return (0, _builder.default)("Import", ...args);
+}
+
+function Decorator(...args) {
+  return (0, _builder.default)("Decorator", ...args);
+}
+
+function DoExpression(...args) {
+  return (0, _builder.default)("DoExpression", ...args);
+}
+
+function ExportDefaultSpecifier(...args) {
+  return (0, _builder.default)("ExportDefaultSpecifier", ...args);
+}
+
+function ExportNamespaceSpecifier(...args) {
+  return (0, _builder.default)("ExportNamespaceSpecifier", ...args);
+}
+
+function PrivateName(...args) {
+  return (0, _builder.default)("PrivateName", ...args);
+}
+
+function BigIntLiteral(...args) {
+  return (0, _builder.default)("BigIntLiteral", ...args);
+}
+
+function RecordExpression(...args) {
+  return (0, _builder.default)("RecordExpression", ...args);
+}
+
+function TupleExpression(...args) {
+  return (0, _builder.default)("TupleExpression", ...args);
+}
+
+function TSParameterProperty(...args) {
+  return (0, _builder.default)("TSParameterProperty", ...args);
+}
+
+function TSDeclareFunction(...args) {
+  return (0, _builder.default)("TSDeclareFunction", ...args);
+}
+
+function TSDeclareMethod(...args) {
+  return (0, _builder.default)("TSDeclareMethod", ...args);
+}
+
+function TSQualifiedName(...args) {
+  return (0, _builder.default)("TSQualifiedName", ...args);
+}
+
+function TSCallSignatureDeclaration(...args) {
+  return (0, _builder.default)("TSCallSignatureDeclaration", ...args);
+}
+
+function TSConstructSignatureDeclaration(...args) {
+  return (0, _builder.default)("TSConstructSignatureDeclaration", ...args);
+}
+
+function TSPropertySignature(...args) {
+  return (0, _builder.default)("TSPropertySignature", ...args);
+}
+
+function TSMethodSignature(...args) {
+  return (0, _builder.default)("TSMethodSignature", ...args);
+}
+
+function TSIndexSignature(...args) {
+  return (0, _builder.default)("TSIndexSignature", ...args);
+}
+
+function TSAnyKeyword(...args) {
+  return (0, _builder.default)("TSAnyKeyword", ...args);
+}
+
+function TSBooleanKeyword(...args) {
+  return (0, _builder.default)("TSBooleanKeyword", ...args);
+}
+
+function TSBigIntKeyword(...args) {
+  return (0, _builder.default)("TSBigIntKeyword", ...args);
+}
+
+function TSNeverKeyword(...args) {
+  return (0, _builder.default)("TSNeverKeyword", ...args);
+}
+
+function TSNullKeyword(...args) {
+  return (0, _builder.default)("TSNullKeyword", ...args);
+}
+
+function TSNumberKeyword(...args) {
+  return (0, _builder.default)("TSNumberKeyword", ...args);
+}
+
+function TSObjectKeyword(...args) {
+  return (0, _builder.default)("TSObjectKeyword", ...args);
+}
+
+function TSStringKeyword(...args) {
+  return (0, _builder.default)("TSStringKeyword", ...args);
+}
+
+function TSSymbolKeyword(...args) {
+  return (0, _builder.default)("TSSymbolKeyword", ...args);
+}
+
+function TSUndefinedKeyword(...args) {
+  return (0, _builder.default)("TSUndefinedKeyword", ...args);
+}
+
+function TSUnknownKeyword(...args) {
+  return (0, _builder.default)("TSUnknownKeyword", ...args);
+}
+
+function TSVoidKeyword(...args) {
+  return (0, _builder.default)("TSVoidKeyword", ...args);
+}
+
+function TSThisType(...args) {
+  return (0, _builder.default)("TSThisType", ...args);
+}
+
+function TSFunctionType(...args) {
+  return (0, _builder.default)("TSFunctionType", ...args);
+}
+
+function TSConstructorType(...args) {
+  return (0, _builder.default)("TSConstructorType", ...args);
+}
+
+function TSTypeReference(...args) {
+  return (0, _builder.default)("TSTypeReference", ...args);
+}
+
+function TSTypePredicate(...args) {
+  return (0, _builder.default)("TSTypePredicate", ...args);
+}
+
+function TSTypeQuery(...args) {
+  return (0, _builder.default)("TSTypeQuery", ...args);
+}
+
+function TSTypeLiteral(...args) {
+  return (0, _builder.default)("TSTypeLiteral", ...args);
+}
+
+function TSArrayType(...args) {
+  return (0, _builder.default)("TSArrayType", ...args);
+}
+
+function TSTupleType(...args) {
+  return (0, _builder.default)("TSTupleType", ...args);
+}
+
+function TSOptionalType(...args) {
+  return (0, _builder.default)("TSOptionalType", ...args);
+}
+
+function TSRestType(...args) {
+  return (0, _builder.default)("TSRestType", ...args);
+}
+
+function TSUnionType(...args) {
+  return (0, _builder.default)("TSUnionType", ...args);
+}
+
+function TSIntersectionType(...args) {
+  return (0, _builder.default)("TSIntersectionType", ...args);
+}
+
+function TSConditionalType(...args) {
+  return (0, _builder.default)("TSConditionalType", ...args);
+}
+
+function TSInferType(...args) {
+  return (0, _builder.default)("TSInferType", ...args);
+}
+
+function TSParenthesizedType(...args) {
+  return (0, _builder.default)("TSParenthesizedType", ...args);
+}
+
+function TSTypeOperator(...args) {
+  return (0, _builder.default)("TSTypeOperator", ...args);
+}
+
+function TSIndexedAccessType(...args) {
+  return (0, _builder.default)("TSIndexedAccessType", ...args);
+}
+
+function TSMappedType(...args) {
+  return (0, _builder.default)("TSMappedType", ...args);
+}
+
+function TSLiteralType(...args) {
+  return (0, _builder.default)("TSLiteralType", ...args);
+}
+
+function TSExpressionWithTypeArguments(...args) {
+  return (0, _builder.default)("TSExpressionWithTypeArguments", ...args);
+}
+
+function TSInterfaceDeclaration(...args) {
+  return (0, _builder.default)("TSInterfaceDeclaration", ...args);
+}
+
+function TSInterfaceBody(...args) {
+  return (0, _builder.default)("TSInterfaceBody", ...args);
+}
+
+function TSTypeAliasDeclaration(...args) {
+  return (0, _builder.default)("TSTypeAliasDeclaration", ...args);
+}
+
+function TSAsExpression(...args) {
+  return (0, _builder.default)("TSAsExpression", ...args);
+}
+
+function TSTypeAssertion(...args) {
+  return (0, _builder.default)("TSTypeAssertion", ...args);
+}
+
+function TSEnumDeclaration(...args) {
+  return (0, _builder.default)("TSEnumDeclaration", ...args);
+}
+
+function TSEnumMember(...args) {
+  return (0, _builder.default)("TSEnumMember", ...args);
+}
+
+function TSModuleDeclaration(...args) {
+  return (0, _builder.default)("TSModuleDeclaration", ...args);
+}
+
+function TSModuleBlock(...args) {
+  return (0, _builder.default)("TSModuleBlock", ...args);
+}
+
+function TSImportType(...args) {
+  return (0, _builder.default)("TSImportType", ...args);
+}
+
+function TSImportEqualsDeclaration(...args) {
+  return (0, _builder.default)("TSImportEqualsDeclaration", ...args);
+}
+
+function TSExternalModuleReference(...args) {
+  return (0, _builder.default)("TSExternalModuleReference", ...args);
+}
+
+function TSNonNullExpression(...args) {
+  return (0, _builder.default)("TSNonNullExpression", ...args);
+}
+
+function TSExportAssignment(...args) {
+  return (0, _builder.default)("TSExportAssignment", ...args);
+}
+
+function TSNamespaceExportDeclaration(...args) {
+  return (0, _builder.default)("TSNamespaceExportDeclaration", ...args);
+}
+
+function TSTypeAnnotation(...args) {
+  return (0, _builder.default)("TSTypeAnnotation", ...args);
+}
+
+function TSTypeParameterInstantiation(...args) {
+  return (0, _builder.default)("TSTypeParameterInstantiation", ...args);
+}
+
+function TSTypeParameterDeclaration(...args) {
+  return (0, _builder.default)("TSTypeParameterDeclaration", ...args);
+}
+
+function TSTypeParameter(...args) {
+  return (0, _builder.default)("TSTypeParameter", ...args);
+}
+
+function NumberLiteral(...args) {
+  console.trace("The node type NumberLiteral has been renamed to NumericLiteral");
+  return NumberLiteral("NumberLiteral", ...args);
+}
+
+function RegexLiteral(...args) {
+  console.trace("The node type RegexLiteral has been renamed to RegExpLiteral");
+  return RegexLiteral("RegexLiteral", ...args);
+}
+
+function RestProperty(...args) {
+  console.trace("The node type RestProperty has been renamed to RestElement");
+  return RestProperty("RestProperty", ...args);
+}
+
+function SpreadProperty(...args) {
+  console.trace("The node type SpreadProperty has been renamed to SpreadElement");
+  return SpreadProperty("SpreadProperty", ...args);
+}
 },
 "PNG+5zDWv22rcffB00KdDz9DY0gz2S6k8/M0fu7uUlg=":
 function (require, module, exports, __dirname, __filename) {
@@ -24168,6 +28043,867 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
   }
 });
 },
+"RBMNavgVql0NAuZTujTgLBs+v8NIFgVXvZf+E5DxfQI=":
+function (require, module, exports, __dirname, __filename) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.patternLikeCommon = exports.functionDeclarationCommon = exports.functionTypeAnnotationCommon = exports.functionCommon = void 0;
+
+var _is = _interopRequireDefault(require("../validators/is"));
+
+var _isValidIdentifier = _interopRequireDefault(require("../validators/isValidIdentifier"));
+
+var _helperValidatorIdentifier = require("@babel/helper-validator-identifier");
+
+var _constants = require("../constants");
+
+var _utils = _interopRequireWildcard(require("./utils"));
+
+function _getRequireWildcardCache() { if (typeof WeakMap !== "function") return null; var cache = new WeakMap(); _getRequireWildcardCache = function () { return cache; }; return cache; }
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } if (obj === null || typeof obj !== "object" && typeof obj !== "function") { return { default: obj }; } var cache = _getRequireWildcardCache(); if (cache && cache.has(obj)) { return cache.get(obj); } var newObj = {}; var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null; if (desc && (desc.get || desc.set)) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } newObj.default = obj; if (cache) { cache.set(obj, newObj); } return newObj; }
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+(0, _utils.default)("ArrayExpression", {
+  fields: {
+    elements: {
+      validate: (0, _utils.chain)((0, _utils.assertValueType)("array"), (0, _utils.assertEach)((0, _utils.assertNodeOrValueType)("null", "Expression", "SpreadElement"))),
+      default: !process.env.BABEL_TYPES_8_BREAKING ? [] : undefined
+    }
+  },
+  visitor: ["elements"],
+  aliases: ["Expression"]
+});
+(0, _utils.default)("AssignmentExpression", {
+  fields: {
+    operator: {
+      validate: function () {
+        if (!process.env.BABEL_TYPES_8_BREAKING) {
+          return (0, _utils.assertValueType)("string");
+        }
+
+        const identifier = (0, _utils.assertOneOf)(..._constants.ASSIGNMENT_OPERATORS);
+        const pattern = (0, _utils.assertOneOf)("=");
+        return function (node, key, val) {
+          const validator = (0, _is.default)("Pattern", node.left) ? pattern : identifier;
+          validator(node, key, val);
+        };
+      }()
+    },
+    left: {
+      validate: !process.env.BABEL_TYPES_8_BREAKING ? (0, _utils.assertNodeType)("LVal") : (0, _utils.assertNodeType)("Identifier", "MemberExpression", "ArrayPattern", "ObjectPattern")
+    },
+    right: {
+      validate: (0, _utils.assertNodeType)("Expression")
+    }
+  },
+  builder: ["operator", "left", "right"],
+  visitor: ["left", "right"],
+  aliases: ["Expression"]
+});
+(0, _utils.default)("BinaryExpression", {
+  builder: ["operator", "left", "right"],
+  fields: {
+    operator: {
+      validate: (0, _utils.assertOneOf)(..._constants.BINARY_OPERATORS)
+    },
+    left: {
+      validate: (0, _utils.assertNodeType)("Expression")
+    },
+    right: {
+      validate: (0, _utils.assertNodeType)("Expression")
+    }
+  },
+  visitor: ["left", "right"],
+  aliases: ["Binary", "Expression"]
+});
+(0, _utils.default)("InterpreterDirective", {
+  builder: ["value"],
+  fields: {
+    value: {
+      validate: (0, _utils.assertValueType)("string")
+    }
+  }
+});
+(0, _utils.default)("Directive", {
+  visitor: ["value"],
+  fields: {
+    value: {
+      validate: (0, _utils.assertNodeType)("DirectiveLiteral")
+    }
+  }
+});
+(0, _utils.default)("DirectiveLiteral", {
+  builder: ["value"],
+  fields: {
+    value: {
+      validate: (0, _utils.assertValueType)("string")
+    }
+  }
+});
+(0, _utils.default)("BlockStatement", {
+  builder: ["body", "directives"],
+  visitor: ["directives", "body"],
+  fields: {
+    directives: {
+      validate: (0, _utils.chain)((0, _utils.assertValueType)("array"), (0, _utils.assertEach)((0, _utils.assertNodeType)("Directive"))),
+      default: []
+    },
+    body: {
+      validate: (0, _utils.chain)((0, _utils.assertValueType)("array"), (0, _utils.assertEach)((0, _utils.assertNodeType)("Statement")))
+    }
+  },
+  aliases: ["Scopable", "BlockParent", "Block", "Statement"]
+});
+(0, _utils.default)("BreakStatement", {
+  visitor: ["label"],
+  fields: {
+    label: {
+      validate: (0, _utils.assertNodeType)("Identifier"),
+      optional: true
+    }
+  },
+  aliases: ["Statement", "Terminatorless", "CompletionStatement"]
+});
+(0, _utils.default)("CallExpression", {
+  visitor: ["callee", "arguments", "typeParameters", "typeArguments"],
+  builder: ["callee", "arguments"],
+  aliases: ["Expression"],
+  fields: Object.assign({
+    callee: {
+      validate: (0, _utils.assertNodeType)("Expression", "V8IntrinsicIdentifier")
+    },
+    arguments: {
+      validate: (0, _utils.chain)((0, _utils.assertValueType)("array"), (0, _utils.assertEach)((0, _utils.assertNodeType)("Expression", "SpreadElement", "JSXNamespacedName", "ArgumentPlaceholder")))
+    }
+  }, !process.env.BABEL_TYPES_8_BREAKING ? {
+    optional: {
+      validate: (0, _utils.assertOneOf)(true, false),
+      optional: true
+    }
+  } : {}, {
+    typeArguments: {
+      validate: (0, _utils.assertNodeType)("TypeParameterInstantiation"),
+      optional: true
+    },
+    typeParameters: {
+      validate: (0, _utils.assertNodeType)("TSTypeParameterInstantiation"),
+      optional: true
+    }
+  })
+});
+(0, _utils.default)("CatchClause", {
+  visitor: ["param", "body"],
+  fields: {
+    param: {
+      validate: (0, _utils.assertNodeType)("Identifier", "ArrayPattern", "ObjectPattern"),
+      optional: true
+    },
+    body: {
+      validate: (0, _utils.assertNodeType)("BlockStatement")
+    }
+  },
+  aliases: ["Scopable", "BlockParent"]
+});
+(0, _utils.default)("ConditionalExpression", {
+  visitor: ["test", "consequent", "alternate"],
+  fields: {
+    test: {
+      validate: (0, _utils.assertNodeType)("Expression")
+    },
+    consequent: {
+      validate: (0, _utils.assertNodeType)("Expression")
+    },
+    alternate: {
+      validate: (0, _utils.assertNodeType)("Expression")
+    }
+  },
+  aliases: ["Expression", "Conditional"]
+});
+(0, _utils.default)("ContinueStatement", {
+  visitor: ["label"],
+  fields: {
+    label: {
+      validate: (0, _utils.assertNodeType)("Identifier"),
+      optional: true
+    }
+  },
+  aliases: ["Statement", "Terminatorless", "CompletionStatement"]
+});
+(0, _utils.default)("DebuggerStatement", {
+  aliases: ["Statement"]
+});
+(0, _utils.default)("DoWhileStatement", {
+  visitor: ["test", "body"],
+  fields: {
+    test: {
+      validate: (0, _utils.assertNodeType)("Expression")
+    },
+    body: {
+      validate: (0, _utils.assertNodeType)("Statement")
+    }
+  },
+  aliases: ["Statement", "BlockParent", "Loop", "While", "Scopable"]
+});
+(0, _utils.default)("EmptyStatement", {
+  aliases: ["Statement"]
+});
+(0, _utils.default)("ExpressionStatement", {
+  visitor: ["expression"],
+  fields: {
+    expression: {
+      validate: (0, _utils.assertNodeType)("Expression")
+    }
+  },
+  aliases: ["Statement", "ExpressionWrapper"]
+});
+(0, _utils.default)("File", {
+  builder: ["program", "comments", "tokens"],
+  visitor: ["program"],
+  fields: {
+    program: {
+      validate: (0, _utils.assertNodeType)("Program")
+    }
+  }
+});
+(0, _utils.default)("ForInStatement", {
+  visitor: ["left", "right", "body"],
+  aliases: ["Scopable", "Statement", "For", "BlockParent", "Loop", "ForXStatement"],
+  fields: {
+    left: {
+      validate: !process.env.BABEL_TYPES_8_BREAKING ? (0, _utils.assertNodeType)("VariableDeclaration", "LVal") : (0, _utils.assertNodeType)("VariableDeclaration", "Identifier", "MemberExpression", "ArrayPattern", "ObjectPattern")
+    },
+    right: {
+      validate: (0, _utils.assertNodeType)("Expression")
+    },
+    body: {
+      validate: (0, _utils.assertNodeType)("Statement")
+    }
+  }
+});
+(0, _utils.default)("ForStatement", {
+  visitor: ["init", "test", "update", "body"],
+  aliases: ["Scopable", "Statement", "For", "BlockParent", "Loop"],
+  fields: {
+    init: {
+      validate: (0, _utils.assertNodeType)("VariableDeclaration", "Expression"),
+      optional: true
+    },
+    test: {
+      validate: (0, _utils.assertNodeType)("Expression"),
+      optional: true
+    },
+    update: {
+      validate: (0, _utils.assertNodeType)("Expression"),
+      optional: true
+    },
+    body: {
+      validate: (0, _utils.assertNodeType)("Statement")
+    }
+  }
+});
+const functionCommon = {
+  params: {
+    validate: (0, _utils.chain)((0, _utils.assertValueType)("array"), (0, _utils.assertEach)((0, _utils.assertNodeType)("Identifier", "Pattern", "RestElement", "TSParameterProperty")))
+  },
+  generator: {
+    default: false
+  },
+  async: {
+    default: false
+  }
+};
+exports.functionCommon = functionCommon;
+const functionTypeAnnotationCommon = {
+  returnType: {
+    validate: (0, _utils.assertNodeType)("TypeAnnotation", "TSTypeAnnotation", "Noop"),
+    optional: true
+  },
+  typeParameters: {
+    validate: (0, _utils.assertNodeType)("TypeParameterDeclaration", "TSTypeParameterDeclaration", "Noop"),
+    optional: true
+  }
+};
+exports.functionTypeAnnotationCommon = functionTypeAnnotationCommon;
+const functionDeclarationCommon = Object.assign({}, functionCommon, {
+  declare: {
+    validate: (0, _utils.assertValueType)("boolean"),
+    optional: true
+  },
+  id: {
+    validate: (0, _utils.assertNodeType)("Identifier"),
+    optional: true
+  }
+});
+exports.functionDeclarationCommon = functionDeclarationCommon;
+(0, _utils.default)("FunctionDeclaration", {
+  builder: ["id", "params", "body", "generator", "async"],
+  visitor: ["id", "params", "body", "returnType", "typeParameters"],
+  fields: Object.assign({}, functionDeclarationCommon, {}, functionTypeAnnotationCommon, {
+    body: {
+      validate: (0, _utils.assertNodeType)("BlockStatement")
+    }
+  }),
+  aliases: ["Scopable", "Function", "BlockParent", "FunctionParent", "Statement", "Pureish", "Declaration"],
+  validate: function () {
+    if (!process.env.BABEL_TYPES_8_BREAKING) return () => {};
+    const identifier = (0, _utils.assertNodeType)("Identifier");
+    return function (parent, key, node) {
+      if (!(0, _is.default)("ExportDefaultDeclaration", parent)) {
+        identifier(node, "id", node.id);
+      }
+    };
+  }()
+});
+(0, _utils.default)("FunctionExpression", {
+  inherits: "FunctionDeclaration",
+  aliases: ["Scopable", "Function", "BlockParent", "FunctionParent", "Expression", "Pureish"],
+  fields: Object.assign({}, functionCommon, {}, functionTypeAnnotationCommon, {
+    id: {
+      validate: (0, _utils.assertNodeType)("Identifier"),
+      optional: true
+    },
+    body: {
+      validate: (0, _utils.assertNodeType)("BlockStatement")
+    }
+  })
+});
+const patternLikeCommon = {
+  typeAnnotation: {
+    validate: (0, _utils.assertNodeType)("TypeAnnotation", "TSTypeAnnotation", "Noop"),
+    optional: true
+  },
+  decorators: {
+    validate: (0, _utils.chain)((0, _utils.assertValueType)("array"), (0, _utils.assertEach)((0, _utils.assertNodeType)("Decorator")))
+  }
+};
+exports.patternLikeCommon = patternLikeCommon;
+(0, _utils.default)("Identifier", {
+  builder: ["name"],
+  visitor: ["typeAnnotation", "decorators"],
+  aliases: ["Expression", "PatternLike", "LVal", "TSEntityName"],
+  fields: Object.assign({}, patternLikeCommon, {
+    name: {
+      validate: (0, _utils.chain)((0, _utils.assertValueType)("string"), function (node, key, val) {
+        if (!process.env.BABEL_TYPES_8_BREAKING) return;
+
+        if (!(0, _isValidIdentifier.default)(val, false)) {
+          throw new TypeError(`"${val}" is not a valid identifier name`);
+        }
+      })
+    },
+    optional: {
+      validate: (0, _utils.assertValueType)("boolean"),
+      optional: true
+    }
+  }),
+
+  validate(parent, key, node) {
+    if (!process.env.BABEL_TYPES_8_BREAKING) return;
+    const match = /\.(\w+)$/.exec(key);
+    if (!match) return;
+    const [, parentKey] = match;
+    const nonComp = {
+      computed: false
+    };
+
+    if (parentKey === "property") {
+      if ((0, _is.default)("MemberExpression", parent, nonComp)) return;
+      if ((0, _is.default)("OptionalMemberExpression", parent, nonComp)) return;
+    } else if (parentKey === "key") {
+      if ((0, _is.default)("Property", parent, nonComp)) return;
+      if ((0, _is.default)("Method", parent, nonComp)) return;
+    } else if (parentKey === "exported") {
+      if ((0, _is.default)("ExportSpecifier", parent)) return;
+    } else if (parentKey === "imported") {
+      if ((0, _is.default)("ImportSpecifier", parent, {
+        imported: node
+      })) return;
+    } else if (parentKey === "meta") {
+      if ((0, _is.default)("MetaProperty", parent, {
+        meta: node
+      })) return;
+    }
+
+    if (((0, _helperValidatorIdentifier.isKeyword)(node.name) || (0, _helperValidatorIdentifier.isReservedWord)(node.name)) && node.name !== "this") {
+      throw new TypeError(`"${node.name}" is not a valid identifier`);
+    }
+  }
+
+});
+(0, _utils.default)("IfStatement", {
+  visitor: ["test", "consequent", "alternate"],
+  aliases: ["Statement", "Conditional"],
+  fields: {
+    test: {
+      validate: (0, _utils.assertNodeType)("Expression")
+    },
+    consequent: {
+      validate: (0, _utils.assertNodeType)("Statement")
+    },
+    alternate: {
+      optional: true,
+      validate: (0, _utils.assertNodeType)("Statement")
+    }
+  }
+});
+(0, _utils.default)("LabeledStatement", {
+  visitor: ["label", "body"],
+  aliases: ["Statement"],
+  fields: {
+    label: {
+      validate: (0, _utils.assertNodeType)("Identifier")
+    },
+    body: {
+      validate: (0, _utils.assertNodeType)("Statement")
+    }
+  }
+});
+(0, _utils.default)("StringLiteral", {
+  builder: ["value"],
+  fields: {
+    value: {
+      validate: (0, _utils.assertValueType)("string")
+    }
+  },
+  aliases: ["Expression", "Pureish", "Literal", "Immutable"]
+});
+(0, _utils.default)("NumericLiteral", {
+  builder: ["value"],
+  deprecatedAlias: "NumberLiteral",
+  fields: {
+    value: {
+      validate: (0, _utils.assertValueType)("number")
+    }
+  },
+  aliases: ["Expression", "Pureish", "Literal", "Immutable"]
+});
+(0, _utils.default)("NullLiteral", {
+  aliases: ["Expression", "Pureish", "Literal", "Immutable"]
+});
+(0, _utils.default)("BooleanLiteral", {
+  builder: ["value"],
+  fields: {
+    value: {
+      validate: (0, _utils.assertValueType)("boolean")
+    }
+  },
+  aliases: ["Expression", "Pureish", "Literal", "Immutable"]
+});
+(0, _utils.default)("RegExpLiteral", {
+  builder: ["pattern", "flags"],
+  deprecatedAlias: "RegexLiteral",
+  aliases: ["Expression", "Pureish", "Literal"],
+  fields: {
+    pattern: {
+      validate: (0, _utils.assertValueType)("string")
+    },
+    flags: {
+      validate: (0, _utils.chain)((0, _utils.assertValueType)("string"), function (node, key, val) {
+        if (!process.env.BABEL_TYPES_8_BREAKING) return;
+        const invalid = /[^gimsuy]/.exec(val);
+
+        if (invalid) {
+          throw new TypeError(`"${invalid[0]}" is not a valid RegExp flag`);
+        }
+      }),
+      default: ""
+    }
+  }
+});
+(0, _utils.default)("LogicalExpression", {
+  builder: ["operator", "left", "right"],
+  visitor: ["left", "right"],
+  aliases: ["Binary", "Expression"],
+  fields: {
+    operator: {
+      validate: (0, _utils.assertOneOf)(..._constants.LOGICAL_OPERATORS)
+    },
+    left: {
+      validate: (0, _utils.assertNodeType)("Expression")
+    },
+    right: {
+      validate: (0, _utils.assertNodeType)("Expression")
+    }
+  }
+});
+(0, _utils.default)("MemberExpression", {
+  builder: ["object", "property", "computed", "optional"],
+  visitor: ["object", "property"],
+  aliases: ["Expression", "LVal"],
+  fields: Object.assign({
+    object: {
+      validate: (0, _utils.assertNodeType)("Expression")
+    },
+    property: {
+      validate: function () {
+        const normal = (0, _utils.assertNodeType)("Identifier", "PrivateName");
+        const computed = (0, _utils.assertNodeType)("Expression");
+        return function (node, key, val) {
+          const validator = node.computed ? computed : normal;
+          validator(node, key, val);
+        };
+      }()
+    },
+    computed: {
+      default: false
+    }
+  }, !process.env.BABEL_TYPES_8_BREAKING ? {
+    optional: {
+      validate: (0, _utils.assertOneOf)(true, false),
+      optional: true
+    }
+  } : {})
+});
+(0, _utils.default)("NewExpression", {
+  inherits: "CallExpression"
+});
+(0, _utils.default)("Program", {
+  visitor: ["directives", "body"],
+  builder: ["body", "directives", "sourceType", "interpreter"],
+  fields: {
+    sourceFile: {
+      validate: (0, _utils.assertValueType)("string")
+    },
+    sourceType: {
+      validate: (0, _utils.assertOneOf)("script", "module"),
+      default: "script"
+    },
+    interpreter: {
+      validate: (0, _utils.assertNodeType)("InterpreterDirective"),
+      default: null,
+      optional: true
+    },
+    directives: {
+      validate: (0, _utils.chain)((0, _utils.assertValueType)("array"), (0, _utils.assertEach)((0, _utils.assertNodeType)("Directive"))),
+      default: []
+    },
+    body: {
+      validate: (0, _utils.chain)((0, _utils.assertValueType)("array"), (0, _utils.assertEach)((0, _utils.assertNodeType)("Statement")))
+    }
+  },
+  aliases: ["Scopable", "BlockParent", "Block"]
+});
+(0, _utils.default)("ObjectExpression", {
+  visitor: ["properties"],
+  aliases: ["Expression"],
+  fields: {
+    properties: {
+      validate: (0, _utils.chain)((0, _utils.assertValueType)("array"), (0, _utils.assertEach)((0, _utils.assertNodeType)("ObjectMethod", "ObjectProperty", "SpreadElement")))
+    }
+  }
+});
+(0, _utils.default)("ObjectMethod", {
+  builder: ["kind", "key", "params", "body", "computed", "generator", "async"],
+  fields: Object.assign({}, functionCommon, {}, functionTypeAnnotationCommon, {
+    kind: Object.assign({
+      validate: (0, _utils.assertOneOf)("method", "get", "set")
+    }, !process.env.BABEL_TYPES_8_BREAKING ? {
+      default: "method"
+    } : {}),
+    computed: {
+      default: false
+    },
+    key: {
+      validate: function () {
+        const normal = (0, _utils.assertNodeType)("Identifier", "StringLiteral", "NumericLiteral");
+        const computed = (0, _utils.assertNodeType)("Expression");
+        return function (node, key, val) {
+          const validator = node.computed ? computed : normal;
+          validator(node, key, val);
+        };
+      }()
+    },
+    decorators: {
+      validate: (0, _utils.chain)((0, _utils.assertValueType)("array"), (0, _utils.assertEach)((0, _utils.assertNodeType)("Decorator"))),
+      optional: true
+    },
+    body: {
+      validate: (0, _utils.assertNodeType)("BlockStatement")
+    }
+  }),
+  visitor: ["key", "params", "body", "decorators", "returnType", "typeParameters"],
+  aliases: ["UserWhitespacable", "Function", "Scopable", "BlockParent", "FunctionParent", "Method", "ObjectMember"]
+});
+(0, _utils.default)("ObjectProperty", {
+  builder: ["key", "value", "computed", "shorthand", ...(!process.env.BABEL_TYPES_8_BREAKING ? ["decorators"] : [])],
+  fields: {
+    computed: {
+      default: false
+    },
+    key: {
+      validate: function () {
+        const normal = (0, _utils.assertNodeType)("Identifier", "StringLiteral", "NumericLiteral");
+        const computed = (0, _utils.assertNodeType)("Expression");
+        return function (node, key, val) {
+          const validator = node.computed ? computed : normal;
+          validator(node, key, val);
+        };
+      }()
+    },
+    value: {
+      validate: (0, _utils.assertNodeType)("Expression", "PatternLike")
+    },
+    shorthand: {
+      validate: (0, _utils.chain)((0, _utils.assertValueType)("boolean"), function (node, key, val) {
+        if (!process.env.BABEL_TYPES_8_BREAKING) return;
+
+        if (val && node.computed) {
+          throw new TypeError("Property shorthand of ObjectProperty cannot be true if computed is true");
+        }
+      }, function (node, key, val) {
+        if (!process.env.BABEL_TYPES_8_BREAKING) return;
+
+        if (val && !(0, _is.default)("Identifier", node.key)) {
+          throw new TypeError("Property shorthand of ObjectProperty cannot be true if key is not an Identifier");
+        }
+      }),
+      default: false
+    },
+    decorators: {
+      validate: (0, _utils.chain)((0, _utils.assertValueType)("array"), (0, _utils.assertEach)((0, _utils.assertNodeType)("Decorator"))),
+      optional: true
+    }
+  },
+  visitor: ["key", "value", "decorators"],
+  aliases: ["UserWhitespacable", "Property", "ObjectMember"],
+  validate: function () {
+    const pattern = (0, _utils.assertNodeType)("Identifier", "Pattern");
+    const expression = (0, _utils.assertNodeType)("Expression");
+    return function (parent, key, node) {
+      if (!process.env.BABEL_TYPES_8_BREAKING) return;
+      const validator = (0, _is.default)("ObjectPattern", parent) ? pattern : expression;
+      validator(node, "value", node.value);
+    };
+  }()
+});
+(0, _utils.default)("RestElement", {
+  visitor: ["argument", "typeAnnotation"],
+  builder: ["argument"],
+  aliases: ["LVal", "PatternLike"],
+  deprecatedAlias: "RestProperty",
+  fields: Object.assign({}, patternLikeCommon, {
+    argument: {
+      validate: !process.env.BABEL_TYPES_8_BREAKING ? (0, _utils.assertNodeType)("LVal") : (0, _utils.assertNodeType)("Identifier", "Pattern", "MemberExpression")
+    }
+  }),
+
+  validate(parent, key) {
+    if (!process.env.BABEL_TYPES_8_BREAKING) return;
+    const match = /(\w+)\[(\d+)\]/.exec(key);
+    if (!match) throw new Error("Internal Babel error: malformed key.");
+    const [, listKey, index] = match;
+
+    if (parent[listKey].length > index + 1) {
+      throw new TypeError(`RestElement must be last element of ${listKey}`);
+    }
+  }
+
+});
+(0, _utils.default)("ReturnStatement", {
+  visitor: ["argument"],
+  aliases: ["Statement", "Terminatorless", "CompletionStatement"],
+  fields: {
+    argument: {
+      validate: (0, _utils.assertNodeType)("Expression"),
+      optional: true
+    }
+  }
+});
+(0, _utils.default)("SequenceExpression", {
+  visitor: ["expressions"],
+  fields: {
+    expressions: {
+      validate: (0, _utils.chain)((0, _utils.assertValueType)("array"), (0, _utils.assertEach)((0, _utils.assertNodeType)("Expression")))
+    }
+  },
+  aliases: ["Expression"]
+});
+(0, _utils.default)("ParenthesizedExpression", {
+  visitor: ["expression"],
+  aliases: ["Expression", "ExpressionWrapper"],
+  fields: {
+    expression: {
+      validate: (0, _utils.assertNodeType)("Expression")
+    }
+  }
+});
+(0, _utils.default)("SwitchCase", {
+  visitor: ["test", "consequent"],
+  fields: {
+    test: {
+      validate: (0, _utils.assertNodeType)("Expression"),
+      optional: true
+    },
+    consequent: {
+      validate: (0, _utils.chain)((0, _utils.assertValueType)("array"), (0, _utils.assertEach)((0, _utils.assertNodeType)("Statement")))
+    }
+  }
+});
+(0, _utils.default)("SwitchStatement", {
+  visitor: ["discriminant", "cases"],
+  aliases: ["Statement", "BlockParent", "Scopable"],
+  fields: {
+    discriminant: {
+      validate: (0, _utils.assertNodeType)("Expression")
+    },
+    cases: {
+      validate: (0, _utils.chain)((0, _utils.assertValueType)("array"), (0, _utils.assertEach)((0, _utils.assertNodeType)("SwitchCase")))
+    }
+  }
+});
+(0, _utils.default)("ThisExpression", {
+  aliases: ["Expression"]
+});
+(0, _utils.default)("ThrowStatement", {
+  visitor: ["argument"],
+  aliases: ["Statement", "Terminatorless", "CompletionStatement"],
+  fields: {
+    argument: {
+      validate: (0, _utils.assertNodeType)("Expression")
+    }
+  }
+});
+(0, _utils.default)("TryStatement", {
+  visitor: ["block", "handler", "finalizer"],
+  aliases: ["Statement"],
+  fields: {
+    block: {
+      validate: (0, _utils.chain)((0, _utils.assertNodeType)("BlockStatement"), function (node) {
+        if (!process.env.BABEL_TYPES_8_BREAKING) return;
+
+        if (!node.handler && !node.finalizer) {
+          throw new TypeError("TryStatement expects either a handler or finalizer, or both");
+        }
+      })
+    },
+    handler: {
+      optional: true,
+      validate: (0, _utils.assertNodeType)("CatchClause")
+    },
+    finalizer: {
+      optional: true,
+      validate: (0, _utils.assertNodeType)("BlockStatement")
+    }
+  }
+});
+(0, _utils.default)("UnaryExpression", {
+  builder: ["operator", "argument", "prefix"],
+  fields: {
+    prefix: {
+      default: true
+    },
+    argument: {
+      validate: (0, _utils.assertNodeType)("Expression")
+    },
+    operator: {
+      validate: (0, _utils.assertOneOf)(..._constants.UNARY_OPERATORS)
+    }
+  },
+  visitor: ["argument"],
+  aliases: ["UnaryLike", "Expression"]
+});
+(0, _utils.default)("UpdateExpression", {
+  builder: ["operator", "argument", "prefix"],
+  fields: {
+    prefix: {
+      default: false
+    },
+    argument: {
+      validate: !process.env.BABEL_TYPES_8_BREAKING ? (0, _utils.assertNodeType)("Expression") : (0, _utils.assertNodeType)("Identifier", "MemberExpression")
+    },
+    operator: {
+      validate: (0, _utils.assertOneOf)(..._constants.UPDATE_OPERATORS)
+    }
+  },
+  visitor: ["argument"],
+  aliases: ["Expression"]
+});
+(0, _utils.default)("VariableDeclaration", {
+  builder: ["kind", "declarations"],
+  visitor: ["declarations"],
+  aliases: ["Statement", "Declaration"],
+  fields: {
+    declare: {
+      validate: (0, _utils.assertValueType)("boolean"),
+      optional: true
+    },
+    kind: {
+      validate: (0, _utils.assertOneOf)("var", "let", "const")
+    },
+    declarations: {
+      validate: (0, _utils.chain)((0, _utils.assertValueType)("array"), (0, _utils.assertEach)((0, _utils.assertNodeType)("VariableDeclarator")))
+    }
+  },
+
+  validate(parent, key, node) {
+    if (!process.env.BABEL_TYPES_8_BREAKING) return;
+    if (!(0, _is.default)("ForXStatement", parent, {
+      left: node
+    })) return;
+
+    if (node.declarations.length !== 1) {
+      throw new TypeError(`Exactly one VariableDeclarator is required in the VariableDeclaration of a ${parent.type}`);
+    }
+  }
+
+});
+(0, _utils.default)("VariableDeclarator", {
+  visitor: ["id", "init"],
+  fields: {
+    id: {
+      validate: function () {
+        if (!process.env.BABEL_TYPES_8_BREAKING) {
+          return (0, _utils.assertNodeType)("LVal");
+        }
+
+        const normal = (0, _utils.assertNodeType)("Identifier", "ArrayPattern", "ObjectPattern");
+        const without = (0, _utils.assertNodeType)("Identifier");
+        return function (node, key, val) {
+          const validator = node.init ? normal : without;
+          validator(node, key, val);
+        };
+      }()
+    },
+    definite: {
+      optional: true,
+      validate: (0, _utils.assertValueType)("boolean")
+    },
+    init: {
+      optional: true,
+      validate: (0, _utils.assertNodeType)("Expression")
+    }
+  }
+});
+(0, _utils.default)("WhileStatement", {
+  visitor: ["test", "body"],
+  aliases: ["Statement", "BlockParent", "Loop", "While", "Scopable"],
+  fields: {
+    test: {
+      validate: (0, _utils.assertNodeType)("Expression")
+    },
+    body: {
+      validate: (0, _utils.assertNodeType)("Statement")
+    }
+  }
+});
+(0, _utils.default)("WithStatement", {
+  visitor: ["object", "body"],
+  aliases: ["Statement"],
+  fields: {
+    object: {
+      validate: (0, _utils.assertNodeType)("Expression")
+    },
+    body: {
+      validate: (0, _utils.assertNodeType)("Statement")
+    }
+  }
+});
+},
 "RLkaEMaRl9GSjbgLW7idizEILvv2tJyvOkJLb/hZCb8=":
 function (require, module, exports, __dirname, __filename) {
 'use strict';
@@ -25171,6 +29907,108 @@ function copyObject(source, props, object, customizer) {
 module.exports = copyObject;
 
 },
+"VD/HTyLi2ECL7A/xB1zL9ysQj0TEkX6KHL622DUEy6k=":
+function (require, module, exports, __dirname, __filename) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.TSBASETYPE_TYPES = exports.TSTYPE_TYPES = exports.TSTYPEELEMENT_TYPES = exports.PRIVATE_TYPES = exports.JSX_TYPES = exports.ENUMMEMBER_TYPES = exports.ENUMBODY_TYPES = exports.FLOWPREDICATE_TYPES = exports.FLOWDECLARATION_TYPES = exports.FLOWBASEANNOTATION_TYPES = exports.FLOWTYPE_TYPES = exports.FLOW_TYPES = exports.MODULESPECIFIER_TYPES = exports.EXPORTDECLARATION_TYPES = exports.MODULEDECLARATION_TYPES = exports.CLASS_TYPES = exports.PATTERN_TYPES = exports.UNARYLIKE_TYPES = exports.PROPERTY_TYPES = exports.OBJECTMEMBER_TYPES = exports.METHOD_TYPES = exports.USERWHITESPACABLE_TYPES = exports.IMMUTABLE_TYPES = exports.LITERAL_TYPES = exports.TSENTITYNAME_TYPES = exports.LVAL_TYPES = exports.PATTERNLIKE_TYPES = exports.DECLARATION_TYPES = exports.PUREISH_TYPES = exports.FUNCTIONPARENT_TYPES = exports.FUNCTION_TYPES = exports.FORXSTATEMENT_TYPES = exports.FOR_TYPES = exports.EXPRESSIONWRAPPER_TYPES = exports.WHILE_TYPES = exports.LOOP_TYPES = exports.CONDITIONAL_TYPES = exports.COMPLETIONSTATEMENT_TYPES = exports.TERMINATORLESS_TYPES = exports.STATEMENT_TYPES = exports.BLOCK_TYPES = exports.BLOCKPARENT_TYPES = exports.SCOPABLE_TYPES = exports.BINARY_TYPES = exports.EXPRESSION_TYPES = void 0;
+
+var _definitions = require("../../definitions");
+
+const EXPRESSION_TYPES = _definitions.FLIPPED_ALIAS_KEYS["Expression"];
+exports.EXPRESSION_TYPES = EXPRESSION_TYPES;
+const BINARY_TYPES = _definitions.FLIPPED_ALIAS_KEYS["Binary"];
+exports.BINARY_TYPES = BINARY_TYPES;
+const SCOPABLE_TYPES = _definitions.FLIPPED_ALIAS_KEYS["Scopable"];
+exports.SCOPABLE_TYPES = SCOPABLE_TYPES;
+const BLOCKPARENT_TYPES = _definitions.FLIPPED_ALIAS_KEYS["BlockParent"];
+exports.BLOCKPARENT_TYPES = BLOCKPARENT_TYPES;
+const BLOCK_TYPES = _definitions.FLIPPED_ALIAS_KEYS["Block"];
+exports.BLOCK_TYPES = BLOCK_TYPES;
+const STATEMENT_TYPES = _definitions.FLIPPED_ALIAS_KEYS["Statement"];
+exports.STATEMENT_TYPES = STATEMENT_TYPES;
+const TERMINATORLESS_TYPES = _definitions.FLIPPED_ALIAS_KEYS["Terminatorless"];
+exports.TERMINATORLESS_TYPES = TERMINATORLESS_TYPES;
+const COMPLETIONSTATEMENT_TYPES = _definitions.FLIPPED_ALIAS_KEYS["CompletionStatement"];
+exports.COMPLETIONSTATEMENT_TYPES = COMPLETIONSTATEMENT_TYPES;
+const CONDITIONAL_TYPES = _definitions.FLIPPED_ALIAS_KEYS["Conditional"];
+exports.CONDITIONAL_TYPES = CONDITIONAL_TYPES;
+const LOOP_TYPES = _definitions.FLIPPED_ALIAS_KEYS["Loop"];
+exports.LOOP_TYPES = LOOP_TYPES;
+const WHILE_TYPES = _definitions.FLIPPED_ALIAS_KEYS["While"];
+exports.WHILE_TYPES = WHILE_TYPES;
+const EXPRESSIONWRAPPER_TYPES = _definitions.FLIPPED_ALIAS_KEYS["ExpressionWrapper"];
+exports.EXPRESSIONWRAPPER_TYPES = EXPRESSIONWRAPPER_TYPES;
+const FOR_TYPES = _definitions.FLIPPED_ALIAS_KEYS["For"];
+exports.FOR_TYPES = FOR_TYPES;
+const FORXSTATEMENT_TYPES = _definitions.FLIPPED_ALIAS_KEYS["ForXStatement"];
+exports.FORXSTATEMENT_TYPES = FORXSTATEMENT_TYPES;
+const FUNCTION_TYPES = _definitions.FLIPPED_ALIAS_KEYS["Function"];
+exports.FUNCTION_TYPES = FUNCTION_TYPES;
+const FUNCTIONPARENT_TYPES = _definitions.FLIPPED_ALIAS_KEYS["FunctionParent"];
+exports.FUNCTIONPARENT_TYPES = FUNCTIONPARENT_TYPES;
+const PUREISH_TYPES = _definitions.FLIPPED_ALIAS_KEYS["Pureish"];
+exports.PUREISH_TYPES = PUREISH_TYPES;
+const DECLARATION_TYPES = _definitions.FLIPPED_ALIAS_KEYS["Declaration"];
+exports.DECLARATION_TYPES = DECLARATION_TYPES;
+const PATTERNLIKE_TYPES = _definitions.FLIPPED_ALIAS_KEYS["PatternLike"];
+exports.PATTERNLIKE_TYPES = PATTERNLIKE_TYPES;
+const LVAL_TYPES = _definitions.FLIPPED_ALIAS_KEYS["LVal"];
+exports.LVAL_TYPES = LVAL_TYPES;
+const TSENTITYNAME_TYPES = _definitions.FLIPPED_ALIAS_KEYS["TSEntityName"];
+exports.TSENTITYNAME_TYPES = TSENTITYNAME_TYPES;
+const LITERAL_TYPES = _definitions.FLIPPED_ALIAS_KEYS["Literal"];
+exports.LITERAL_TYPES = LITERAL_TYPES;
+const IMMUTABLE_TYPES = _definitions.FLIPPED_ALIAS_KEYS["Immutable"];
+exports.IMMUTABLE_TYPES = IMMUTABLE_TYPES;
+const USERWHITESPACABLE_TYPES = _definitions.FLIPPED_ALIAS_KEYS["UserWhitespacable"];
+exports.USERWHITESPACABLE_TYPES = USERWHITESPACABLE_TYPES;
+const METHOD_TYPES = _definitions.FLIPPED_ALIAS_KEYS["Method"];
+exports.METHOD_TYPES = METHOD_TYPES;
+const OBJECTMEMBER_TYPES = _definitions.FLIPPED_ALIAS_KEYS["ObjectMember"];
+exports.OBJECTMEMBER_TYPES = OBJECTMEMBER_TYPES;
+const PROPERTY_TYPES = _definitions.FLIPPED_ALIAS_KEYS["Property"];
+exports.PROPERTY_TYPES = PROPERTY_TYPES;
+const UNARYLIKE_TYPES = _definitions.FLIPPED_ALIAS_KEYS["UnaryLike"];
+exports.UNARYLIKE_TYPES = UNARYLIKE_TYPES;
+const PATTERN_TYPES = _definitions.FLIPPED_ALIAS_KEYS["Pattern"];
+exports.PATTERN_TYPES = PATTERN_TYPES;
+const CLASS_TYPES = _definitions.FLIPPED_ALIAS_KEYS["Class"];
+exports.CLASS_TYPES = CLASS_TYPES;
+const MODULEDECLARATION_TYPES = _definitions.FLIPPED_ALIAS_KEYS["ModuleDeclaration"];
+exports.MODULEDECLARATION_TYPES = MODULEDECLARATION_TYPES;
+const EXPORTDECLARATION_TYPES = _definitions.FLIPPED_ALIAS_KEYS["ExportDeclaration"];
+exports.EXPORTDECLARATION_TYPES = EXPORTDECLARATION_TYPES;
+const MODULESPECIFIER_TYPES = _definitions.FLIPPED_ALIAS_KEYS["ModuleSpecifier"];
+exports.MODULESPECIFIER_TYPES = MODULESPECIFIER_TYPES;
+const FLOW_TYPES = _definitions.FLIPPED_ALIAS_KEYS["Flow"];
+exports.FLOW_TYPES = FLOW_TYPES;
+const FLOWTYPE_TYPES = _definitions.FLIPPED_ALIAS_KEYS["FlowType"];
+exports.FLOWTYPE_TYPES = FLOWTYPE_TYPES;
+const FLOWBASEANNOTATION_TYPES = _definitions.FLIPPED_ALIAS_KEYS["FlowBaseAnnotation"];
+exports.FLOWBASEANNOTATION_TYPES = FLOWBASEANNOTATION_TYPES;
+const FLOWDECLARATION_TYPES = _definitions.FLIPPED_ALIAS_KEYS["FlowDeclaration"];
+exports.FLOWDECLARATION_TYPES = FLOWDECLARATION_TYPES;
+const FLOWPREDICATE_TYPES = _definitions.FLIPPED_ALIAS_KEYS["FlowPredicate"];
+exports.FLOWPREDICATE_TYPES = FLOWPREDICATE_TYPES;
+const ENUMBODY_TYPES = _definitions.FLIPPED_ALIAS_KEYS["EnumBody"];
+exports.ENUMBODY_TYPES = ENUMBODY_TYPES;
+const ENUMMEMBER_TYPES = _definitions.FLIPPED_ALIAS_KEYS["EnumMember"];
+exports.ENUMMEMBER_TYPES = ENUMMEMBER_TYPES;
+const JSX_TYPES = _definitions.FLIPPED_ALIAS_KEYS["JSX"];
+exports.JSX_TYPES = JSX_TYPES;
+const PRIVATE_TYPES = _definitions.FLIPPED_ALIAS_KEYS["Private"];
+exports.PRIVATE_TYPES = PRIVATE_TYPES;
+const TSTYPEELEMENT_TYPES = _definitions.FLIPPED_ALIAS_KEYS["TSTypeElement"];
+exports.TSTYPEELEMENT_TYPES = TSTYPEELEMENT_TYPES;
+const TSTYPE_TYPES = _definitions.FLIPPED_ALIAS_KEYS["TSType"];
+exports.TSTYPE_TYPES = TSTYPE_TYPES;
+const TSBASETYPE_TYPES = _definitions.FLIPPED_ALIAS_KEYS["TSBaseType"];
+exports.TSBASETYPE_TYPES = TSBASETYPE_TYPES;
+},
 "VQ7Vs3OSvZZJOww4ISpb+HeYkLe6lk0qxAScQegPd0o=":
 function (require, module, exports, __dirname, __filename) {
 var root = require('./_root');
@@ -25209,6 +30047,613 @@ function cloneBuffer(buffer, isDeep) {
 
 module.exports = cloneBuffer;
 
+},
+"VR+kSF7lae5hq/UKaKxV6dpA7h9Bv/p+zXERI2C/9Wg=":
+function (require, module, exports, __dirname, __filename) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+var _exportNames = {
+  react: true,
+  assertNode: true,
+  createTypeAnnotationBasedOnTypeof: true,
+  createUnionTypeAnnotation: true,
+  createFlowUnionType: true,
+  createTSUnionType: true,
+  cloneNode: true,
+  clone: true,
+  cloneDeep: true,
+  cloneDeepWithoutLoc: true,
+  cloneWithoutLoc: true,
+  addComment: true,
+  addComments: true,
+  inheritInnerComments: true,
+  inheritLeadingComments: true,
+  inheritsComments: true,
+  inheritTrailingComments: true,
+  removeComments: true,
+  ensureBlock: true,
+  toBindingIdentifierName: true,
+  toBlock: true,
+  toComputedKey: true,
+  toExpression: true,
+  toIdentifier: true,
+  toKeyAlias: true,
+  toSequenceExpression: true,
+  toStatement: true,
+  valueToNode: true,
+  appendToMemberExpression: true,
+  inherits: true,
+  prependToMemberExpression: true,
+  removeProperties: true,
+  removePropertiesDeep: true,
+  removeTypeDuplicates: true,
+  getBindingIdentifiers: true,
+  getOuterBindingIdentifiers: true,
+  traverse: true,
+  traverseFast: true,
+  shallowEqual: true,
+  is: true,
+  isBinding: true,
+  isBlockScoped: true,
+  isImmutable: true,
+  isLet: true,
+  isNode: true,
+  isNodesEquivalent: true,
+  isPlaceholderType: true,
+  isReferenced: true,
+  isScope: true,
+  isSpecifierDefault: true,
+  isType: true,
+  isValidES3Identifier: true,
+  isValidIdentifier: true,
+  isVar: true,
+  matchesPattern: true,
+  validate: true,
+  buildMatchMemberExpression: true
+};
+Object.defineProperty(exports, "assertNode", {
+  enumerable: true,
+  get: function () {
+    return _assertNode.default;
+  }
+});
+Object.defineProperty(exports, "createTypeAnnotationBasedOnTypeof", {
+  enumerable: true,
+  get: function () {
+    return _createTypeAnnotationBasedOnTypeof.default;
+  }
+});
+Object.defineProperty(exports, "createUnionTypeAnnotation", {
+  enumerable: true,
+  get: function () {
+    return _createFlowUnionType.default;
+  }
+});
+Object.defineProperty(exports, "createFlowUnionType", {
+  enumerable: true,
+  get: function () {
+    return _createFlowUnionType.default;
+  }
+});
+Object.defineProperty(exports, "createTSUnionType", {
+  enumerable: true,
+  get: function () {
+    return _createTSUnionType.default;
+  }
+});
+Object.defineProperty(exports, "cloneNode", {
+  enumerable: true,
+  get: function () {
+    return _cloneNode.default;
+  }
+});
+Object.defineProperty(exports, "clone", {
+  enumerable: true,
+  get: function () {
+    return _clone.default;
+  }
+});
+Object.defineProperty(exports, "cloneDeep", {
+  enumerable: true,
+  get: function () {
+    return _cloneDeep.default;
+  }
+});
+Object.defineProperty(exports, "cloneDeepWithoutLoc", {
+  enumerable: true,
+  get: function () {
+    return _cloneDeepWithoutLoc.default;
+  }
+});
+Object.defineProperty(exports, "cloneWithoutLoc", {
+  enumerable: true,
+  get: function () {
+    return _cloneWithoutLoc.default;
+  }
+});
+Object.defineProperty(exports, "addComment", {
+  enumerable: true,
+  get: function () {
+    return _addComment.default;
+  }
+});
+Object.defineProperty(exports, "addComments", {
+  enumerable: true,
+  get: function () {
+    return _addComments.default;
+  }
+});
+Object.defineProperty(exports, "inheritInnerComments", {
+  enumerable: true,
+  get: function () {
+    return _inheritInnerComments.default;
+  }
+});
+Object.defineProperty(exports, "inheritLeadingComments", {
+  enumerable: true,
+  get: function () {
+    return _inheritLeadingComments.default;
+  }
+});
+Object.defineProperty(exports, "inheritsComments", {
+  enumerable: true,
+  get: function () {
+    return _inheritsComments.default;
+  }
+});
+Object.defineProperty(exports, "inheritTrailingComments", {
+  enumerable: true,
+  get: function () {
+    return _inheritTrailingComments.default;
+  }
+});
+Object.defineProperty(exports, "removeComments", {
+  enumerable: true,
+  get: function () {
+    return _removeComments.default;
+  }
+});
+Object.defineProperty(exports, "ensureBlock", {
+  enumerable: true,
+  get: function () {
+    return _ensureBlock.default;
+  }
+});
+Object.defineProperty(exports, "toBindingIdentifierName", {
+  enumerable: true,
+  get: function () {
+    return _toBindingIdentifierName.default;
+  }
+});
+Object.defineProperty(exports, "toBlock", {
+  enumerable: true,
+  get: function () {
+    return _toBlock.default;
+  }
+});
+Object.defineProperty(exports, "toComputedKey", {
+  enumerable: true,
+  get: function () {
+    return _toComputedKey.default;
+  }
+});
+Object.defineProperty(exports, "toExpression", {
+  enumerable: true,
+  get: function () {
+    return _toExpression.default;
+  }
+});
+Object.defineProperty(exports, "toIdentifier", {
+  enumerable: true,
+  get: function () {
+    return _toIdentifier.default;
+  }
+});
+Object.defineProperty(exports, "toKeyAlias", {
+  enumerable: true,
+  get: function () {
+    return _toKeyAlias.default;
+  }
+});
+Object.defineProperty(exports, "toSequenceExpression", {
+  enumerable: true,
+  get: function () {
+    return _toSequenceExpression.default;
+  }
+});
+Object.defineProperty(exports, "toStatement", {
+  enumerable: true,
+  get: function () {
+    return _toStatement.default;
+  }
+});
+Object.defineProperty(exports, "valueToNode", {
+  enumerable: true,
+  get: function () {
+    return _valueToNode.default;
+  }
+});
+Object.defineProperty(exports, "appendToMemberExpression", {
+  enumerable: true,
+  get: function () {
+    return _appendToMemberExpression.default;
+  }
+});
+Object.defineProperty(exports, "inherits", {
+  enumerable: true,
+  get: function () {
+    return _inherits.default;
+  }
+});
+Object.defineProperty(exports, "prependToMemberExpression", {
+  enumerable: true,
+  get: function () {
+    return _prependToMemberExpression.default;
+  }
+});
+Object.defineProperty(exports, "removeProperties", {
+  enumerable: true,
+  get: function () {
+    return _removeProperties.default;
+  }
+});
+Object.defineProperty(exports, "removePropertiesDeep", {
+  enumerable: true,
+  get: function () {
+    return _removePropertiesDeep.default;
+  }
+});
+Object.defineProperty(exports, "removeTypeDuplicates", {
+  enumerable: true,
+  get: function () {
+    return _removeTypeDuplicates.default;
+  }
+});
+Object.defineProperty(exports, "getBindingIdentifiers", {
+  enumerable: true,
+  get: function () {
+    return _getBindingIdentifiers.default;
+  }
+});
+Object.defineProperty(exports, "getOuterBindingIdentifiers", {
+  enumerable: true,
+  get: function () {
+    return _getOuterBindingIdentifiers.default;
+  }
+});
+Object.defineProperty(exports, "traverse", {
+  enumerable: true,
+  get: function () {
+    return _traverse.default;
+  }
+});
+Object.defineProperty(exports, "traverseFast", {
+  enumerable: true,
+  get: function () {
+    return _traverseFast.default;
+  }
+});
+Object.defineProperty(exports, "shallowEqual", {
+  enumerable: true,
+  get: function () {
+    return _shallowEqual.default;
+  }
+});
+Object.defineProperty(exports, "is", {
+  enumerable: true,
+  get: function () {
+    return _is.default;
+  }
+});
+Object.defineProperty(exports, "isBinding", {
+  enumerable: true,
+  get: function () {
+    return _isBinding.default;
+  }
+});
+Object.defineProperty(exports, "isBlockScoped", {
+  enumerable: true,
+  get: function () {
+    return _isBlockScoped.default;
+  }
+});
+Object.defineProperty(exports, "isImmutable", {
+  enumerable: true,
+  get: function () {
+    return _isImmutable.default;
+  }
+});
+Object.defineProperty(exports, "isLet", {
+  enumerable: true,
+  get: function () {
+    return _isLet.default;
+  }
+});
+Object.defineProperty(exports, "isNode", {
+  enumerable: true,
+  get: function () {
+    return _isNode.default;
+  }
+});
+Object.defineProperty(exports, "isNodesEquivalent", {
+  enumerable: true,
+  get: function () {
+    return _isNodesEquivalent.default;
+  }
+});
+Object.defineProperty(exports, "isPlaceholderType", {
+  enumerable: true,
+  get: function () {
+    return _isPlaceholderType.default;
+  }
+});
+Object.defineProperty(exports, "isReferenced", {
+  enumerable: true,
+  get: function () {
+    return _isReferenced.default;
+  }
+});
+Object.defineProperty(exports, "isScope", {
+  enumerable: true,
+  get: function () {
+    return _isScope.default;
+  }
+});
+Object.defineProperty(exports, "isSpecifierDefault", {
+  enumerable: true,
+  get: function () {
+    return _isSpecifierDefault.default;
+  }
+});
+Object.defineProperty(exports, "isType", {
+  enumerable: true,
+  get: function () {
+    return _isType.default;
+  }
+});
+Object.defineProperty(exports, "isValidES3Identifier", {
+  enumerable: true,
+  get: function () {
+    return _isValidES3Identifier.default;
+  }
+});
+Object.defineProperty(exports, "isValidIdentifier", {
+  enumerable: true,
+  get: function () {
+    return _isValidIdentifier.default;
+  }
+});
+Object.defineProperty(exports, "isVar", {
+  enumerable: true,
+  get: function () {
+    return _isVar.default;
+  }
+});
+Object.defineProperty(exports, "matchesPattern", {
+  enumerable: true,
+  get: function () {
+    return _matchesPattern.default;
+  }
+});
+Object.defineProperty(exports, "validate", {
+  enumerable: true,
+  get: function () {
+    return _validate.default;
+  }
+});
+Object.defineProperty(exports, "buildMatchMemberExpression", {
+  enumerable: true,
+  get: function () {
+    return _buildMatchMemberExpression.default;
+  }
+});
+exports.react = void 0;
+
+var _isReactComponent = _interopRequireDefault(require("./validators/react/isReactComponent"));
+
+var _isCompatTag = _interopRequireDefault(require("./validators/react/isCompatTag"));
+
+var _buildChildren = _interopRequireDefault(require("./builders/react/buildChildren"));
+
+var _assertNode = _interopRequireDefault(require("./asserts/assertNode"));
+
+var _generated = require("./asserts/generated");
+
+Object.keys(_generated).forEach(function (key) {
+  if (key === "default" || key === "__esModule") return;
+  if (Object.prototype.hasOwnProperty.call(_exportNames, key)) return;
+  Object.defineProperty(exports, key, {
+    enumerable: true,
+    get: function () {
+      return _generated[key];
+    }
+  });
+});
+
+var _createTypeAnnotationBasedOnTypeof = _interopRequireDefault(require("./builders/flow/createTypeAnnotationBasedOnTypeof"));
+
+var _createFlowUnionType = _interopRequireDefault(require("./builders/flow/createFlowUnionType"));
+
+var _createTSUnionType = _interopRequireDefault(require("./builders/typescript/createTSUnionType"));
+
+var _generated2 = require("./builders/generated");
+
+Object.keys(_generated2).forEach(function (key) {
+  if (key === "default" || key === "__esModule") return;
+  if (Object.prototype.hasOwnProperty.call(_exportNames, key)) return;
+  Object.defineProperty(exports, key, {
+    enumerable: true,
+    get: function () {
+      return _generated2[key];
+    }
+  });
+});
+
+var _cloneNode = _interopRequireDefault(require("./clone/cloneNode"));
+
+var _clone = _interopRequireDefault(require("./clone/clone"));
+
+var _cloneDeep = _interopRequireDefault(require("./clone/cloneDeep"));
+
+var _cloneDeepWithoutLoc = _interopRequireDefault(require("./clone/cloneDeepWithoutLoc"));
+
+var _cloneWithoutLoc = _interopRequireDefault(require("./clone/cloneWithoutLoc"));
+
+var _addComment = _interopRequireDefault(require("./comments/addComment"));
+
+var _addComments = _interopRequireDefault(require("./comments/addComments"));
+
+var _inheritInnerComments = _interopRequireDefault(require("./comments/inheritInnerComments"));
+
+var _inheritLeadingComments = _interopRequireDefault(require("./comments/inheritLeadingComments"));
+
+var _inheritsComments = _interopRequireDefault(require("./comments/inheritsComments"));
+
+var _inheritTrailingComments = _interopRequireDefault(require("./comments/inheritTrailingComments"));
+
+var _removeComments = _interopRequireDefault(require("./comments/removeComments"));
+
+var _generated3 = require("./constants/generated");
+
+Object.keys(_generated3).forEach(function (key) {
+  if (key === "default" || key === "__esModule") return;
+  if (Object.prototype.hasOwnProperty.call(_exportNames, key)) return;
+  Object.defineProperty(exports, key, {
+    enumerable: true,
+    get: function () {
+      return _generated3[key];
+    }
+  });
+});
+
+var _constants = require("./constants");
+
+Object.keys(_constants).forEach(function (key) {
+  if (key === "default" || key === "__esModule") return;
+  if (Object.prototype.hasOwnProperty.call(_exportNames, key)) return;
+  Object.defineProperty(exports, key, {
+    enumerable: true,
+    get: function () {
+      return _constants[key];
+    }
+  });
+});
+
+var _ensureBlock = _interopRequireDefault(require("./converters/ensureBlock"));
+
+var _toBindingIdentifierName = _interopRequireDefault(require("./converters/toBindingIdentifierName"));
+
+var _toBlock = _interopRequireDefault(require("./converters/toBlock"));
+
+var _toComputedKey = _interopRequireDefault(require("./converters/toComputedKey"));
+
+var _toExpression = _interopRequireDefault(require("./converters/toExpression"));
+
+var _toIdentifier = _interopRequireDefault(require("./converters/toIdentifier"));
+
+var _toKeyAlias = _interopRequireDefault(require("./converters/toKeyAlias"));
+
+var _toSequenceExpression = _interopRequireDefault(require("./converters/toSequenceExpression"));
+
+var _toStatement = _interopRequireDefault(require("./converters/toStatement"));
+
+var _valueToNode = _interopRequireDefault(require("./converters/valueToNode"));
+
+var _definitions = require("./definitions");
+
+Object.keys(_definitions).forEach(function (key) {
+  if (key === "default" || key === "__esModule") return;
+  if (Object.prototype.hasOwnProperty.call(_exportNames, key)) return;
+  Object.defineProperty(exports, key, {
+    enumerable: true,
+    get: function () {
+      return _definitions[key];
+    }
+  });
+});
+
+var _appendToMemberExpression = _interopRequireDefault(require("./modifications/appendToMemberExpression"));
+
+var _inherits = _interopRequireDefault(require("./modifications/inherits"));
+
+var _prependToMemberExpression = _interopRequireDefault(require("./modifications/prependToMemberExpression"));
+
+var _removeProperties = _interopRequireDefault(require("./modifications/removeProperties"));
+
+var _removePropertiesDeep = _interopRequireDefault(require("./modifications/removePropertiesDeep"));
+
+var _removeTypeDuplicates = _interopRequireDefault(require("./modifications/flow/removeTypeDuplicates"));
+
+var _getBindingIdentifiers = _interopRequireDefault(require("./retrievers/getBindingIdentifiers"));
+
+var _getOuterBindingIdentifiers = _interopRequireDefault(require("./retrievers/getOuterBindingIdentifiers"));
+
+var _traverse = _interopRequireDefault(require("./traverse/traverse"));
+
+var _traverseFast = _interopRequireDefault(require("./traverse/traverseFast"));
+
+var _shallowEqual = _interopRequireDefault(require("./utils/shallowEqual"));
+
+var _is = _interopRequireDefault(require("./validators/is"));
+
+var _isBinding = _interopRequireDefault(require("./validators/isBinding"));
+
+var _isBlockScoped = _interopRequireDefault(require("./validators/isBlockScoped"));
+
+var _isImmutable = _interopRequireDefault(require("./validators/isImmutable"));
+
+var _isLet = _interopRequireDefault(require("./validators/isLet"));
+
+var _isNode = _interopRequireDefault(require("./validators/isNode"));
+
+var _isNodesEquivalent = _interopRequireDefault(require("./validators/isNodesEquivalent"));
+
+var _isPlaceholderType = _interopRequireDefault(require("./validators/isPlaceholderType"));
+
+var _isReferenced = _interopRequireDefault(require("./validators/isReferenced"));
+
+var _isScope = _interopRequireDefault(require("./validators/isScope"));
+
+var _isSpecifierDefault = _interopRequireDefault(require("./validators/isSpecifierDefault"));
+
+var _isType = _interopRequireDefault(require("./validators/isType"));
+
+var _isValidES3Identifier = _interopRequireDefault(require("./validators/isValidES3Identifier"));
+
+var _isValidIdentifier = _interopRequireDefault(require("./validators/isValidIdentifier"));
+
+var _isVar = _interopRequireDefault(require("./validators/isVar"));
+
+var _matchesPattern = _interopRequireDefault(require("./validators/matchesPattern"));
+
+var _validate = _interopRequireDefault(require("./validators/validate"));
+
+var _buildMatchMemberExpression = _interopRequireDefault(require("./validators/buildMatchMemberExpression"));
+
+var _generated4 = require("./validators/generated");
+
+Object.keys(_generated4).forEach(function (key) {
+  if (key === "default" || key === "__esModule") return;
+  if (Object.prototype.hasOwnProperty.call(_exportNames, key)) return;
+  Object.defineProperty(exports, key, {
+    enumerable: true,
+    get: function () {
+      return _generated4[key];
+    }
+  });
+});
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+const react = {
+  isReactComponent: _isReactComponent.default,
+  isCompatTag: _isCompatTag.default,
+  buildChildren: _buildChildren.default
+};
+exports.react = react;
 },
 "VZhpcvXzyURvh2xXbhzTD9TwTNJlJ++7Wtg0Y3x0Dkw=":
 function (require, module, exports, __dirname, __filename) {
@@ -29167,6 +34612,32 @@ function isBinding(node, parent, grandparent) {
   return false;
 }
 },
+"a91N2WisTGSLhiBGayHI69+zUWOuL6rhqSey7JB7HM4=":
+function (require, module, exports, __dirname, __filename) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = createTSUnionType;
+
+var _generated = require("../generated");
+
+var _removeTypeDuplicates = _interopRequireDefault(require("../../modifications/typescript/removeTypeDuplicates"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function createTSUnionType(typeAnnotations) {
+  const types = typeAnnotations.map(type => type.typeAnnotations);
+  const flattened = (0, _removeTypeDuplicates.default)(types);
+
+  if (flattened.length === 1) {
+    return flattened[0];
+  } else {
+    return (0, _generated.TSUnionType)(flattened);
+  }
+}
+},
 "aL4EHdA3nSldiVUNH28ujClkW92S0UtCf+LhQLPI8vg=":
 function (require, module, exports, __dirname, __filename) {
 /*!
@@ -29275,6 +34746,23 @@ exports.default = isCompatTag;
 
 function isCompatTag(tagName) {
   return !!tagName && /^[a-z]/.test(tagName);
+}
+},
+"ay8CT9yyB3GR2JQRITJuabXStu2L2WOmkSWM2d7ZpGk=":
+function (require, module, exports, __dirname, __filename) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = cloneDeepWithoutLoc;
+
+var _cloneNode = _interopRequireDefault(require("./cloneNode"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function cloneDeepWithoutLoc(node) {
+  return (0, _cloneNode.default)(node, true, true);
 }
 },
 "b+P18ATD7HdVppE543Fka566sogUhHY1FA9UWl77Djg=":
@@ -46046,6 +51534,63 @@ function _classMethodHead(node) {
   this._methodHead(node);
 }
 },
+"eRRPrFaHl0XMED6v+D/zK7n3HY4lDL40PKZAfRAAPFI=":
+function (require, module, exports, __dirname, __filename) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = removeTypeDuplicates;
+
+var _generated = require("../../validators/generated");
+
+function removeTypeDuplicates(nodes) {
+  const generics = {};
+  const bases = {};
+  const typeGroups = [];
+  const types = [];
+
+  for (let i = 0; i < nodes.length; i++) {
+    const node = nodes[i];
+    if (!node) continue;
+
+    if (types.indexOf(node) >= 0) {
+      continue;
+    }
+
+    if ((0, _generated.isTSAnyKeyword)(node.type)) {
+      return [node];
+    }
+
+    if ((0, _generated.isTSBaseType)(node)) {
+      bases[node.type] = node;
+      continue;
+    }
+
+    if ((0, _generated.isTSUnionType)(node)) {
+      if (typeGroups.indexOf(node.types) < 0) {
+        nodes = nodes.concat(node.types);
+        typeGroups.push(node.types);
+      }
+
+      continue;
+    }
+
+    types.push(node);
+  }
+
+  for (const type of Object.keys(bases)) {
+    types.push(bases[type]);
+  }
+
+  for (const name of Object.keys(generics)) {
+    types.push(generics[name]);
+  }
+
+  return types;
+}
+},
 "eTG/QUGAvCDPVjN7WjPmdnUBtsf1N+m7nnnw9uJMpRU=":
 function (require, module, exports, __dirname, __filename) {
 /** Detect free variable `global` from Node.js. */
@@ -50212,6 +55757,47 @@ function inherit(key, child, parent) {
   if (child && parent) {
     child[key] = (0, _uniq.default)([].concat(child[key], parent[key]).filter(Boolean));
   }
+}
+},
+"kM68ZI90hPG6OVj5ji+uzv/Pf1ta9ORAjgKbFlZqnNY=":
+function (require, module, exports, __dirname, __filename) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.isReservedWord = isReservedWord;
+exports.isStrictReservedWord = isStrictReservedWord;
+exports.isStrictBindOnlyReservedWord = isStrictBindOnlyReservedWord;
+exports.isStrictBindReservedWord = isStrictBindReservedWord;
+exports.isKeyword = isKeyword;
+const reservedWords = {
+  keyword: ["break", "case", "catch", "continue", "debugger", "default", "do", "else", "finally", "for", "function", "if", "return", "switch", "throw", "try", "var", "const", "while", "with", "new", "this", "super", "class", "extends", "export", "import", "null", "true", "false", "in", "instanceof", "typeof", "void", "delete"],
+  strict: ["implements", "interface", "let", "package", "private", "protected", "public", "static", "yield"],
+  strictBind: ["eval", "arguments"]
+};
+const keywords = new Set(reservedWords.keyword);
+const reservedWordsStrictSet = new Set(reservedWords.strict);
+const reservedWordsStrictBindSet = new Set(reservedWords.strictBind);
+
+function isReservedWord(word, inModule) {
+  return inModule && word === "await" || word === "enum";
+}
+
+function isStrictReservedWord(word, inModule) {
+  return isReservedWord(word, inModule) || reservedWordsStrictSet.has(word);
+}
+
+function isStrictBindOnlyReservedWord(word) {
+  return reservedWordsStrictBindSet.has(word);
+}
+
+function isStrictBindReservedWord(word, inModule) {
+  return isStrictReservedWord(word, inModule) || isStrictBindOnlyReservedWord(word);
+}
+
+function isKeyword(word) {
+  return keywords.has(word);
 }
 },
 "kOwjvNa4D741e1EhZI3zpAxnzT/4+cbuVzGjlSp0kcU=":
@@ -54794,6 +60380,470 @@ function assertNode(node) {
     throw new TypeError(`Not a valid node of type "${type}"`);
   }
 }
+},
+"mm5ArrCrLkNAFr9ICrQJZxWWt2chhhGMIdhm/grysz8=":
+function (require, module, exports, __dirname, __filename) {
+"use strict";
+
+var _utils = _interopRequireWildcard(require("./utils"));
+
+function _getRequireWildcardCache() { if (typeof WeakMap !== "function") return null; var cache = new WeakMap(); _getRequireWildcardCache = function () { return cache; }; return cache; }
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } if (obj === null || typeof obj !== "object" && typeof obj !== "function") { return { default: obj }; } var cache = _getRequireWildcardCache(); if (cache && cache.has(obj)) { return cache.get(obj); } var newObj = {}; var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null; if (desc && (desc.get || desc.set)) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } newObj.default = obj; if (cache) { cache.set(obj, newObj); } return newObj; }
+
+const defineInterfaceishType = (name, typeParameterType = "TypeParameterDeclaration") => {
+  (0, _utils.default)(name, {
+    builder: ["id", "typeParameters", "extends", "body"],
+    visitor: ["id", "typeParameters", "extends", "mixins", "implements", "body"],
+    aliases: ["Flow", "FlowDeclaration", "Statement", "Declaration"],
+    fields: {
+      id: (0, _utils.validateType)("Identifier"),
+      typeParameters: (0, _utils.validateOptionalType)(typeParameterType),
+      extends: (0, _utils.validateOptional)((0, _utils.arrayOfType)("InterfaceExtends")),
+      mixins: (0, _utils.validateOptional)((0, _utils.arrayOfType)("InterfaceExtends")),
+      implements: (0, _utils.validateOptional)((0, _utils.arrayOfType)("ClassImplements")),
+      body: (0, _utils.validateType)("ObjectTypeAnnotation")
+    }
+  });
+};
+
+(0, _utils.default)("AnyTypeAnnotation", {
+  aliases: ["Flow", "FlowType", "FlowBaseAnnotation"]
+});
+(0, _utils.default)("ArrayTypeAnnotation", {
+  visitor: ["elementType"],
+  aliases: ["Flow", "FlowType"],
+  fields: {
+    elementType: (0, _utils.validateType)("FlowType")
+  }
+});
+(0, _utils.default)("BooleanTypeAnnotation", {
+  aliases: ["Flow", "FlowType", "FlowBaseAnnotation"]
+});
+(0, _utils.default)("BooleanLiteralTypeAnnotation", {
+  builder: ["value"],
+  aliases: ["Flow", "FlowType"],
+  fields: {
+    value: (0, _utils.validate)((0, _utils.assertValueType)("boolean"))
+  }
+});
+(0, _utils.default)("NullLiteralTypeAnnotation", {
+  aliases: ["Flow", "FlowType", "FlowBaseAnnotation"]
+});
+(0, _utils.default)("ClassImplements", {
+  visitor: ["id", "typeParameters"],
+  aliases: ["Flow"],
+  fields: {
+    id: (0, _utils.validateType)("Identifier"),
+    typeParameters: (0, _utils.validateOptionalType)("TypeParameterInstantiation")
+  }
+});
+defineInterfaceishType("DeclareClass");
+(0, _utils.default)("DeclareFunction", {
+  visitor: ["id"],
+  aliases: ["Flow", "FlowDeclaration", "Statement", "Declaration"],
+  fields: {
+    id: (0, _utils.validateType)("Identifier"),
+    predicate: (0, _utils.validateOptionalType)("DeclaredPredicate")
+  }
+});
+defineInterfaceishType("DeclareInterface");
+(0, _utils.default)("DeclareModule", {
+  builder: ["id", "body", "kind"],
+  visitor: ["id", "body"],
+  aliases: ["Flow", "FlowDeclaration", "Statement", "Declaration"],
+  fields: {
+    id: (0, _utils.validateType)(["Identifier", "StringLiteral"]),
+    body: (0, _utils.validateType)("BlockStatement"),
+    kind: (0, _utils.validateOptional)((0, _utils.assertOneOf)("CommonJS", "ES"))
+  }
+});
+(0, _utils.default)("DeclareModuleExports", {
+  visitor: ["typeAnnotation"],
+  aliases: ["Flow", "FlowDeclaration", "Statement", "Declaration"],
+  fields: {
+    typeAnnotation: (0, _utils.validateType)("TypeAnnotation")
+  }
+});
+(0, _utils.default)("DeclareTypeAlias", {
+  visitor: ["id", "typeParameters", "right"],
+  aliases: ["Flow", "FlowDeclaration", "Statement", "Declaration"],
+  fields: {
+    id: (0, _utils.validateType)("Identifier"),
+    typeParameters: (0, _utils.validateOptionalType)("TypeParameterDeclaration"),
+    right: (0, _utils.validateType)("FlowType")
+  }
+});
+(0, _utils.default)("DeclareOpaqueType", {
+  visitor: ["id", "typeParameters", "supertype"],
+  aliases: ["Flow", "FlowDeclaration", "Statement", "Declaration"],
+  fields: {
+    id: (0, _utils.validateType)("Identifier"),
+    typeParameters: (0, _utils.validateOptionalType)("TypeParameterDeclaration"),
+    supertype: (0, _utils.validateOptionalType)("FlowType")
+  }
+});
+(0, _utils.default)("DeclareVariable", {
+  visitor: ["id"],
+  aliases: ["Flow", "FlowDeclaration", "Statement", "Declaration"],
+  fields: {
+    id: (0, _utils.validateType)("Identifier")
+  }
+});
+(0, _utils.default)("DeclareExportDeclaration", {
+  visitor: ["declaration", "specifiers", "source"],
+  aliases: ["Flow", "FlowDeclaration", "Statement", "Declaration"],
+  fields: {
+    declaration: (0, _utils.validateOptionalType)("Flow"),
+    specifiers: (0, _utils.validateOptional)((0, _utils.arrayOfType)(["ExportSpecifier", "ExportNamespaceSpecifier"])),
+    source: (0, _utils.validateOptionalType)("StringLiteral"),
+    default: (0, _utils.validateOptional)((0, _utils.assertValueType)("boolean"))
+  }
+});
+(0, _utils.default)("DeclareExportAllDeclaration", {
+  visitor: ["source"],
+  aliases: ["Flow", "FlowDeclaration", "Statement", "Declaration"],
+  fields: {
+    source: (0, _utils.validateType)("StringLiteral"),
+    exportKind: (0, _utils.validateOptional)((0, _utils.assertOneOf)("type", "value"))
+  }
+});
+(0, _utils.default)("DeclaredPredicate", {
+  visitor: ["value"],
+  aliases: ["Flow", "FlowPredicate"],
+  fields: {
+    value: (0, _utils.validateType)("Flow")
+  }
+});
+(0, _utils.default)("ExistsTypeAnnotation", {
+  aliases: ["Flow", "FlowType"]
+});
+(0, _utils.default)("FunctionTypeAnnotation", {
+  visitor: ["typeParameters", "params", "rest", "returnType"],
+  aliases: ["Flow", "FlowType"],
+  fields: {
+    typeParameters: (0, _utils.validateOptionalType)("TypeParameterDeclaration"),
+    params: (0, _utils.validate)((0, _utils.arrayOfType)("FunctionTypeParam")),
+    rest: (0, _utils.validateOptionalType)("FunctionTypeParam"),
+    returnType: (0, _utils.validateType)("FlowType")
+  }
+});
+(0, _utils.default)("FunctionTypeParam", {
+  visitor: ["name", "typeAnnotation"],
+  aliases: ["Flow"],
+  fields: {
+    name: (0, _utils.validateOptionalType)("Identifier"),
+    typeAnnotation: (0, _utils.validateType)("FlowType"),
+    optional: (0, _utils.validateOptional)((0, _utils.assertValueType)("boolean"))
+  }
+});
+(0, _utils.default)("GenericTypeAnnotation", {
+  visitor: ["id", "typeParameters"],
+  aliases: ["Flow", "FlowType"],
+  fields: {
+    id: (0, _utils.validateType)(["Identifier", "QualifiedTypeIdentifier"]),
+    typeParameters: (0, _utils.validateOptionalType)("TypeParameterInstantiation")
+  }
+});
+(0, _utils.default)("InferredPredicate", {
+  aliases: ["Flow", "FlowPredicate"]
+});
+(0, _utils.default)("InterfaceExtends", {
+  visitor: ["id", "typeParameters"],
+  aliases: ["Flow"],
+  fields: {
+    id: (0, _utils.validateType)(["Identifier", "QualifiedTypeIdentifier"]),
+    typeParameters: (0, _utils.validateOptionalType)("TypeParameterInstantiation")
+  }
+});
+defineInterfaceishType("InterfaceDeclaration");
+(0, _utils.default)("InterfaceTypeAnnotation", {
+  visitor: ["extends", "body"],
+  aliases: ["Flow", "FlowType"],
+  fields: {
+    extends: (0, _utils.validateOptional)((0, _utils.arrayOfType)("InterfaceExtends")),
+    body: (0, _utils.validateType)("ObjectTypeAnnotation")
+  }
+});
+(0, _utils.default)("IntersectionTypeAnnotation", {
+  visitor: ["types"],
+  aliases: ["Flow", "FlowType"],
+  fields: {
+    types: (0, _utils.validate)((0, _utils.arrayOfType)("FlowType"))
+  }
+});
+(0, _utils.default)("MixedTypeAnnotation", {
+  aliases: ["Flow", "FlowType", "FlowBaseAnnotation"]
+});
+(0, _utils.default)("EmptyTypeAnnotation", {
+  aliases: ["Flow", "FlowType", "FlowBaseAnnotation"]
+});
+(0, _utils.default)("NullableTypeAnnotation", {
+  visitor: ["typeAnnotation"],
+  aliases: ["Flow", "FlowType"],
+  fields: {
+    typeAnnotation: (0, _utils.validateType)("FlowType")
+  }
+});
+(0, _utils.default)("NumberLiteralTypeAnnotation", {
+  builder: ["value"],
+  aliases: ["Flow", "FlowType"],
+  fields: {
+    value: (0, _utils.validate)((0, _utils.assertValueType)("number"))
+  }
+});
+(0, _utils.default)("NumberTypeAnnotation", {
+  aliases: ["Flow", "FlowType", "FlowBaseAnnotation"]
+});
+(0, _utils.default)("ObjectTypeAnnotation", {
+  visitor: ["properties", "indexers", "callProperties", "internalSlots"],
+  aliases: ["Flow", "FlowType"],
+  builder: ["properties", "indexers", "callProperties", "internalSlots", "exact"],
+  fields: {
+    properties: (0, _utils.validate)((0, _utils.arrayOfType)(["ObjectTypeProperty", "ObjectTypeSpreadProperty"])),
+    indexers: (0, _utils.validateOptional)((0, _utils.arrayOfType)("ObjectTypeIndexer")),
+    callProperties: (0, _utils.validateOptional)((0, _utils.arrayOfType)("ObjectTypeCallProperty")),
+    internalSlots: (0, _utils.validateOptional)((0, _utils.arrayOfType)("ObjectTypeInternalSlot")),
+    exact: {
+      validate: (0, _utils.assertValueType)("boolean"),
+      default: false
+    },
+    inexact: (0, _utils.validateOptional)((0, _utils.assertValueType)("boolean"))
+  }
+});
+(0, _utils.default)("ObjectTypeInternalSlot", {
+  visitor: ["id", "value", "optional", "static", "method"],
+  aliases: ["Flow", "UserWhitespacable"],
+  fields: {
+    id: (0, _utils.validateType)("Identifier"),
+    value: (0, _utils.validateType)("FlowType"),
+    optional: (0, _utils.validate)((0, _utils.assertValueType)("boolean")),
+    static: (0, _utils.validate)((0, _utils.assertValueType)("boolean")),
+    method: (0, _utils.validate)((0, _utils.assertValueType)("boolean"))
+  }
+});
+(0, _utils.default)("ObjectTypeCallProperty", {
+  visitor: ["value"],
+  aliases: ["Flow", "UserWhitespacable"],
+  fields: {
+    value: (0, _utils.validateType)("FlowType"),
+    static: (0, _utils.validate)((0, _utils.assertValueType)("boolean"))
+  }
+});
+(0, _utils.default)("ObjectTypeIndexer", {
+  visitor: ["id", "key", "value", "variance"],
+  aliases: ["Flow", "UserWhitespacable"],
+  fields: {
+    id: (0, _utils.validateOptionalType)("Identifier"),
+    key: (0, _utils.validateType)("FlowType"),
+    value: (0, _utils.validateType)("FlowType"),
+    static: (0, _utils.validate)((0, _utils.assertValueType)("boolean")),
+    variance: (0, _utils.validateOptionalType)("Variance")
+  }
+});
+(0, _utils.default)("ObjectTypeProperty", {
+  visitor: ["key", "value", "variance"],
+  aliases: ["Flow", "UserWhitespacable"],
+  fields: {
+    key: (0, _utils.validateType)(["Identifier", "StringLiteral"]),
+    value: (0, _utils.validateType)("FlowType"),
+    kind: (0, _utils.validate)((0, _utils.assertOneOf)("init", "get", "set")),
+    static: (0, _utils.validate)((0, _utils.assertValueType)("boolean")),
+    proto: (0, _utils.validate)((0, _utils.assertValueType)("boolean")),
+    optional: (0, _utils.validate)((0, _utils.assertValueType)("boolean")),
+    variance: (0, _utils.validateOptionalType)("Variance")
+  }
+});
+(0, _utils.default)("ObjectTypeSpreadProperty", {
+  visitor: ["argument"],
+  aliases: ["Flow", "UserWhitespacable"],
+  fields: {
+    argument: (0, _utils.validateType)("FlowType")
+  }
+});
+(0, _utils.default)("OpaqueType", {
+  visitor: ["id", "typeParameters", "supertype", "impltype"],
+  aliases: ["Flow", "FlowDeclaration", "Statement", "Declaration"],
+  fields: {
+    id: (0, _utils.validateType)("Identifier"),
+    typeParameters: (0, _utils.validateOptionalType)("TypeParameterDeclaration"),
+    supertype: (0, _utils.validateOptionalType)("FlowType"),
+    impltype: (0, _utils.validateType)("FlowType")
+  }
+});
+(0, _utils.default)("QualifiedTypeIdentifier", {
+  visitor: ["id", "qualification"],
+  aliases: ["Flow"],
+  fields: {
+    id: (0, _utils.validateType)("Identifier"),
+    qualification: (0, _utils.validateType)(["Identifier", "QualifiedTypeIdentifier"])
+  }
+});
+(0, _utils.default)("StringLiteralTypeAnnotation", {
+  builder: ["value"],
+  aliases: ["Flow", "FlowType"],
+  fields: {
+    value: (0, _utils.validate)((0, _utils.assertValueType)("string"))
+  }
+});
+(0, _utils.default)("StringTypeAnnotation", {
+  aliases: ["Flow", "FlowType", "FlowBaseAnnotation"]
+});
+(0, _utils.default)("SymbolTypeAnnotation", {
+  aliases: ["Flow", "FlowType", "FlowBaseAnnotation"]
+});
+(0, _utils.default)("ThisTypeAnnotation", {
+  aliases: ["Flow", "FlowType", "FlowBaseAnnotation"]
+});
+(0, _utils.default)("TupleTypeAnnotation", {
+  visitor: ["types"],
+  aliases: ["Flow", "FlowType"],
+  fields: {
+    types: (0, _utils.validate)((0, _utils.arrayOfType)("FlowType"))
+  }
+});
+(0, _utils.default)("TypeofTypeAnnotation", {
+  visitor: ["argument"],
+  aliases: ["Flow", "FlowType"],
+  fields: {
+    argument: (0, _utils.validateType)("FlowType")
+  }
+});
+(0, _utils.default)("TypeAlias", {
+  visitor: ["id", "typeParameters", "right"],
+  aliases: ["Flow", "FlowDeclaration", "Statement", "Declaration"],
+  fields: {
+    id: (0, _utils.validateType)("Identifier"),
+    typeParameters: (0, _utils.validateOptionalType)("TypeParameterDeclaration"),
+    right: (0, _utils.validateType)("FlowType")
+  }
+});
+(0, _utils.default)("TypeAnnotation", {
+  aliases: ["Flow"],
+  visitor: ["typeAnnotation"],
+  fields: {
+    typeAnnotation: (0, _utils.validateType)("FlowType")
+  }
+});
+(0, _utils.default)("TypeCastExpression", {
+  visitor: ["expression", "typeAnnotation"],
+  aliases: ["Flow", "ExpressionWrapper", "Expression"],
+  fields: {
+    expression: (0, _utils.validateType)("Expression"),
+    typeAnnotation: (0, _utils.validateType)("TypeAnnotation")
+  }
+});
+(0, _utils.default)("TypeParameter", {
+  aliases: ["Flow"],
+  visitor: ["bound", "default", "variance"],
+  fields: {
+    name: (0, _utils.validate)((0, _utils.assertValueType)("string")),
+    bound: (0, _utils.validateOptionalType)("TypeAnnotation"),
+    default: (0, _utils.validateOptionalType)("FlowType"),
+    variance: (0, _utils.validateOptionalType)("Variance")
+  }
+});
+(0, _utils.default)("TypeParameterDeclaration", {
+  aliases: ["Flow"],
+  visitor: ["params"],
+  fields: {
+    params: (0, _utils.validate)((0, _utils.arrayOfType)("TypeParameter"))
+  }
+});
+(0, _utils.default)("TypeParameterInstantiation", {
+  aliases: ["Flow"],
+  visitor: ["params"],
+  fields: {
+    params: (0, _utils.validate)((0, _utils.arrayOfType)("FlowType"))
+  }
+});
+(0, _utils.default)("UnionTypeAnnotation", {
+  visitor: ["types"],
+  aliases: ["Flow", "FlowType"],
+  fields: {
+    types: (0, _utils.validate)((0, _utils.arrayOfType)("FlowType"))
+  }
+});
+(0, _utils.default)("Variance", {
+  aliases: ["Flow"],
+  builder: ["kind"],
+  fields: {
+    kind: (0, _utils.validate)((0, _utils.assertOneOf)("minus", "plus"))
+  }
+});
+(0, _utils.default)("VoidTypeAnnotation", {
+  aliases: ["Flow", "FlowType", "FlowBaseAnnotation"]
+});
+(0, _utils.default)("EnumDeclaration", {
+  aliases: ["Statement", "Declaration"],
+  visitor: ["id", "body"],
+  fields: {
+    id: (0, _utils.validateType)("Identifier"),
+    body: (0, _utils.validateType)(["EnumBooleanBody", "EnumNumberBody", "EnumStringBody", "EnumSymbolBody"])
+  }
+});
+(0, _utils.default)("EnumBooleanBody", {
+  aliases: ["EnumBody"],
+  visitor: ["members"],
+  fields: {
+    explicit: (0, _utils.validate)((0, _utils.assertValueType)("boolean")),
+    members: (0, _utils.validateArrayOfType)("EnumBooleanMember")
+  }
+});
+(0, _utils.default)("EnumNumberBody", {
+  aliases: ["EnumBody"],
+  visitor: ["members"],
+  fields: {
+    explicit: (0, _utils.validate)((0, _utils.assertValueType)("boolean")),
+    members: (0, _utils.validateArrayOfType)("EnumNumberMember")
+  }
+});
+(0, _utils.default)("EnumStringBody", {
+  aliases: ["EnumBody"],
+  visitor: ["members"],
+  fields: {
+    explicit: (0, _utils.validate)((0, _utils.assertValueType)("boolean")),
+    members: (0, _utils.validateArrayOfType)(["EnumStringMember", "EnumDefaultedMember"])
+  }
+});
+(0, _utils.default)("EnumSymbolBody", {
+  aliases: ["EnumBody"],
+  visitor: ["members"],
+  fields: {
+    members: (0, _utils.validateArrayOfType)("EnumDefaultedMember")
+  }
+});
+(0, _utils.default)("EnumBooleanMember", {
+  aliases: ["EnumMember"],
+  visitor: ["id"],
+  fields: {
+    id: (0, _utils.validateType)("Identifier"),
+    init: (0, _utils.validateType)("BooleanLiteral")
+  }
+});
+(0, _utils.default)("EnumNumberMember", {
+  aliases: ["EnumMember"],
+  visitor: ["id", "init"],
+  fields: {
+    id: (0, _utils.validateType)("Identifier"),
+    init: (0, _utils.validateType)("NumericLiteral")
+  }
+});
+(0, _utils.default)("EnumStringMember", {
+  aliases: ["EnumMember"],
+  visitor: ["id", "init"],
+  fields: {
+    id: (0, _utils.validateType)("Identifier"),
+    init: (0, _utils.validateType)("StringLiteral")
+  }
+});
+(0, _utils.default)("EnumDefaultedMember", {
+  aliases: ["EnumMember"],
+  visitor: ["id"],
+  fields: {
+    id: (0, _utils.validateType)("Identifier")
+  }
+});
 },
 "n6fKXOWx1Z3pN9rOkGTIC2HwOGBRnJQVsrXrecfdqXk=":
 function (require, module, exports, __dirname, __filename) {
@@ -59687,6 +65737,476 @@ for (const type of Object.keys(virtualTypes)) {
   };
 }
 },
+"nUhiwcCfXQAAo6OGdjUwQ/2JayjunAevzEBhE1eLbEc=":
+function (require, module, exports, __dirname, __filename) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.classMethodOrDeclareMethodCommon = exports.classMethodOrPropertyCommon = void 0;
+
+var _utils = _interopRequireWildcard(require("./utils"));
+
+var _core = require("./core");
+
+var _is = _interopRequireDefault(require("../validators/is"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _getRequireWildcardCache() { if (typeof WeakMap !== "function") return null; var cache = new WeakMap(); _getRequireWildcardCache = function () { return cache; }; return cache; }
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } if (obj === null || typeof obj !== "object" && typeof obj !== "function") { return { default: obj }; } var cache = _getRequireWildcardCache(); if (cache && cache.has(obj)) { return cache.get(obj); } var newObj = {}; var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null; if (desc && (desc.get || desc.set)) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } newObj.default = obj; if (cache) { cache.set(obj, newObj); } return newObj; }
+
+(0, _utils.default)("AssignmentPattern", {
+  visitor: ["left", "right", "decorators"],
+  builder: ["left", "right"],
+  aliases: ["Pattern", "PatternLike", "LVal"],
+  fields: Object.assign({}, _core.patternLikeCommon, {
+    left: {
+      validate: (0, _utils.assertNodeType)("Identifier", "ObjectPattern", "ArrayPattern", "MemberExpression")
+    },
+    right: {
+      validate: (0, _utils.assertNodeType)("Expression")
+    },
+    decorators: {
+      validate: (0, _utils.chain)((0, _utils.assertValueType)("array"), (0, _utils.assertEach)((0, _utils.assertNodeType)("Decorator"))),
+      optional: true
+    }
+  })
+});
+(0, _utils.default)("ArrayPattern", {
+  visitor: ["elements", "typeAnnotation"],
+  builder: ["elements"],
+  aliases: ["Pattern", "PatternLike", "LVal"],
+  fields: Object.assign({}, _core.patternLikeCommon, {
+    elements: {
+      validate: (0, _utils.chain)((0, _utils.assertValueType)("array"), (0, _utils.assertEach)((0, _utils.assertNodeOrValueType)("null", "PatternLike")))
+    },
+    decorators: {
+      validate: (0, _utils.chain)((0, _utils.assertValueType)("array"), (0, _utils.assertEach)((0, _utils.assertNodeType)("Decorator"))),
+      optional: true
+    }
+  })
+});
+(0, _utils.default)("ArrowFunctionExpression", {
+  builder: ["params", "body", "async"],
+  visitor: ["params", "body", "returnType", "typeParameters"],
+  aliases: ["Scopable", "Function", "BlockParent", "FunctionParent", "Expression", "Pureish"],
+  fields: Object.assign({}, _core.functionCommon, {}, _core.functionTypeAnnotationCommon, {
+    expression: {
+      validate: (0, _utils.assertValueType)("boolean")
+    },
+    body: {
+      validate: (0, _utils.assertNodeType)("BlockStatement", "Expression")
+    }
+  })
+});
+(0, _utils.default)("ClassBody", {
+  visitor: ["body"],
+  fields: {
+    body: {
+      validate: (0, _utils.chain)((0, _utils.assertValueType)("array"), (0, _utils.assertEach)((0, _utils.assertNodeType)("ClassMethod", "ClassPrivateMethod", "ClassProperty", "ClassPrivateProperty", "TSDeclareMethod", "TSIndexSignature")))
+    }
+  }
+});
+(0, _utils.default)("ClassExpression", {
+  builder: ["id", "superClass", "body", "decorators"],
+  visitor: ["id", "body", "superClass", "mixins", "typeParameters", "superTypeParameters", "implements", "decorators"],
+  aliases: ["Scopable", "Class", "Expression"],
+  fields: {
+    id: {
+      validate: (0, _utils.assertNodeType)("Identifier"),
+      optional: true
+    },
+    typeParameters: {
+      validate: (0, _utils.assertNodeType)("TypeParameterDeclaration", "TSTypeParameterDeclaration", "Noop"),
+      optional: true
+    },
+    body: {
+      validate: (0, _utils.assertNodeType)("ClassBody")
+    },
+    superClass: {
+      optional: true,
+      validate: (0, _utils.assertNodeType)("Expression")
+    },
+    superTypeParameters: {
+      validate: (0, _utils.assertNodeType)("TypeParameterInstantiation", "TSTypeParameterInstantiation"),
+      optional: true
+    },
+    implements: {
+      validate: (0, _utils.chain)((0, _utils.assertValueType)("array"), (0, _utils.assertEach)((0, _utils.assertNodeType)("TSExpressionWithTypeArguments", "ClassImplements"))),
+      optional: true
+    },
+    decorators: {
+      validate: (0, _utils.chain)((0, _utils.assertValueType)("array"), (0, _utils.assertEach)((0, _utils.assertNodeType)("Decorator"))),
+      optional: true
+    }
+  }
+});
+(0, _utils.default)("ClassDeclaration", {
+  inherits: "ClassExpression",
+  aliases: ["Scopable", "Class", "Statement", "Declaration"],
+  fields: {
+    declare: {
+      validate: (0, _utils.assertValueType)("boolean"),
+      optional: true
+    },
+    abstract: {
+      validate: (0, _utils.assertValueType)("boolean"),
+      optional: true
+    }
+  },
+  validate: function () {
+    const identifier = (0, _utils.assertNodeType)("Identifier");
+    return function (parent, key, node) {
+      if (!process.env.BABEL_TYPES_8_BREAKING) return;
+
+      if (!(0, _is.default)("ExportDefaultDeclaration", parent)) {
+        identifier(node, "id", node.id);
+      }
+    };
+  }()
+});
+(0, _utils.default)("ExportAllDeclaration", {
+  visitor: ["source"],
+  aliases: ["Statement", "Declaration", "ModuleDeclaration", "ExportDeclaration"],
+  fields: {
+    source: {
+      validate: (0, _utils.assertNodeType)("StringLiteral")
+    }
+  }
+});
+(0, _utils.default)("ExportDefaultDeclaration", {
+  visitor: ["declaration"],
+  aliases: ["Statement", "Declaration", "ModuleDeclaration", "ExportDeclaration"],
+  fields: {
+    declaration: {
+      validate: (0, _utils.assertNodeType)("FunctionDeclaration", "TSDeclareFunction", "ClassDeclaration", "Expression")
+    }
+  }
+});
+(0, _utils.default)("ExportNamedDeclaration", {
+  visitor: ["declaration", "specifiers", "source"],
+  aliases: ["Statement", "Declaration", "ModuleDeclaration", "ExportDeclaration"],
+  fields: {
+    declaration: {
+      optional: true,
+      validate: (0, _utils.chain)((0, _utils.assertNodeType)("Declaration"), function (node, key, val) {
+        if (!process.env.BABEL_TYPES_8_BREAKING) return;
+
+        if (val && node.specifiers.length) {
+          throw new TypeError("Only declaration or specifiers is allowed on ExportNamedDeclaration");
+        }
+      }, function (node, key, val) {
+        if (!process.env.BABEL_TYPES_8_BREAKING) return;
+
+        if (val && node.source) {
+          throw new TypeError("Cannot export a declaration from a source");
+        }
+      })
+    },
+    specifiers: {
+      default: [],
+      validate: (0, _utils.chain)((0, _utils.assertValueType)("array"), (0, _utils.assertEach)(function () {
+        const sourced = (0, _utils.assertNodeType)("ExportSpecifier", "ExportDefaultSpecifier", "ExportNamespaceSpecifier");
+        const sourceless = (0, _utils.assertNodeType)("ExportSpecifier");
+        if (!process.env.BABEL_TYPES_8_BREAKING) return sourced;
+        return function (node, key, val) {
+          const validator = node.source ? sourced : sourceless;
+          validator(node, key, val);
+        };
+      }()))
+    },
+    source: {
+      validate: (0, _utils.assertNodeType)("StringLiteral"),
+      optional: true
+    },
+    exportKind: (0, _utils.validateOptional)((0, _utils.assertOneOf)("type", "value"))
+  }
+});
+(0, _utils.default)("ExportSpecifier", {
+  visitor: ["local", "exported"],
+  aliases: ["ModuleSpecifier"],
+  fields: {
+    local: {
+      validate: (0, _utils.assertNodeType)("Identifier")
+    },
+    exported: {
+      validate: (0, _utils.assertNodeType)("Identifier")
+    }
+  }
+});
+(0, _utils.default)("ForOfStatement", {
+  visitor: ["left", "right", "body"],
+  builder: ["left", "right", "body", "await"],
+  aliases: ["Scopable", "Statement", "For", "BlockParent", "Loop", "ForXStatement"],
+  fields: {
+    left: {
+      validate: function () {
+        if (!process.env.BABEL_TYPES_8_BREAKING) {
+          return (0, _utils.assertNodeType)("VariableDeclaration", "LVal");
+        }
+
+        const declaration = (0, _utils.assertNodeType)("VariableDeclaration");
+        const lval = (0, _utils.assertNodeType)("Identifier", "MemberExpression", "ArrayPattern", "ObjectPattern");
+        return function (node, key, val) {
+          if ((0, _is.default)("VariableDeclaration", val)) {
+            declaration(node, key, val);
+          } else {
+            lval(node, key, val);
+          }
+        };
+      }()
+    },
+    right: {
+      validate: (0, _utils.assertNodeType)("Expression")
+    },
+    body: {
+      validate: (0, _utils.assertNodeType)("Statement")
+    },
+    await: {
+      default: false
+    }
+  }
+});
+(0, _utils.default)("ImportDeclaration", {
+  visitor: ["specifiers", "source"],
+  aliases: ["Statement", "Declaration", "ModuleDeclaration"],
+  fields: {
+    specifiers: {
+      validate: (0, _utils.chain)((0, _utils.assertValueType)("array"), (0, _utils.assertEach)((0, _utils.assertNodeType)("ImportSpecifier", "ImportDefaultSpecifier", "ImportNamespaceSpecifier")))
+    },
+    source: {
+      validate: (0, _utils.assertNodeType)("StringLiteral")
+    },
+    importKind: {
+      validate: (0, _utils.assertOneOf)("type", "typeof", "value"),
+      optional: true
+    }
+  }
+});
+(0, _utils.default)("ImportDefaultSpecifier", {
+  visitor: ["local"],
+  aliases: ["ModuleSpecifier"],
+  fields: {
+    local: {
+      validate: (0, _utils.assertNodeType)("Identifier")
+    }
+  }
+});
+(0, _utils.default)("ImportNamespaceSpecifier", {
+  visitor: ["local"],
+  aliases: ["ModuleSpecifier"],
+  fields: {
+    local: {
+      validate: (0, _utils.assertNodeType)("Identifier")
+    }
+  }
+});
+(0, _utils.default)("ImportSpecifier", {
+  visitor: ["local", "imported"],
+  aliases: ["ModuleSpecifier"],
+  fields: {
+    local: {
+      validate: (0, _utils.assertNodeType)("Identifier")
+    },
+    imported: {
+      validate: (0, _utils.assertNodeType)("Identifier")
+    },
+    importKind: {
+      validate: (0, _utils.assertOneOf)("type", "typeof"),
+      optional: true
+    }
+  }
+});
+(0, _utils.default)("MetaProperty", {
+  visitor: ["meta", "property"],
+  aliases: ["Expression"],
+  fields: {
+    meta: {
+      validate: (0, _utils.chain)((0, _utils.assertNodeType)("Identifier"), function (node, key, val) {
+        if (!process.env.BABEL_TYPES_8_BREAKING) return;
+        let property;
+
+        switch (val.name) {
+          case "function":
+            property = "sent";
+            break;
+
+          case "new":
+            property = "target";
+            break;
+
+          case "import":
+            property = "meta";
+            break;
+        }
+
+        if (!(0, _is.default)("Identifier", node.property, {
+          name: property
+        })) {
+          throw new TypeError("Unrecognised MetaProperty");
+        }
+      })
+    },
+    property: {
+      validate: (0, _utils.assertNodeType)("Identifier")
+    }
+  }
+});
+const classMethodOrPropertyCommon = {
+  abstract: {
+    validate: (0, _utils.assertValueType)("boolean"),
+    optional: true
+  },
+  accessibility: {
+    validate: (0, _utils.assertOneOf)("public", "private", "protected"),
+    optional: true
+  },
+  static: {
+    default: false
+  },
+  computed: {
+    default: false
+  },
+  optional: {
+    validate: (0, _utils.assertValueType)("boolean"),
+    optional: true
+  },
+  key: {
+    validate: (0, _utils.chain)(function () {
+      const normal = (0, _utils.assertNodeType)("Identifier", "StringLiteral", "NumericLiteral");
+      const computed = (0, _utils.assertNodeType)("Expression");
+      return function (node, key, val) {
+        const validator = node.computed ? computed : normal;
+        validator(node, key, val);
+      };
+    }(), (0, _utils.assertNodeType)("Identifier", "StringLiteral", "NumericLiteral", "Expression"))
+  }
+};
+exports.classMethodOrPropertyCommon = classMethodOrPropertyCommon;
+const classMethodOrDeclareMethodCommon = Object.assign({}, _core.functionCommon, {}, classMethodOrPropertyCommon, {
+  kind: {
+    validate: (0, _utils.assertOneOf)("get", "set", "method", "constructor"),
+    default: "method"
+  },
+  access: {
+    validate: (0, _utils.chain)((0, _utils.assertValueType)("string"), (0, _utils.assertOneOf)("public", "private", "protected")),
+    optional: true
+  },
+  decorators: {
+    validate: (0, _utils.chain)((0, _utils.assertValueType)("array"), (0, _utils.assertEach)((0, _utils.assertNodeType)("Decorator"))),
+    optional: true
+  }
+});
+exports.classMethodOrDeclareMethodCommon = classMethodOrDeclareMethodCommon;
+(0, _utils.default)("ClassMethod", {
+  aliases: ["Function", "Scopable", "BlockParent", "FunctionParent", "Method"],
+  builder: ["kind", "key", "params", "body", "computed", "static", "generator", "async"],
+  visitor: ["key", "params", "body", "decorators", "returnType", "typeParameters"],
+  fields: Object.assign({}, classMethodOrDeclareMethodCommon, {}, _core.functionTypeAnnotationCommon, {
+    body: {
+      validate: (0, _utils.assertNodeType)("BlockStatement")
+    }
+  })
+});
+(0, _utils.default)("ObjectPattern", {
+  visitor: ["properties", "typeAnnotation", "decorators"],
+  builder: ["properties"],
+  aliases: ["Pattern", "PatternLike", "LVal"],
+  fields: Object.assign({}, _core.patternLikeCommon, {
+    properties: {
+      validate: (0, _utils.chain)((0, _utils.assertValueType)("array"), (0, _utils.assertEach)((0, _utils.assertNodeType)("RestElement", "ObjectProperty")))
+    }
+  })
+});
+(0, _utils.default)("SpreadElement", {
+  visitor: ["argument"],
+  aliases: ["UnaryLike"],
+  deprecatedAlias: "SpreadProperty",
+  fields: {
+    argument: {
+      validate: (0, _utils.assertNodeType)("Expression")
+    }
+  }
+});
+(0, _utils.default)("Super", {
+  aliases: ["Expression"]
+});
+(0, _utils.default)("TaggedTemplateExpression", {
+  visitor: ["tag", "quasi"],
+  aliases: ["Expression"],
+  fields: {
+    tag: {
+      validate: (0, _utils.assertNodeType)("Expression")
+    },
+    quasi: {
+      validate: (0, _utils.assertNodeType)("TemplateLiteral")
+    },
+    typeParameters: {
+      validate: (0, _utils.assertNodeType)("TypeParameterInstantiation", "TSTypeParameterInstantiation"),
+      optional: true
+    }
+  }
+});
+(0, _utils.default)("TemplateElement", {
+  builder: ["value", "tail"],
+  fields: {
+    value: {
+      validate: (0, _utils.assertShape)({
+        raw: {
+          validate: (0, _utils.assertValueType)("string")
+        },
+        cooked: {
+          validate: (0, _utils.assertValueType)("string"),
+          optional: true
+        }
+      })
+    },
+    tail: {
+      default: false
+    }
+  }
+});
+(0, _utils.default)("TemplateLiteral", {
+  visitor: ["quasis", "expressions"],
+  aliases: ["Expression", "Literal"],
+  fields: {
+    quasis: {
+      validate: (0, _utils.chain)((0, _utils.assertValueType)("array"), (0, _utils.assertEach)((0, _utils.assertNodeType)("TemplateElement")))
+    },
+    expressions: {
+      validate: (0, _utils.chain)((0, _utils.assertValueType)("array"), (0, _utils.assertEach)((0, _utils.assertNodeType)("Expression")), function (node, key, val) {
+        if (node.quasis.length !== val.length + 1) {
+          throw new TypeError(`Number of ${node.type} quasis should be exactly one more than the number of expressions.\nExpected ${val.length + 1} quasis but got ${node.quasis.length}`);
+        }
+      })
+    }
+  }
+});
+(0, _utils.default)("YieldExpression", {
+  builder: ["argument", "delegate"],
+  visitor: ["argument"],
+  aliases: ["Expression", "Terminatorless"],
+  fields: {
+    delegate: {
+      validate: (0, _utils.chain)((0, _utils.assertValueType)("boolean"), function (node, key, val) {
+        if (!process.env.BABEL_TYPES_8_BREAKING) return;
+
+        if (val && !node.argument) {
+          throw new TypeError("Property delegate of YieldExpression cannot be true if there is no argument");
+        }
+      }),
+      default: false
+    },
+    argument: {
+      optional: true,
+      validate: (0, _utils.assertNodeType)("Expression")
+    }
+  }
+});
+},
 "ncnT1TXjuG6ejmQ3nJtrFf93kR08Mw1Fdui6Thpp2Cs=":
 function (require, module, exports, __dirname, __filename) {
 "use strict";
@@ -62833,6 +69353,4598 @@ models.forEach(fromModel => {
 module.exports = convert;
 
 },
+"rfeIFbynOWmUSxCK1/ZmKlJTpigBku6B1qQvGq4VZrs=":
+function (require, module, exports, __dirname, __filename) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.isArrayExpression = isArrayExpression;
+exports.isAssignmentExpression = isAssignmentExpression;
+exports.isBinaryExpression = isBinaryExpression;
+exports.isInterpreterDirective = isInterpreterDirective;
+exports.isDirective = isDirective;
+exports.isDirectiveLiteral = isDirectiveLiteral;
+exports.isBlockStatement = isBlockStatement;
+exports.isBreakStatement = isBreakStatement;
+exports.isCallExpression = isCallExpression;
+exports.isCatchClause = isCatchClause;
+exports.isConditionalExpression = isConditionalExpression;
+exports.isContinueStatement = isContinueStatement;
+exports.isDebuggerStatement = isDebuggerStatement;
+exports.isDoWhileStatement = isDoWhileStatement;
+exports.isEmptyStatement = isEmptyStatement;
+exports.isExpressionStatement = isExpressionStatement;
+exports.isFile = isFile;
+exports.isForInStatement = isForInStatement;
+exports.isForStatement = isForStatement;
+exports.isFunctionDeclaration = isFunctionDeclaration;
+exports.isFunctionExpression = isFunctionExpression;
+exports.isIdentifier = isIdentifier;
+exports.isIfStatement = isIfStatement;
+exports.isLabeledStatement = isLabeledStatement;
+exports.isStringLiteral = isStringLiteral;
+exports.isNumericLiteral = isNumericLiteral;
+exports.isNullLiteral = isNullLiteral;
+exports.isBooleanLiteral = isBooleanLiteral;
+exports.isRegExpLiteral = isRegExpLiteral;
+exports.isLogicalExpression = isLogicalExpression;
+exports.isMemberExpression = isMemberExpression;
+exports.isNewExpression = isNewExpression;
+exports.isProgram = isProgram;
+exports.isObjectExpression = isObjectExpression;
+exports.isObjectMethod = isObjectMethod;
+exports.isObjectProperty = isObjectProperty;
+exports.isRestElement = isRestElement;
+exports.isReturnStatement = isReturnStatement;
+exports.isSequenceExpression = isSequenceExpression;
+exports.isParenthesizedExpression = isParenthesizedExpression;
+exports.isSwitchCase = isSwitchCase;
+exports.isSwitchStatement = isSwitchStatement;
+exports.isThisExpression = isThisExpression;
+exports.isThrowStatement = isThrowStatement;
+exports.isTryStatement = isTryStatement;
+exports.isUnaryExpression = isUnaryExpression;
+exports.isUpdateExpression = isUpdateExpression;
+exports.isVariableDeclaration = isVariableDeclaration;
+exports.isVariableDeclarator = isVariableDeclarator;
+exports.isWhileStatement = isWhileStatement;
+exports.isWithStatement = isWithStatement;
+exports.isAssignmentPattern = isAssignmentPattern;
+exports.isArrayPattern = isArrayPattern;
+exports.isArrowFunctionExpression = isArrowFunctionExpression;
+exports.isClassBody = isClassBody;
+exports.isClassExpression = isClassExpression;
+exports.isClassDeclaration = isClassDeclaration;
+exports.isExportAllDeclaration = isExportAllDeclaration;
+exports.isExportDefaultDeclaration = isExportDefaultDeclaration;
+exports.isExportNamedDeclaration = isExportNamedDeclaration;
+exports.isExportSpecifier = isExportSpecifier;
+exports.isForOfStatement = isForOfStatement;
+exports.isImportDeclaration = isImportDeclaration;
+exports.isImportDefaultSpecifier = isImportDefaultSpecifier;
+exports.isImportNamespaceSpecifier = isImportNamespaceSpecifier;
+exports.isImportSpecifier = isImportSpecifier;
+exports.isMetaProperty = isMetaProperty;
+exports.isClassMethod = isClassMethod;
+exports.isObjectPattern = isObjectPattern;
+exports.isSpreadElement = isSpreadElement;
+exports.isSuper = isSuper;
+exports.isTaggedTemplateExpression = isTaggedTemplateExpression;
+exports.isTemplateElement = isTemplateElement;
+exports.isTemplateLiteral = isTemplateLiteral;
+exports.isYieldExpression = isYieldExpression;
+exports.isAnyTypeAnnotation = isAnyTypeAnnotation;
+exports.isArrayTypeAnnotation = isArrayTypeAnnotation;
+exports.isBooleanTypeAnnotation = isBooleanTypeAnnotation;
+exports.isBooleanLiteralTypeAnnotation = isBooleanLiteralTypeAnnotation;
+exports.isNullLiteralTypeAnnotation = isNullLiteralTypeAnnotation;
+exports.isClassImplements = isClassImplements;
+exports.isDeclareClass = isDeclareClass;
+exports.isDeclareFunction = isDeclareFunction;
+exports.isDeclareInterface = isDeclareInterface;
+exports.isDeclareModule = isDeclareModule;
+exports.isDeclareModuleExports = isDeclareModuleExports;
+exports.isDeclareTypeAlias = isDeclareTypeAlias;
+exports.isDeclareOpaqueType = isDeclareOpaqueType;
+exports.isDeclareVariable = isDeclareVariable;
+exports.isDeclareExportDeclaration = isDeclareExportDeclaration;
+exports.isDeclareExportAllDeclaration = isDeclareExportAllDeclaration;
+exports.isDeclaredPredicate = isDeclaredPredicate;
+exports.isExistsTypeAnnotation = isExistsTypeAnnotation;
+exports.isFunctionTypeAnnotation = isFunctionTypeAnnotation;
+exports.isFunctionTypeParam = isFunctionTypeParam;
+exports.isGenericTypeAnnotation = isGenericTypeAnnotation;
+exports.isInferredPredicate = isInferredPredicate;
+exports.isInterfaceExtends = isInterfaceExtends;
+exports.isInterfaceDeclaration = isInterfaceDeclaration;
+exports.isInterfaceTypeAnnotation = isInterfaceTypeAnnotation;
+exports.isIntersectionTypeAnnotation = isIntersectionTypeAnnotation;
+exports.isMixedTypeAnnotation = isMixedTypeAnnotation;
+exports.isEmptyTypeAnnotation = isEmptyTypeAnnotation;
+exports.isNullableTypeAnnotation = isNullableTypeAnnotation;
+exports.isNumberLiteralTypeAnnotation = isNumberLiteralTypeAnnotation;
+exports.isNumberTypeAnnotation = isNumberTypeAnnotation;
+exports.isObjectTypeAnnotation = isObjectTypeAnnotation;
+exports.isObjectTypeInternalSlot = isObjectTypeInternalSlot;
+exports.isObjectTypeCallProperty = isObjectTypeCallProperty;
+exports.isObjectTypeIndexer = isObjectTypeIndexer;
+exports.isObjectTypeProperty = isObjectTypeProperty;
+exports.isObjectTypeSpreadProperty = isObjectTypeSpreadProperty;
+exports.isOpaqueType = isOpaqueType;
+exports.isQualifiedTypeIdentifier = isQualifiedTypeIdentifier;
+exports.isStringLiteralTypeAnnotation = isStringLiteralTypeAnnotation;
+exports.isStringTypeAnnotation = isStringTypeAnnotation;
+exports.isSymbolTypeAnnotation = isSymbolTypeAnnotation;
+exports.isThisTypeAnnotation = isThisTypeAnnotation;
+exports.isTupleTypeAnnotation = isTupleTypeAnnotation;
+exports.isTypeofTypeAnnotation = isTypeofTypeAnnotation;
+exports.isTypeAlias = isTypeAlias;
+exports.isTypeAnnotation = isTypeAnnotation;
+exports.isTypeCastExpression = isTypeCastExpression;
+exports.isTypeParameter = isTypeParameter;
+exports.isTypeParameterDeclaration = isTypeParameterDeclaration;
+exports.isTypeParameterInstantiation = isTypeParameterInstantiation;
+exports.isUnionTypeAnnotation = isUnionTypeAnnotation;
+exports.isVariance = isVariance;
+exports.isVoidTypeAnnotation = isVoidTypeAnnotation;
+exports.isEnumDeclaration = isEnumDeclaration;
+exports.isEnumBooleanBody = isEnumBooleanBody;
+exports.isEnumNumberBody = isEnumNumberBody;
+exports.isEnumStringBody = isEnumStringBody;
+exports.isEnumSymbolBody = isEnumSymbolBody;
+exports.isEnumBooleanMember = isEnumBooleanMember;
+exports.isEnumNumberMember = isEnumNumberMember;
+exports.isEnumStringMember = isEnumStringMember;
+exports.isEnumDefaultedMember = isEnumDefaultedMember;
+exports.isJSXAttribute = isJSXAttribute;
+exports.isJSXClosingElement = isJSXClosingElement;
+exports.isJSXElement = isJSXElement;
+exports.isJSXEmptyExpression = isJSXEmptyExpression;
+exports.isJSXExpressionContainer = isJSXExpressionContainer;
+exports.isJSXSpreadChild = isJSXSpreadChild;
+exports.isJSXIdentifier = isJSXIdentifier;
+exports.isJSXMemberExpression = isJSXMemberExpression;
+exports.isJSXNamespacedName = isJSXNamespacedName;
+exports.isJSXOpeningElement = isJSXOpeningElement;
+exports.isJSXSpreadAttribute = isJSXSpreadAttribute;
+exports.isJSXText = isJSXText;
+exports.isJSXFragment = isJSXFragment;
+exports.isJSXOpeningFragment = isJSXOpeningFragment;
+exports.isJSXClosingFragment = isJSXClosingFragment;
+exports.isNoop = isNoop;
+exports.isPlaceholder = isPlaceholder;
+exports.isV8IntrinsicIdentifier = isV8IntrinsicIdentifier;
+exports.isArgumentPlaceholder = isArgumentPlaceholder;
+exports.isAwaitExpression = isAwaitExpression;
+exports.isBindExpression = isBindExpression;
+exports.isClassProperty = isClassProperty;
+exports.isOptionalMemberExpression = isOptionalMemberExpression;
+exports.isPipelineTopicExpression = isPipelineTopicExpression;
+exports.isPipelineBareFunction = isPipelineBareFunction;
+exports.isPipelinePrimaryTopicReference = isPipelinePrimaryTopicReference;
+exports.isOptionalCallExpression = isOptionalCallExpression;
+exports.isClassPrivateProperty = isClassPrivateProperty;
+exports.isClassPrivateMethod = isClassPrivateMethod;
+exports.isImport = isImport;
+exports.isDecorator = isDecorator;
+exports.isDoExpression = isDoExpression;
+exports.isExportDefaultSpecifier = isExportDefaultSpecifier;
+exports.isExportNamespaceSpecifier = isExportNamespaceSpecifier;
+exports.isPrivateName = isPrivateName;
+exports.isBigIntLiteral = isBigIntLiteral;
+exports.isRecordExpression = isRecordExpression;
+exports.isTupleExpression = isTupleExpression;
+exports.isTSParameterProperty = isTSParameterProperty;
+exports.isTSDeclareFunction = isTSDeclareFunction;
+exports.isTSDeclareMethod = isTSDeclareMethod;
+exports.isTSQualifiedName = isTSQualifiedName;
+exports.isTSCallSignatureDeclaration = isTSCallSignatureDeclaration;
+exports.isTSConstructSignatureDeclaration = isTSConstructSignatureDeclaration;
+exports.isTSPropertySignature = isTSPropertySignature;
+exports.isTSMethodSignature = isTSMethodSignature;
+exports.isTSIndexSignature = isTSIndexSignature;
+exports.isTSAnyKeyword = isTSAnyKeyword;
+exports.isTSBooleanKeyword = isTSBooleanKeyword;
+exports.isTSBigIntKeyword = isTSBigIntKeyword;
+exports.isTSNeverKeyword = isTSNeverKeyword;
+exports.isTSNullKeyword = isTSNullKeyword;
+exports.isTSNumberKeyword = isTSNumberKeyword;
+exports.isTSObjectKeyword = isTSObjectKeyword;
+exports.isTSStringKeyword = isTSStringKeyword;
+exports.isTSSymbolKeyword = isTSSymbolKeyword;
+exports.isTSUndefinedKeyword = isTSUndefinedKeyword;
+exports.isTSUnknownKeyword = isTSUnknownKeyword;
+exports.isTSVoidKeyword = isTSVoidKeyword;
+exports.isTSThisType = isTSThisType;
+exports.isTSFunctionType = isTSFunctionType;
+exports.isTSConstructorType = isTSConstructorType;
+exports.isTSTypeReference = isTSTypeReference;
+exports.isTSTypePredicate = isTSTypePredicate;
+exports.isTSTypeQuery = isTSTypeQuery;
+exports.isTSTypeLiteral = isTSTypeLiteral;
+exports.isTSArrayType = isTSArrayType;
+exports.isTSTupleType = isTSTupleType;
+exports.isTSOptionalType = isTSOptionalType;
+exports.isTSRestType = isTSRestType;
+exports.isTSUnionType = isTSUnionType;
+exports.isTSIntersectionType = isTSIntersectionType;
+exports.isTSConditionalType = isTSConditionalType;
+exports.isTSInferType = isTSInferType;
+exports.isTSParenthesizedType = isTSParenthesizedType;
+exports.isTSTypeOperator = isTSTypeOperator;
+exports.isTSIndexedAccessType = isTSIndexedAccessType;
+exports.isTSMappedType = isTSMappedType;
+exports.isTSLiteralType = isTSLiteralType;
+exports.isTSExpressionWithTypeArguments = isTSExpressionWithTypeArguments;
+exports.isTSInterfaceDeclaration = isTSInterfaceDeclaration;
+exports.isTSInterfaceBody = isTSInterfaceBody;
+exports.isTSTypeAliasDeclaration = isTSTypeAliasDeclaration;
+exports.isTSAsExpression = isTSAsExpression;
+exports.isTSTypeAssertion = isTSTypeAssertion;
+exports.isTSEnumDeclaration = isTSEnumDeclaration;
+exports.isTSEnumMember = isTSEnumMember;
+exports.isTSModuleDeclaration = isTSModuleDeclaration;
+exports.isTSModuleBlock = isTSModuleBlock;
+exports.isTSImportType = isTSImportType;
+exports.isTSImportEqualsDeclaration = isTSImportEqualsDeclaration;
+exports.isTSExternalModuleReference = isTSExternalModuleReference;
+exports.isTSNonNullExpression = isTSNonNullExpression;
+exports.isTSExportAssignment = isTSExportAssignment;
+exports.isTSNamespaceExportDeclaration = isTSNamespaceExportDeclaration;
+exports.isTSTypeAnnotation = isTSTypeAnnotation;
+exports.isTSTypeParameterInstantiation = isTSTypeParameterInstantiation;
+exports.isTSTypeParameterDeclaration = isTSTypeParameterDeclaration;
+exports.isTSTypeParameter = isTSTypeParameter;
+exports.isExpression = isExpression;
+exports.isBinary = isBinary;
+exports.isScopable = isScopable;
+exports.isBlockParent = isBlockParent;
+exports.isBlock = isBlock;
+exports.isStatement = isStatement;
+exports.isTerminatorless = isTerminatorless;
+exports.isCompletionStatement = isCompletionStatement;
+exports.isConditional = isConditional;
+exports.isLoop = isLoop;
+exports.isWhile = isWhile;
+exports.isExpressionWrapper = isExpressionWrapper;
+exports.isFor = isFor;
+exports.isForXStatement = isForXStatement;
+exports.isFunction = isFunction;
+exports.isFunctionParent = isFunctionParent;
+exports.isPureish = isPureish;
+exports.isDeclaration = isDeclaration;
+exports.isPatternLike = isPatternLike;
+exports.isLVal = isLVal;
+exports.isTSEntityName = isTSEntityName;
+exports.isLiteral = isLiteral;
+exports.isImmutable = isImmutable;
+exports.isUserWhitespacable = isUserWhitespacable;
+exports.isMethod = isMethod;
+exports.isObjectMember = isObjectMember;
+exports.isProperty = isProperty;
+exports.isUnaryLike = isUnaryLike;
+exports.isPattern = isPattern;
+exports.isClass = isClass;
+exports.isModuleDeclaration = isModuleDeclaration;
+exports.isExportDeclaration = isExportDeclaration;
+exports.isModuleSpecifier = isModuleSpecifier;
+exports.isFlow = isFlow;
+exports.isFlowType = isFlowType;
+exports.isFlowBaseAnnotation = isFlowBaseAnnotation;
+exports.isFlowDeclaration = isFlowDeclaration;
+exports.isFlowPredicate = isFlowPredicate;
+exports.isEnumBody = isEnumBody;
+exports.isEnumMember = isEnumMember;
+exports.isJSX = isJSX;
+exports.isPrivate = isPrivate;
+exports.isTSTypeElement = isTSTypeElement;
+exports.isTSType = isTSType;
+exports.isTSBaseType = isTSBaseType;
+exports.isNumberLiteral = isNumberLiteral;
+exports.isRegexLiteral = isRegexLiteral;
+exports.isRestProperty = isRestProperty;
+exports.isSpreadProperty = isSpreadProperty;
+
+var _shallowEqual = _interopRequireDefault(require("../../utils/shallowEqual"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function isArrayExpression(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "ArrayExpression") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isAssignmentExpression(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "AssignmentExpression") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isBinaryExpression(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "BinaryExpression") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isInterpreterDirective(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "InterpreterDirective") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isDirective(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "Directive") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isDirectiveLiteral(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "DirectiveLiteral") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isBlockStatement(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "BlockStatement") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isBreakStatement(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "BreakStatement") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isCallExpression(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "CallExpression") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isCatchClause(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "CatchClause") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isConditionalExpression(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "ConditionalExpression") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isContinueStatement(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "ContinueStatement") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isDebuggerStatement(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "DebuggerStatement") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isDoWhileStatement(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "DoWhileStatement") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isEmptyStatement(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "EmptyStatement") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isExpressionStatement(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "ExpressionStatement") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isFile(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "File") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isForInStatement(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "ForInStatement") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isForStatement(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "ForStatement") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isFunctionDeclaration(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "FunctionDeclaration") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isFunctionExpression(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "FunctionExpression") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isIdentifier(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "Identifier") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isIfStatement(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "IfStatement") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isLabeledStatement(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "LabeledStatement") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isStringLiteral(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "StringLiteral") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isNumericLiteral(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "NumericLiteral") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isNullLiteral(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "NullLiteral") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isBooleanLiteral(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "BooleanLiteral") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isRegExpLiteral(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "RegExpLiteral") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isLogicalExpression(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "LogicalExpression") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isMemberExpression(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "MemberExpression") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isNewExpression(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "NewExpression") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isProgram(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "Program") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isObjectExpression(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "ObjectExpression") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isObjectMethod(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "ObjectMethod") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isObjectProperty(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "ObjectProperty") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isRestElement(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "RestElement") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isReturnStatement(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "ReturnStatement") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isSequenceExpression(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "SequenceExpression") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isParenthesizedExpression(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "ParenthesizedExpression") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isSwitchCase(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "SwitchCase") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isSwitchStatement(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "SwitchStatement") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isThisExpression(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "ThisExpression") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isThrowStatement(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "ThrowStatement") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isTryStatement(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "TryStatement") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isUnaryExpression(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "UnaryExpression") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isUpdateExpression(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "UpdateExpression") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isVariableDeclaration(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "VariableDeclaration") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isVariableDeclarator(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "VariableDeclarator") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isWhileStatement(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "WhileStatement") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isWithStatement(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "WithStatement") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isAssignmentPattern(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "AssignmentPattern") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isArrayPattern(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "ArrayPattern") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isArrowFunctionExpression(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "ArrowFunctionExpression") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isClassBody(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "ClassBody") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isClassExpression(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "ClassExpression") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isClassDeclaration(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "ClassDeclaration") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isExportAllDeclaration(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "ExportAllDeclaration") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isExportDefaultDeclaration(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "ExportDefaultDeclaration") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isExportNamedDeclaration(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "ExportNamedDeclaration") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isExportSpecifier(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "ExportSpecifier") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isForOfStatement(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "ForOfStatement") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isImportDeclaration(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "ImportDeclaration") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isImportDefaultSpecifier(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "ImportDefaultSpecifier") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isImportNamespaceSpecifier(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "ImportNamespaceSpecifier") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isImportSpecifier(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "ImportSpecifier") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isMetaProperty(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "MetaProperty") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isClassMethod(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "ClassMethod") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isObjectPattern(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "ObjectPattern") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isSpreadElement(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "SpreadElement") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isSuper(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "Super") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isTaggedTemplateExpression(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "TaggedTemplateExpression") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isTemplateElement(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "TemplateElement") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isTemplateLiteral(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "TemplateLiteral") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isYieldExpression(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "YieldExpression") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isAnyTypeAnnotation(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "AnyTypeAnnotation") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isArrayTypeAnnotation(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "ArrayTypeAnnotation") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isBooleanTypeAnnotation(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "BooleanTypeAnnotation") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isBooleanLiteralTypeAnnotation(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "BooleanLiteralTypeAnnotation") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isNullLiteralTypeAnnotation(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "NullLiteralTypeAnnotation") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isClassImplements(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "ClassImplements") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isDeclareClass(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "DeclareClass") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isDeclareFunction(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "DeclareFunction") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isDeclareInterface(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "DeclareInterface") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isDeclareModule(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "DeclareModule") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isDeclareModuleExports(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "DeclareModuleExports") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isDeclareTypeAlias(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "DeclareTypeAlias") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isDeclareOpaqueType(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "DeclareOpaqueType") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isDeclareVariable(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "DeclareVariable") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isDeclareExportDeclaration(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "DeclareExportDeclaration") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isDeclareExportAllDeclaration(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "DeclareExportAllDeclaration") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isDeclaredPredicate(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "DeclaredPredicate") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isExistsTypeAnnotation(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "ExistsTypeAnnotation") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isFunctionTypeAnnotation(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "FunctionTypeAnnotation") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isFunctionTypeParam(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "FunctionTypeParam") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isGenericTypeAnnotation(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "GenericTypeAnnotation") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isInferredPredicate(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "InferredPredicate") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isInterfaceExtends(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "InterfaceExtends") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isInterfaceDeclaration(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "InterfaceDeclaration") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isInterfaceTypeAnnotation(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "InterfaceTypeAnnotation") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isIntersectionTypeAnnotation(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "IntersectionTypeAnnotation") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isMixedTypeAnnotation(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "MixedTypeAnnotation") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isEmptyTypeAnnotation(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "EmptyTypeAnnotation") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isNullableTypeAnnotation(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "NullableTypeAnnotation") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isNumberLiteralTypeAnnotation(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "NumberLiteralTypeAnnotation") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isNumberTypeAnnotation(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "NumberTypeAnnotation") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isObjectTypeAnnotation(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "ObjectTypeAnnotation") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isObjectTypeInternalSlot(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "ObjectTypeInternalSlot") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isObjectTypeCallProperty(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "ObjectTypeCallProperty") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isObjectTypeIndexer(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "ObjectTypeIndexer") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isObjectTypeProperty(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "ObjectTypeProperty") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isObjectTypeSpreadProperty(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "ObjectTypeSpreadProperty") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isOpaqueType(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "OpaqueType") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isQualifiedTypeIdentifier(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "QualifiedTypeIdentifier") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isStringLiteralTypeAnnotation(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "StringLiteralTypeAnnotation") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isStringTypeAnnotation(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "StringTypeAnnotation") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isSymbolTypeAnnotation(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "SymbolTypeAnnotation") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isThisTypeAnnotation(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "ThisTypeAnnotation") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isTupleTypeAnnotation(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "TupleTypeAnnotation") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isTypeofTypeAnnotation(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "TypeofTypeAnnotation") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isTypeAlias(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "TypeAlias") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isTypeAnnotation(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "TypeAnnotation") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isTypeCastExpression(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "TypeCastExpression") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isTypeParameter(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "TypeParameter") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isTypeParameterDeclaration(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "TypeParameterDeclaration") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isTypeParameterInstantiation(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "TypeParameterInstantiation") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isUnionTypeAnnotation(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "UnionTypeAnnotation") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isVariance(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "Variance") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isVoidTypeAnnotation(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "VoidTypeAnnotation") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isEnumDeclaration(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "EnumDeclaration") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isEnumBooleanBody(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "EnumBooleanBody") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isEnumNumberBody(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "EnumNumberBody") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isEnumStringBody(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "EnumStringBody") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isEnumSymbolBody(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "EnumSymbolBody") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isEnumBooleanMember(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "EnumBooleanMember") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isEnumNumberMember(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "EnumNumberMember") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isEnumStringMember(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "EnumStringMember") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isEnumDefaultedMember(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "EnumDefaultedMember") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isJSXAttribute(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "JSXAttribute") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isJSXClosingElement(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "JSXClosingElement") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isJSXElement(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "JSXElement") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isJSXEmptyExpression(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "JSXEmptyExpression") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isJSXExpressionContainer(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "JSXExpressionContainer") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isJSXSpreadChild(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "JSXSpreadChild") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isJSXIdentifier(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "JSXIdentifier") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isJSXMemberExpression(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "JSXMemberExpression") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isJSXNamespacedName(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "JSXNamespacedName") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isJSXOpeningElement(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "JSXOpeningElement") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isJSXSpreadAttribute(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "JSXSpreadAttribute") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isJSXText(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "JSXText") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isJSXFragment(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "JSXFragment") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isJSXOpeningFragment(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "JSXOpeningFragment") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isJSXClosingFragment(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "JSXClosingFragment") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isNoop(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "Noop") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isPlaceholder(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "Placeholder") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isV8IntrinsicIdentifier(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "V8IntrinsicIdentifier") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isArgumentPlaceholder(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "ArgumentPlaceholder") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isAwaitExpression(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "AwaitExpression") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isBindExpression(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "BindExpression") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isClassProperty(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "ClassProperty") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isOptionalMemberExpression(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "OptionalMemberExpression") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isPipelineTopicExpression(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "PipelineTopicExpression") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isPipelineBareFunction(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "PipelineBareFunction") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isPipelinePrimaryTopicReference(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "PipelinePrimaryTopicReference") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isOptionalCallExpression(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "OptionalCallExpression") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isClassPrivateProperty(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "ClassPrivateProperty") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isClassPrivateMethod(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "ClassPrivateMethod") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isImport(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "Import") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isDecorator(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "Decorator") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isDoExpression(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "DoExpression") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isExportDefaultSpecifier(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "ExportDefaultSpecifier") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isExportNamespaceSpecifier(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "ExportNamespaceSpecifier") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isPrivateName(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "PrivateName") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isBigIntLiteral(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "BigIntLiteral") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isRecordExpression(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "RecordExpression") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isTupleExpression(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "TupleExpression") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isTSParameterProperty(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "TSParameterProperty") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isTSDeclareFunction(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "TSDeclareFunction") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isTSDeclareMethod(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "TSDeclareMethod") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isTSQualifiedName(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "TSQualifiedName") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isTSCallSignatureDeclaration(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "TSCallSignatureDeclaration") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isTSConstructSignatureDeclaration(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "TSConstructSignatureDeclaration") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isTSPropertySignature(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "TSPropertySignature") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isTSMethodSignature(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "TSMethodSignature") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isTSIndexSignature(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "TSIndexSignature") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isTSAnyKeyword(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "TSAnyKeyword") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isTSBooleanKeyword(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "TSBooleanKeyword") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isTSBigIntKeyword(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "TSBigIntKeyword") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isTSNeverKeyword(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "TSNeverKeyword") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isTSNullKeyword(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "TSNullKeyword") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isTSNumberKeyword(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "TSNumberKeyword") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isTSObjectKeyword(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "TSObjectKeyword") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isTSStringKeyword(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "TSStringKeyword") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isTSSymbolKeyword(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "TSSymbolKeyword") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isTSUndefinedKeyword(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "TSUndefinedKeyword") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isTSUnknownKeyword(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "TSUnknownKeyword") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isTSVoidKeyword(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "TSVoidKeyword") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isTSThisType(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "TSThisType") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isTSFunctionType(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "TSFunctionType") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isTSConstructorType(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "TSConstructorType") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isTSTypeReference(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "TSTypeReference") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isTSTypePredicate(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "TSTypePredicate") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isTSTypeQuery(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "TSTypeQuery") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isTSTypeLiteral(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "TSTypeLiteral") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isTSArrayType(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "TSArrayType") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isTSTupleType(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "TSTupleType") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isTSOptionalType(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "TSOptionalType") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isTSRestType(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "TSRestType") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isTSUnionType(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "TSUnionType") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isTSIntersectionType(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "TSIntersectionType") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isTSConditionalType(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "TSConditionalType") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isTSInferType(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "TSInferType") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isTSParenthesizedType(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "TSParenthesizedType") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isTSTypeOperator(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "TSTypeOperator") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isTSIndexedAccessType(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "TSIndexedAccessType") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isTSMappedType(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "TSMappedType") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isTSLiteralType(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "TSLiteralType") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isTSExpressionWithTypeArguments(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "TSExpressionWithTypeArguments") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isTSInterfaceDeclaration(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "TSInterfaceDeclaration") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isTSInterfaceBody(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "TSInterfaceBody") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isTSTypeAliasDeclaration(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "TSTypeAliasDeclaration") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isTSAsExpression(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "TSAsExpression") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isTSTypeAssertion(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "TSTypeAssertion") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isTSEnumDeclaration(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "TSEnumDeclaration") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isTSEnumMember(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "TSEnumMember") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isTSModuleDeclaration(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "TSModuleDeclaration") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isTSModuleBlock(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "TSModuleBlock") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isTSImportType(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "TSImportType") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isTSImportEqualsDeclaration(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "TSImportEqualsDeclaration") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isTSExternalModuleReference(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "TSExternalModuleReference") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isTSNonNullExpression(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "TSNonNullExpression") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isTSExportAssignment(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "TSExportAssignment") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isTSNamespaceExportDeclaration(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "TSNamespaceExportDeclaration") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isTSTypeAnnotation(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "TSTypeAnnotation") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isTSTypeParameterInstantiation(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "TSTypeParameterInstantiation") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isTSTypeParameterDeclaration(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "TSTypeParameterDeclaration") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isTSTypeParameter(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "TSTypeParameter") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isExpression(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "Expression" || "ArrayExpression" === nodeType || "AssignmentExpression" === nodeType || "BinaryExpression" === nodeType || "CallExpression" === nodeType || "ConditionalExpression" === nodeType || "FunctionExpression" === nodeType || "Identifier" === nodeType || "StringLiteral" === nodeType || "NumericLiteral" === nodeType || "NullLiteral" === nodeType || "BooleanLiteral" === nodeType || "RegExpLiteral" === nodeType || "LogicalExpression" === nodeType || "MemberExpression" === nodeType || "NewExpression" === nodeType || "ObjectExpression" === nodeType || "SequenceExpression" === nodeType || "ParenthesizedExpression" === nodeType || "ThisExpression" === nodeType || "UnaryExpression" === nodeType || "UpdateExpression" === nodeType || "ArrowFunctionExpression" === nodeType || "ClassExpression" === nodeType || "MetaProperty" === nodeType || "Super" === nodeType || "TaggedTemplateExpression" === nodeType || "TemplateLiteral" === nodeType || "YieldExpression" === nodeType || "TypeCastExpression" === nodeType || "JSXElement" === nodeType || "JSXFragment" === nodeType || "AwaitExpression" === nodeType || "BindExpression" === nodeType || "OptionalMemberExpression" === nodeType || "PipelinePrimaryTopicReference" === nodeType || "OptionalCallExpression" === nodeType || "Import" === nodeType || "DoExpression" === nodeType || "BigIntLiteral" === nodeType || "RecordExpression" === nodeType || "TupleExpression" === nodeType || "TSAsExpression" === nodeType || "TSTypeAssertion" === nodeType || "TSNonNullExpression" === nodeType || nodeType === "Placeholder" && ("Expression" === node.expectedNode || "Identifier" === node.expectedNode || "StringLiteral" === node.expectedNode)) {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isBinary(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "Binary" || "BinaryExpression" === nodeType || "LogicalExpression" === nodeType) {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isScopable(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "Scopable" || "BlockStatement" === nodeType || "CatchClause" === nodeType || "DoWhileStatement" === nodeType || "ForInStatement" === nodeType || "ForStatement" === nodeType || "FunctionDeclaration" === nodeType || "FunctionExpression" === nodeType || "Program" === nodeType || "ObjectMethod" === nodeType || "SwitchStatement" === nodeType || "WhileStatement" === nodeType || "ArrowFunctionExpression" === nodeType || "ClassExpression" === nodeType || "ClassDeclaration" === nodeType || "ForOfStatement" === nodeType || "ClassMethod" === nodeType || "ClassPrivateMethod" === nodeType || "TSModuleBlock" === nodeType || nodeType === "Placeholder" && "BlockStatement" === node.expectedNode) {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isBlockParent(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "BlockParent" || "BlockStatement" === nodeType || "CatchClause" === nodeType || "DoWhileStatement" === nodeType || "ForInStatement" === nodeType || "ForStatement" === nodeType || "FunctionDeclaration" === nodeType || "FunctionExpression" === nodeType || "Program" === nodeType || "ObjectMethod" === nodeType || "SwitchStatement" === nodeType || "WhileStatement" === nodeType || "ArrowFunctionExpression" === nodeType || "ForOfStatement" === nodeType || "ClassMethod" === nodeType || "ClassPrivateMethod" === nodeType || "TSModuleBlock" === nodeType || nodeType === "Placeholder" && "BlockStatement" === node.expectedNode) {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isBlock(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "Block" || "BlockStatement" === nodeType || "Program" === nodeType || "TSModuleBlock" === nodeType || nodeType === "Placeholder" && "BlockStatement" === node.expectedNode) {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isStatement(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "Statement" || "BlockStatement" === nodeType || "BreakStatement" === nodeType || "ContinueStatement" === nodeType || "DebuggerStatement" === nodeType || "DoWhileStatement" === nodeType || "EmptyStatement" === nodeType || "ExpressionStatement" === nodeType || "ForInStatement" === nodeType || "ForStatement" === nodeType || "FunctionDeclaration" === nodeType || "IfStatement" === nodeType || "LabeledStatement" === nodeType || "ReturnStatement" === nodeType || "SwitchStatement" === nodeType || "ThrowStatement" === nodeType || "TryStatement" === nodeType || "VariableDeclaration" === nodeType || "WhileStatement" === nodeType || "WithStatement" === nodeType || "ClassDeclaration" === nodeType || "ExportAllDeclaration" === nodeType || "ExportDefaultDeclaration" === nodeType || "ExportNamedDeclaration" === nodeType || "ForOfStatement" === nodeType || "ImportDeclaration" === nodeType || "DeclareClass" === nodeType || "DeclareFunction" === nodeType || "DeclareInterface" === nodeType || "DeclareModule" === nodeType || "DeclareModuleExports" === nodeType || "DeclareTypeAlias" === nodeType || "DeclareOpaqueType" === nodeType || "DeclareVariable" === nodeType || "DeclareExportDeclaration" === nodeType || "DeclareExportAllDeclaration" === nodeType || "InterfaceDeclaration" === nodeType || "OpaqueType" === nodeType || "TypeAlias" === nodeType || "EnumDeclaration" === nodeType || "TSDeclareFunction" === nodeType || "TSInterfaceDeclaration" === nodeType || "TSTypeAliasDeclaration" === nodeType || "TSEnumDeclaration" === nodeType || "TSModuleDeclaration" === nodeType || "TSImportEqualsDeclaration" === nodeType || "TSExportAssignment" === nodeType || "TSNamespaceExportDeclaration" === nodeType || nodeType === "Placeholder" && ("Statement" === node.expectedNode || "Declaration" === node.expectedNode || "BlockStatement" === node.expectedNode)) {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isTerminatorless(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "Terminatorless" || "BreakStatement" === nodeType || "ContinueStatement" === nodeType || "ReturnStatement" === nodeType || "ThrowStatement" === nodeType || "YieldExpression" === nodeType || "AwaitExpression" === nodeType) {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isCompletionStatement(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "CompletionStatement" || "BreakStatement" === nodeType || "ContinueStatement" === nodeType || "ReturnStatement" === nodeType || "ThrowStatement" === nodeType) {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isConditional(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "Conditional" || "ConditionalExpression" === nodeType || "IfStatement" === nodeType) {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isLoop(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "Loop" || "DoWhileStatement" === nodeType || "ForInStatement" === nodeType || "ForStatement" === nodeType || "WhileStatement" === nodeType || "ForOfStatement" === nodeType) {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isWhile(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "While" || "DoWhileStatement" === nodeType || "WhileStatement" === nodeType) {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isExpressionWrapper(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "ExpressionWrapper" || "ExpressionStatement" === nodeType || "ParenthesizedExpression" === nodeType || "TypeCastExpression" === nodeType) {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isFor(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "For" || "ForInStatement" === nodeType || "ForStatement" === nodeType || "ForOfStatement" === nodeType) {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isForXStatement(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "ForXStatement" || "ForInStatement" === nodeType || "ForOfStatement" === nodeType) {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isFunction(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "Function" || "FunctionDeclaration" === nodeType || "FunctionExpression" === nodeType || "ObjectMethod" === nodeType || "ArrowFunctionExpression" === nodeType || "ClassMethod" === nodeType || "ClassPrivateMethod" === nodeType) {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isFunctionParent(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "FunctionParent" || "FunctionDeclaration" === nodeType || "FunctionExpression" === nodeType || "ObjectMethod" === nodeType || "ArrowFunctionExpression" === nodeType || "ClassMethod" === nodeType || "ClassPrivateMethod" === nodeType) {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isPureish(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "Pureish" || "FunctionDeclaration" === nodeType || "FunctionExpression" === nodeType || "StringLiteral" === nodeType || "NumericLiteral" === nodeType || "NullLiteral" === nodeType || "BooleanLiteral" === nodeType || "RegExpLiteral" === nodeType || "ArrowFunctionExpression" === nodeType || "BigIntLiteral" === nodeType || nodeType === "Placeholder" && "StringLiteral" === node.expectedNode) {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isDeclaration(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "Declaration" || "FunctionDeclaration" === nodeType || "VariableDeclaration" === nodeType || "ClassDeclaration" === nodeType || "ExportAllDeclaration" === nodeType || "ExportDefaultDeclaration" === nodeType || "ExportNamedDeclaration" === nodeType || "ImportDeclaration" === nodeType || "DeclareClass" === nodeType || "DeclareFunction" === nodeType || "DeclareInterface" === nodeType || "DeclareModule" === nodeType || "DeclareModuleExports" === nodeType || "DeclareTypeAlias" === nodeType || "DeclareOpaqueType" === nodeType || "DeclareVariable" === nodeType || "DeclareExportDeclaration" === nodeType || "DeclareExportAllDeclaration" === nodeType || "InterfaceDeclaration" === nodeType || "OpaqueType" === nodeType || "TypeAlias" === nodeType || "EnumDeclaration" === nodeType || "TSDeclareFunction" === nodeType || "TSInterfaceDeclaration" === nodeType || "TSTypeAliasDeclaration" === nodeType || "TSEnumDeclaration" === nodeType || "TSModuleDeclaration" === nodeType || nodeType === "Placeholder" && "Declaration" === node.expectedNode) {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isPatternLike(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "PatternLike" || "Identifier" === nodeType || "RestElement" === nodeType || "AssignmentPattern" === nodeType || "ArrayPattern" === nodeType || "ObjectPattern" === nodeType || nodeType === "Placeholder" && ("Pattern" === node.expectedNode || "Identifier" === node.expectedNode)) {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isLVal(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "LVal" || "Identifier" === nodeType || "MemberExpression" === nodeType || "RestElement" === nodeType || "AssignmentPattern" === nodeType || "ArrayPattern" === nodeType || "ObjectPattern" === nodeType || "TSParameterProperty" === nodeType || nodeType === "Placeholder" && ("Pattern" === node.expectedNode || "Identifier" === node.expectedNode)) {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isTSEntityName(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "TSEntityName" || "Identifier" === nodeType || "TSQualifiedName" === nodeType || nodeType === "Placeholder" && "Identifier" === node.expectedNode) {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isLiteral(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "Literal" || "StringLiteral" === nodeType || "NumericLiteral" === nodeType || "NullLiteral" === nodeType || "BooleanLiteral" === nodeType || "RegExpLiteral" === nodeType || "TemplateLiteral" === nodeType || "BigIntLiteral" === nodeType || nodeType === "Placeholder" && "StringLiteral" === node.expectedNode) {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isImmutable(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "Immutable" || "StringLiteral" === nodeType || "NumericLiteral" === nodeType || "NullLiteral" === nodeType || "BooleanLiteral" === nodeType || "JSXAttribute" === nodeType || "JSXClosingElement" === nodeType || "JSXElement" === nodeType || "JSXExpressionContainer" === nodeType || "JSXSpreadChild" === nodeType || "JSXOpeningElement" === nodeType || "JSXText" === nodeType || "JSXFragment" === nodeType || "JSXOpeningFragment" === nodeType || "JSXClosingFragment" === nodeType || "BigIntLiteral" === nodeType || nodeType === "Placeholder" && "StringLiteral" === node.expectedNode) {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isUserWhitespacable(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "UserWhitespacable" || "ObjectMethod" === nodeType || "ObjectProperty" === nodeType || "ObjectTypeInternalSlot" === nodeType || "ObjectTypeCallProperty" === nodeType || "ObjectTypeIndexer" === nodeType || "ObjectTypeProperty" === nodeType || "ObjectTypeSpreadProperty" === nodeType) {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isMethod(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "Method" || "ObjectMethod" === nodeType || "ClassMethod" === nodeType || "ClassPrivateMethod" === nodeType) {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isObjectMember(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "ObjectMember" || "ObjectMethod" === nodeType || "ObjectProperty" === nodeType) {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isProperty(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "Property" || "ObjectProperty" === nodeType || "ClassProperty" === nodeType || "ClassPrivateProperty" === nodeType) {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isUnaryLike(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "UnaryLike" || "UnaryExpression" === nodeType || "SpreadElement" === nodeType) {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isPattern(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "Pattern" || "AssignmentPattern" === nodeType || "ArrayPattern" === nodeType || "ObjectPattern" === nodeType || nodeType === "Placeholder" && "Pattern" === node.expectedNode) {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isClass(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "Class" || "ClassExpression" === nodeType || "ClassDeclaration" === nodeType) {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isModuleDeclaration(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "ModuleDeclaration" || "ExportAllDeclaration" === nodeType || "ExportDefaultDeclaration" === nodeType || "ExportNamedDeclaration" === nodeType || "ImportDeclaration" === nodeType) {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isExportDeclaration(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "ExportDeclaration" || "ExportAllDeclaration" === nodeType || "ExportDefaultDeclaration" === nodeType || "ExportNamedDeclaration" === nodeType) {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isModuleSpecifier(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "ModuleSpecifier" || "ExportSpecifier" === nodeType || "ImportDefaultSpecifier" === nodeType || "ImportNamespaceSpecifier" === nodeType || "ImportSpecifier" === nodeType || "ExportDefaultSpecifier" === nodeType || "ExportNamespaceSpecifier" === nodeType) {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isFlow(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "Flow" || "AnyTypeAnnotation" === nodeType || "ArrayTypeAnnotation" === nodeType || "BooleanTypeAnnotation" === nodeType || "BooleanLiteralTypeAnnotation" === nodeType || "NullLiteralTypeAnnotation" === nodeType || "ClassImplements" === nodeType || "DeclareClass" === nodeType || "DeclareFunction" === nodeType || "DeclareInterface" === nodeType || "DeclareModule" === nodeType || "DeclareModuleExports" === nodeType || "DeclareTypeAlias" === nodeType || "DeclareOpaqueType" === nodeType || "DeclareVariable" === nodeType || "DeclareExportDeclaration" === nodeType || "DeclareExportAllDeclaration" === nodeType || "DeclaredPredicate" === nodeType || "ExistsTypeAnnotation" === nodeType || "FunctionTypeAnnotation" === nodeType || "FunctionTypeParam" === nodeType || "GenericTypeAnnotation" === nodeType || "InferredPredicate" === nodeType || "InterfaceExtends" === nodeType || "InterfaceDeclaration" === nodeType || "InterfaceTypeAnnotation" === nodeType || "IntersectionTypeAnnotation" === nodeType || "MixedTypeAnnotation" === nodeType || "EmptyTypeAnnotation" === nodeType || "NullableTypeAnnotation" === nodeType || "NumberLiteralTypeAnnotation" === nodeType || "NumberTypeAnnotation" === nodeType || "ObjectTypeAnnotation" === nodeType || "ObjectTypeInternalSlot" === nodeType || "ObjectTypeCallProperty" === nodeType || "ObjectTypeIndexer" === nodeType || "ObjectTypeProperty" === nodeType || "ObjectTypeSpreadProperty" === nodeType || "OpaqueType" === nodeType || "QualifiedTypeIdentifier" === nodeType || "StringLiteralTypeAnnotation" === nodeType || "StringTypeAnnotation" === nodeType || "SymbolTypeAnnotation" === nodeType || "ThisTypeAnnotation" === nodeType || "TupleTypeAnnotation" === nodeType || "TypeofTypeAnnotation" === nodeType || "TypeAlias" === nodeType || "TypeAnnotation" === nodeType || "TypeCastExpression" === nodeType || "TypeParameter" === nodeType || "TypeParameterDeclaration" === nodeType || "TypeParameterInstantiation" === nodeType || "UnionTypeAnnotation" === nodeType || "Variance" === nodeType || "VoidTypeAnnotation" === nodeType) {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isFlowType(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "FlowType" || "AnyTypeAnnotation" === nodeType || "ArrayTypeAnnotation" === nodeType || "BooleanTypeAnnotation" === nodeType || "BooleanLiteralTypeAnnotation" === nodeType || "NullLiteralTypeAnnotation" === nodeType || "ExistsTypeAnnotation" === nodeType || "FunctionTypeAnnotation" === nodeType || "GenericTypeAnnotation" === nodeType || "InterfaceTypeAnnotation" === nodeType || "IntersectionTypeAnnotation" === nodeType || "MixedTypeAnnotation" === nodeType || "EmptyTypeAnnotation" === nodeType || "NullableTypeAnnotation" === nodeType || "NumberLiteralTypeAnnotation" === nodeType || "NumberTypeAnnotation" === nodeType || "ObjectTypeAnnotation" === nodeType || "StringLiteralTypeAnnotation" === nodeType || "StringTypeAnnotation" === nodeType || "SymbolTypeAnnotation" === nodeType || "ThisTypeAnnotation" === nodeType || "TupleTypeAnnotation" === nodeType || "TypeofTypeAnnotation" === nodeType || "UnionTypeAnnotation" === nodeType || "VoidTypeAnnotation" === nodeType) {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isFlowBaseAnnotation(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "FlowBaseAnnotation" || "AnyTypeAnnotation" === nodeType || "BooleanTypeAnnotation" === nodeType || "NullLiteralTypeAnnotation" === nodeType || "MixedTypeAnnotation" === nodeType || "EmptyTypeAnnotation" === nodeType || "NumberTypeAnnotation" === nodeType || "StringTypeAnnotation" === nodeType || "SymbolTypeAnnotation" === nodeType || "ThisTypeAnnotation" === nodeType || "VoidTypeAnnotation" === nodeType) {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isFlowDeclaration(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "FlowDeclaration" || "DeclareClass" === nodeType || "DeclareFunction" === nodeType || "DeclareInterface" === nodeType || "DeclareModule" === nodeType || "DeclareModuleExports" === nodeType || "DeclareTypeAlias" === nodeType || "DeclareOpaqueType" === nodeType || "DeclareVariable" === nodeType || "DeclareExportDeclaration" === nodeType || "DeclareExportAllDeclaration" === nodeType || "InterfaceDeclaration" === nodeType || "OpaqueType" === nodeType || "TypeAlias" === nodeType) {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isFlowPredicate(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "FlowPredicate" || "DeclaredPredicate" === nodeType || "InferredPredicate" === nodeType) {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isEnumBody(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "EnumBody" || "EnumBooleanBody" === nodeType || "EnumNumberBody" === nodeType || "EnumStringBody" === nodeType || "EnumSymbolBody" === nodeType) {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isEnumMember(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "EnumMember" || "EnumBooleanMember" === nodeType || "EnumNumberMember" === nodeType || "EnumStringMember" === nodeType || "EnumDefaultedMember" === nodeType) {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isJSX(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "JSX" || "JSXAttribute" === nodeType || "JSXClosingElement" === nodeType || "JSXElement" === nodeType || "JSXEmptyExpression" === nodeType || "JSXExpressionContainer" === nodeType || "JSXSpreadChild" === nodeType || "JSXIdentifier" === nodeType || "JSXMemberExpression" === nodeType || "JSXNamespacedName" === nodeType || "JSXOpeningElement" === nodeType || "JSXSpreadAttribute" === nodeType || "JSXText" === nodeType || "JSXFragment" === nodeType || "JSXOpeningFragment" === nodeType || "JSXClosingFragment" === nodeType) {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isPrivate(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "Private" || "ClassPrivateProperty" === nodeType || "ClassPrivateMethod" === nodeType || "PrivateName" === nodeType) {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isTSTypeElement(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "TSTypeElement" || "TSCallSignatureDeclaration" === nodeType || "TSConstructSignatureDeclaration" === nodeType || "TSPropertySignature" === nodeType || "TSMethodSignature" === nodeType || "TSIndexSignature" === nodeType) {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isTSType(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "TSType" || "TSAnyKeyword" === nodeType || "TSBooleanKeyword" === nodeType || "TSBigIntKeyword" === nodeType || "TSNeverKeyword" === nodeType || "TSNullKeyword" === nodeType || "TSNumberKeyword" === nodeType || "TSObjectKeyword" === nodeType || "TSStringKeyword" === nodeType || "TSSymbolKeyword" === nodeType || "TSUndefinedKeyword" === nodeType || "TSUnknownKeyword" === nodeType || "TSVoidKeyword" === nodeType || "TSThisType" === nodeType || "TSFunctionType" === nodeType || "TSConstructorType" === nodeType || "TSTypeReference" === nodeType || "TSTypePredicate" === nodeType || "TSTypeQuery" === nodeType || "TSTypeLiteral" === nodeType || "TSArrayType" === nodeType || "TSTupleType" === nodeType || "TSOptionalType" === nodeType || "TSRestType" === nodeType || "TSUnionType" === nodeType || "TSIntersectionType" === nodeType || "TSConditionalType" === nodeType || "TSInferType" === nodeType || "TSParenthesizedType" === nodeType || "TSTypeOperator" === nodeType || "TSIndexedAccessType" === nodeType || "TSMappedType" === nodeType || "TSLiteralType" === nodeType || "TSExpressionWithTypeArguments" === nodeType || "TSImportType" === nodeType) {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isTSBaseType(node, opts) {
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "TSBaseType" || "TSAnyKeyword" === nodeType || "TSBooleanKeyword" === nodeType || "TSBigIntKeyword" === nodeType || "TSNeverKeyword" === nodeType || "TSNullKeyword" === nodeType || "TSNumberKeyword" === nodeType || "TSObjectKeyword" === nodeType || "TSStringKeyword" === nodeType || "TSSymbolKeyword" === nodeType || "TSUndefinedKeyword" === nodeType || "TSUnknownKeyword" === nodeType || "TSVoidKeyword" === nodeType || "TSThisType" === nodeType || "TSLiteralType" === nodeType) {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isNumberLiteral(node, opts) {
+  console.trace("The node type NumberLiteral has been renamed to NumericLiteral");
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "NumberLiteral") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isRegexLiteral(node, opts) {
+  console.trace("The node type RegexLiteral has been renamed to RegExpLiteral");
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "RegexLiteral") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isRestProperty(node, opts) {
+  console.trace("The node type RestProperty has been renamed to RestElement");
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "RestProperty") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+
+function isSpreadProperty(node, opts) {
+  console.trace("The node type SpreadProperty has been renamed to SpreadElement");
+  if (!node) return false;
+  const nodeType = node.type;
+
+  if (nodeType === "SpreadProperty") {
+    if (typeof opts === "undefined") {
+      return true;
+    } else {
+      return (0, _shallowEqual.default)(node, opts);
+    }
+  }
+
+  return false;
+}
+},
 "rl+N3uzWfkqy9TnKTL26xy1zvYbqhJVlNTFtwUqNYtQ=":
 function (require, module, exports, __dirname, __filename) {
 var Symbol = require('./_Symbol');
@@ -63821,6 +74933,212 @@ const ansiRegex = require('ansi-regex');
 module.exports = string => typeof string === 'string' ? string.replace(ansiRegex(), '') : string;
 
 },
+"w7ZkZwGKcypB+59SPuV1H77LJCLC/dOCVEIsdYUYqOo=":
+function (require, module, exports, __dirname, __filename) {
+const traverse = require('@babel/traverse').default
+const t = require('@babel/types')
+
+function findStatementStart({ast, current_line}) {
+  let result = {
+    line: 1, column: 0
+  }
+
+  traverse(ast, {
+    Statement({node}) {
+      const {loc} = node
+      if (loc.start.line <= current_line && loc.end.line >= current_line) {
+        if (result.line < loc.start.line) {
+          result = loc.start
+        }
+      }
+    }
+  })
+
+  return result
+}
+
+function findVariablesDefinedWithinSelectionButUsedOutside({ast, start_line, end_line}) {
+  const result = {}
+
+  traverse(ast, {
+    VariableDeclaration({node, scope}) {
+      const {loc, declarations, kind} = node
+
+      if (loc.start.line >= start_line && loc.end.line <= end_line) {
+        const names = declarations.map(({id}) => id.name)
+
+        names.forEach((name) => {
+          scope.bindings[name].referencePaths.forEach(({node}) => {
+            if (node.loc.start.line > end_line) {
+              result[name] = kind
+            }
+          })
+        })
+      }
+    }
+  })
+
+  return Object.entries(result).map(([name, kind]) => {
+    return { name, kind }
+  })
+}
+
+function findGlobalScopeStart({ast, current_line}) {
+  let result = {
+    line: 1, column: 0
+  }
+
+  traverse(ast, {
+    Statement(path) {
+      const {loc} = path.node
+
+      if (loc.start.line <= current_line && loc.end.line >= current_line) {
+        result = {
+          line: loc.start.line,
+          column: loc.start.column
+        }
+        path.stop()
+      }
+    }
+  })
+
+  return result
+}
+
+function findGlobalFunctionArguments({ast, start_line, end_line}) {
+  const result = []
+  let currentScopePath
+  let globalScope
+
+  traverse(ast, {
+    Scope(path) {
+      const loc = path.node.loc
+
+      if (!currentScopePath) {
+        currentScopePath = path
+        globalScope = path.scope
+      } else {
+        if (start_line >= loc.start.line && end_line <= loc.end.line) {
+          const currentScopePathLoc = currentScopePath.node.loc
+
+          if (loc.start.line >= currentScopePathLoc.start.line && loc.end.line <= currentScopePathLoc.end.line) {
+            currentScopePath = path
+          }
+        }
+      }
+    }
+  })
+
+  const isGlobalBinding = (binding) => {
+    return Object.values(globalScope.bindings).find(b => b === binding)
+  }
+
+  for (let path = currentScopePath; path.parentPath; path = path.parentPath) {
+    for (const [name, binding] of Object.entries(path.scope.bindings)) {
+      if (isGlobalBinding(binding)) {
+        continue
+      }
+
+      const bindingLoc = binding.identifier.loc
+      if (bindingLoc.start.line >= start_line && bindingLoc.start.line <= end_line) {
+        continue
+      }
+
+      for (const referencePath of binding.referencePaths) {
+        const loc = referencePath.node.loc
+
+        if (loc.start.line >= start_line && loc.end.line <= end_line) {
+          result.push(name)
+        }
+      }
+    }
+  }
+
+  return [...new Set(result)]
+}
+
+function determineExtractedFunctionType({ast, start_line, end_line}) {
+  let thisPath
+
+  traverse(ast, {
+    ThisExpression(path) {
+      const {start, end} = path.node.loc
+      if (start_line <= start.line && end.line <= end_line) {
+        thisPath = path
+        path.stop()
+      }
+    },
+  })
+
+  if (!thisPath) {
+    return 'function'
+  }
+
+  for (let path = thisPath.parentPath; path.parentPath; path = path.parentPath) {
+    if (t.isObjectMethod(path.node)) {
+      return 'objectMethod'
+    } else if (t.isClassMethod(path.node)) {
+      return 'classMethod'
+    } else if (t.isFunctionDeclaration(path.node)) {
+      return 'unboundFunction'
+    } else if (t.isFunctionExpression(path.node)) {
+      if (path.parent.type === 'ObjectProperty') {
+        return 'objectMethod'
+      } else {
+        return 'unboundFunction'
+      }
+    }
+  }
+
+  throw 'Could not determine scope for "this"'
+}
+
+function findMethodScopeStart({ast, current_line}) {
+  let result = {
+    line: 1, column: 0
+  }
+
+  const handler = (path) => {
+    const {loc} = path.node
+
+    if (loc.start.line <= current_line && loc.end.line >= current_line) {
+      result = {
+        line: loc.start.line,
+        column: loc.start.column
+      }
+      path.stop()
+    }
+  }
+
+  traverse(ast, {
+    ClassMethod: handler,
+    ObjectMethod: handler,
+    FunctionExpression(path) {
+      const {loc} = path.node
+
+      if (path.parent.type === 'ObjectProperty' && loc.start.line <= current_line && loc.end.line >= current_line) {
+        result = {
+          line: path.parent.loc.start.line,
+          column: path.parent.loc.start.column
+        }
+        path.stop()
+      }
+    }
+  })
+
+  return result
+}
+
+module.exports = {
+  findStatementStart,
+  findVariablesDefinedWithinSelectionButUsedOutside,
+  findGlobalScopeStart,
+  findGlobalFunctionArguments,
+  determineExtractedFunctionType,
+  findMethodScopeStart,
+}
+
+},
 "wZcKEL7fL8V/Awa4RpwtfEzxLfPrDx5lOKkppLu+CEk=":
 function (require, module, exports, __dirname, __filename) {
 /**
@@ -63871,6 +75189,66 @@ function isValidIdentifier(name, reserved = true) {
 
   return _esutils.default.keyword.isIdentifierNameES6(name);
 }
+},
+"woTQ643kOQvp+lFvAYj31hthWvLaPrIiqUjhkRWCdnU=":
+function (require, module, exports, __dirname, __filename) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+Object.defineProperty(exports, "isIdentifierName", {
+  enumerable: true,
+  get: function () {
+    return _identifier.isIdentifierName;
+  }
+});
+Object.defineProperty(exports, "isIdentifierChar", {
+  enumerable: true,
+  get: function () {
+    return _identifier.isIdentifierChar;
+  }
+});
+Object.defineProperty(exports, "isIdentifierStart", {
+  enumerable: true,
+  get: function () {
+    return _identifier.isIdentifierStart;
+  }
+});
+Object.defineProperty(exports, "isReservedWord", {
+  enumerable: true,
+  get: function () {
+    return _keyword.isReservedWord;
+  }
+});
+Object.defineProperty(exports, "isStrictBindOnlyReservedWord", {
+  enumerable: true,
+  get: function () {
+    return _keyword.isStrictBindOnlyReservedWord;
+  }
+});
+Object.defineProperty(exports, "isStrictBindReservedWord", {
+  enumerable: true,
+  get: function () {
+    return _keyword.isStrictBindReservedWord;
+  }
+});
+Object.defineProperty(exports, "isStrictReservedWord", {
+  enumerable: true,
+  get: function () {
+    return _keyword.isStrictReservedWord;
+  }
+});
+Object.defineProperty(exports, "isKeyword", {
+  enumerable: true,
+  get: function () {
+    return _keyword.isKeyword;
+  }
+});
+
+var _identifier = require("./identifier");
+
+var _keyword = require("./keyword");
 },
 "wzXqdX44mAgHlfJQk4J9l7j7ANDzrATdVsgO7NrI7vM=":
 function (require, module, exports, __dirname, __filename) {
@@ -67312,7 +78690,7 @@ module.exports = cacheHas;
 ,
 {
   "js_language_server.js": [
-    "AKu2QciJH4p4A5flNqz8o2M5oxAqu0ODArmvHWepGi0=",
+    "0cE9Z7zUZbY6GNLgS6F6ZyCWZHn0FvHGXYG0q/ZTg4c=",
     {
       "./queries": "queries.js",
       "@babel/parser": "node_modules/@babel/parser/lib/index.js",
@@ -67337,14 +78715,14 @@ module.exports = cacheHas;
   "node_modules/@babel/generator/lib/generators/classes.js": [
     "eEHirO+z0nMa4kr6H4YPp0lDBJh90zT2/F8wtUbEtRc=",
     {
-      "@babel/types": "node_modules/@babel/types/lib/index.js"
+      "@babel/types": "node_modules/@babel/generator/node_modules/@babel/types/lib/index.js"
     }
   ],
   "node_modules/@babel/generator/lib/generators/expressions.js": [
     "oaz8TXUDJLFtOWZYQsK0GS/rturN3sIE9dHP8LViq+Y=",
     {
       "../node": "node_modules/@babel/generator/lib/node/index.js",
-      "@babel/types": "node_modules/@babel/types/lib/index.js"
+      "@babel/types": "node_modules/@babel/generator/node_modules/@babel/types/lib/index.js"
     }
   ],
   "node_modules/@babel/generator/lib/generators/flow.js": [
@@ -67352,7 +78730,7 @@ module.exports = cacheHas;
     {
       "./modules": "node_modules/@babel/generator/lib/generators/modules.js",
       "./types": "node_modules/@babel/generator/lib/generators/types.js",
-      "@babel/types": "node_modules/@babel/types/lib/index.js"
+      "@babel/types": "node_modules/@babel/generator/node_modules/@babel/types/lib/index.js"
     }
   ],
   "node_modules/@babel/generator/lib/generators/index.js": [
@@ -67378,19 +78756,19 @@ module.exports = cacheHas;
   "node_modules/@babel/generator/lib/generators/methods.js": [
     "0d9Ck3r80LzaXiEF0lmmB0kOs2fiuXD1LAq6qXnhM2s=",
     {
-      "@babel/types": "node_modules/@babel/types/lib/index.js"
+      "@babel/types": "node_modules/@babel/generator/node_modules/@babel/types/lib/index.js"
     }
   ],
   "node_modules/@babel/generator/lib/generators/modules.js": [
     "oZqiCQCaUmJkiiF9LTJBCbt2qstDUDoEe8NsHgH9YKI=",
     {
-      "@babel/types": "node_modules/@babel/types/lib/index.js"
+      "@babel/types": "node_modules/@babel/generator/node_modules/@babel/types/lib/index.js"
     }
   ],
   "node_modules/@babel/generator/lib/generators/statements.js": [
     "KSgNSfggjf3rTOg2DRIYjsLLlDCUA3q4/OCxL+/wgIk=",
     {
-      "@babel/types": "node_modules/@babel/types/lib/index.js"
+      "@babel/types": "node_modules/@babel/generator/node_modules/@babel/types/lib/index.js"
     }
   ],
   "node_modules/@babel/generator/lib/generators/template-literals.js": [
@@ -67400,7 +78778,7 @@ module.exports = cacheHas;
   "node_modules/@babel/generator/lib/generators/types.js": [
     "QRotpWnwTrqkgQ33H31dOAR5pDTp12F9K0HMvXy8Dfg=",
     {
-      "@babel/types": "node_modules/@babel/types/lib/index.js",
+      "@babel/types": "node_modules/@babel/generator/node_modules/@babel/types/lib/index.js",
       "jsesc": "node_modules/jsesc/jsesc.js"
     }
   ],
@@ -67420,19 +78798,19 @@ module.exports = cacheHas;
     {
       "./parentheses": "node_modules/@babel/generator/lib/node/parentheses.js",
       "./whitespace": "node_modules/@babel/generator/lib/node/whitespace.js",
-      "@babel/types": "node_modules/@babel/types/lib/index.js"
+      "@babel/types": "node_modules/@babel/generator/node_modules/@babel/types/lib/index.js"
     }
   ],
   "node_modules/@babel/generator/lib/node/parentheses.js": [
     "DdrtKYgwEbejBS/oWZvuXI6HIbbRsgETkm0HczZsnDo=",
     {
-      "@babel/types": "node_modules/@babel/types/lib/index.js"
+      "@babel/types": "node_modules/@babel/generator/node_modules/@babel/types/lib/index.js"
     }
   ],
   "node_modules/@babel/generator/lib/node/whitespace.js": [
     "I83szh62RP7cQMj2PTdR8G1UlABubRPNEuh2ixXefBw=",
     {
-      "@babel/types": "node_modules/@babel/types/lib/index.js"
+      "@babel/types": "node_modules/@babel/generator/node_modules/@babel/types/lib/index.js"
     }
   ],
   "node_modules/@babel/generator/lib/printer.js": [
@@ -67441,7 +78819,7 @@ module.exports = cacheHas;
       "./buffer": "node_modules/@babel/generator/lib/buffer.js",
       "./generators": "node_modules/@babel/generator/lib/generators/index.js",
       "./node": "node_modules/@babel/generator/lib/node/index.js",
-      "@babel/types": "node_modules/@babel/types/lib/index.js",
+      "@babel/types": "node_modules/@babel/generator/node_modules/@babel/types/lib/index.js",
       "lodash/isInteger": "node_modules/lodash/isInteger.js",
       "lodash/repeat": "node_modules/lodash/repeat.js"
     }
@@ -67452,25 +78830,2248 @@ module.exports = cacheHas;
       "source-map": "node_modules/source-map/source-map.js"
     }
   ],
+  "node_modules/@babel/generator/node_modules/@babel/types/lib/asserts/assertNode.js": [
+    "mfekKBICa0wkDoFcjQuz46wWi31d6lNVKf3WyaT2JhE=",
+    {
+      "../validators/isNode": "node_modules/@babel/generator/node_modules/@babel/types/lib/validators/isNode.js"
+    }
+  ],
+  "node_modules/@babel/generator/node_modules/@babel/types/lib/asserts/generated/index.js": [
+    "mT6/nEVmdwoaaoIJM4vcwvk7KRFXgO8QSrZ9aU8qMfg=",
+    {
+      "../../validators/is": "node_modules/@babel/generator/node_modules/@babel/types/lib/validators/is.js"
+    }
+  ],
+  "node_modules/@babel/generator/node_modules/@babel/types/lib/builders/builder.js": [
+    "mTXSk+hzEwbmQXYWEvqqqkbjGEcCNt2WpdArKm37zGk=",
+    {
+      "../definitions": "node_modules/@babel/generator/node_modules/@babel/types/lib/definitions/index.js",
+      "../validators/validate": "node_modules/@babel/generator/node_modules/@babel/types/lib/validators/validate.js",
+      "lodash/clone": "node_modules/lodash/clone.js"
+    }
+  ],
+  "node_modules/@babel/generator/node_modules/@babel/types/lib/builders/flow/createTypeAnnotationBasedOnTypeof.js": [
+    "U7eCycl/8DiBcGlEgIxhGfjChvNw2NZUN6CbflgH4X8=",
+    {
+      "../generated": "node_modules/@babel/generator/node_modules/@babel/types/lib/builders/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/generator/node_modules/@babel/types/lib/builders/flow/createUnionTypeAnnotation.js": [
+    "tcblNNM9C/1eHiqi3NYG/hHcMloDz7Q7/aVoguTfSxg=",
+    {
+      "../../modifications/flow/removeTypeDuplicates": "node_modules/@babel/generator/node_modules/@babel/types/lib/modifications/flow/removeTypeDuplicates.js",
+      "../generated": "node_modules/@babel/generator/node_modules/@babel/types/lib/builders/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/generator/node_modules/@babel/types/lib/builders/generated/index.js": [
+    "557DwixyQv6EPRCB6HJunqEqKIcoBXlcB7AhZ7eQHg0=",
+    {
+      "../builder": "node_modules/@babel/generator/node_modules/@babel/types/lib/builders/builder.js"
+    }
+  ],
+  "node_modules/@babel/generator/node_modules/@babel/types/lib/builders/react/buildChildren.js": [
+    "A0k2ncE8Oz5CX2pN+Kpo7PluvMj1gXw95+nzZKa+Ve8=",
+    {
+      "../../utils/react/cleanJSXElementLiteralChild": "node_modules/@babel/generator/node_modules/@babel/types/lib/utils/react/cleanJSXElementLiteralChild.js",
+      "../../validators/generated": "node_modules/@babel/generator/node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/generator/node_modules/@babel/types/lib/clone/clone.js": [
+    "THkH4wFFQUVzIJ0nw7GWOEHFgsjNUMA11okf/2jeHFY=",
+    {
+      "./cloneNode": "node_modules/@babel/generator/node_modules/@babel/types/lib/clone/cloneNode.js"
+    }
+  ],
+  "node_modules/@babel/generator/node_modules/@babel/types/lib/clone/cloneDeep.js": [
+    "4hGR0sww7W+NuT6hEDLKf3gP9hzRwIfN/bi6Pr40OLs=",
+    {
+      "./cloneNode": "node_modules/@babel/generator/node_modules/@babel/types/lib/clone/cloneNode.js"
+    }
+  ],
+  "node_modules/@babel/generator/node_modules/@babel/types/lib/clone/cloneNode.js": [
+    "5xw78htLt4zrMZGWP3gschKGsBpiB3Iu5Vgvr9D2eBQ=",
+    {
+      "../definitions": "node_modules/@babel/generator/node_modules/@babel/types/lib/definitions/index.js"
+    }
+  ],
+  "node_modules/@babel/generator/node_modules/@babel/types/lib/clone/cloneWithoutLoc.js": [
+    "usonzIhNZhBCwU1/WAW9GcW71AzOyaEQXGBhN1WVu/0=",
+    {
+      "./clone": "node_modules/@babel/generator/node_modules/@babel/types/lib/clone/clone.js"
+    }
+  ],
+  "node_modules/@babel/generator/node_modules/@babel/types/lib/comments/addComment.js": [
+    "a+hWI3NJdEiIVqI1DnZam3XE/fwBzZuF6v15O+DFs+Y=",
+    {
+      "./addComments": "node_modules/@babel/generator/node_modules/@babel/types/lib/comments/addComments.js"
+    }
+  ],
+  "node_modules/@babel/generator/node_modules/@babel/types/lib/comments/addComments.js": [
+    "NHqJP6zaX5sMqS0Anx5abFuzcOumKxLJSYi5Ufu+qOo=",
+    {}
+  ],
+  "node_modules/@babel/generator/node_modules/@babel/types/lib/comments/inheritInnerComments.js": [
+    "usyEeify3ZPuB/QJVWJqwfHFjDY4ngOJR2+BCGg71m8=",
+    {
+      "../utils/inherit": "node_modules/@babel/generator/node_modules/@babel/types/lib/utils/inherit.js"
+    }
+  ],
+  "node_modules/@babel/generator/node_modules/@babel/types/lib/comments/inheritLeadingComments.js": [
+    "dSBd50YQRz6cQDMqbLcacTW0XSvrDccSAWYTI9KGsHo=",
+    {
+      "../utils/inherit": "node_modules/@babel/generator/node_modules/@babel/types/lib/utils/inherit.js"
+    }
+  ],
+  "node_modules/@babel/generator/node_modules/@babel/types/lib/comments/inheritTrailingComments.js": [
+    "vUH3HrhkXqUIWN42PTpx9/vzJVub/zAq6HWf/7LRovs=",
+    {
+      "../utils/inherit": "node_modules/@babel/generator/node_modules/@babel/types/lib/utils/inherit.js"
+    }
+  ],
+  "node_modules/@babel/generator/node_modules/@babel/types/lib/comments/inheritsComments.js": [
+    "Xyg5Dn5f1attr+37AGZVIklShIuf/An/KJfcsEIlj9Y=",
+    {
+      "./inheritInnerComments": "node_modules/@babel/generator/node_modules/@babel/types/lib/comments/inheritInnerComments.js",
+      "./inheritLeadingComments": "node_modules/@babel/generator/node_modules/@babel/types/lib/comments/inheritLeadingComments.js",
+      "./inheritTrailingComments": "node_modules/@babel/generator/node_modules/@babel/types/lib/comments/inheritTrailingComments.js"
+    }
+  ],
+  "node_modules/@babel/generator/node_modules/@babel/types/lib/comments/removeComments.js": [
+    "IPergGqpjvMc8ziFTCXPNcFFHyeKIHYcVZ+Ovj8s2Hg=",
+    {
+      "../constants": "node_modules/@babel/generator/node_modules/@babel/types/lib/constants/index.js"
+    }
+  ],
+  "node_modules/@babel/generator/node_modules/@babel/types/lib/constants/generated/index.js": [
+    "XM2x9B42aoxgxBqzlJvVmP45ZBFuNCcesjeeiEgOfNU=",
+    {
+      "../../definitions": "node_modules/@babel/generator/node_modules/@babel/types/lib/definitions/index.js"
+    }
+  ],
+  "node_modules/@babel/generator/node_modules/@babel/types/lib/constants/index.js": [
+    "9cztyx6J568P994lqUPI6yCAD+D7kt75qdBajn2+5hw=",
+    {}
+  ],
+  "node_modules/@babel/generator/node_modules/@babel/types/lib/converters/ensureBlock.js": [
+    "B2UP3sICM3EW0d2yaGZTrhJyssvIqYh9iVNyOV85wFg=",
+    {
+      "./toBlock": "node_modules/@babel/generator/node_modules/@babel/types/lib/converters/toBlock.js"
+    }
+  ],
+  "node_modules/@babel/generator/node_modules/@babel/types/lib/converters/gatherSequenceExpressions.js": [
+    "OoZe9skvIZocS/GGEWep7a3eLq+l2Cvm7Kgq4C2En3M=",
+    {
+      "../builders/generated": "node_modules/@babel/generator/node_modules/@babel/types/lib/builders/generated/index.js",
+      "../clone/cloneNode": "node_modules/@babel/generator/node_modules/@babel/types/lib/clone/cloneNode.js",
+      "../retrievers/getBindingIdentifiers": "node_modules/@babel/generator/node_modules/@babel/types/lib/retrievers/getBindingIdentifiers.js",
+      "../validators/generated": "node_modules/@babel/generator/node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/generator/node_modules/@babel/types/lib/converters/toBindingIdentifierName.js": [
+    "bzUfn6/LdzG8xS+PG22PK85sW5/6iKu7uiU7CjD1igc=",
+    {
+      "./toIdentifier": "node_modules/@babel/generator/node_modules/@babel/types/lib/converters/toIdentifier.js"
+    }
+  ],
+  "node_modules/@babel/generator/node_modules/@babel/types/lib/converters/toBlock.js": [
+    "07eFsSZ5+oMolNdbhr0ys254AmUX1szgBinWd6cPkTg=",
+    {
+      "../builders/generated": "node_modules/@babel/generator/node_modules/@babel/types/lib/builders/generated/index.js",
+      "../validators/generated": "node_modules/@babel/generator/node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/generator/node_modules/@babel/types/lib/converters/toComputedKey.js": [
+    "UzpqkgFycRTTttVkVcx+W4iaGvtgfEAg7zDUvah1JV4=",
+    {
+      "../builders/generated": "node_modules/@babel/generator/node_modules/@babel/types/lib/builders/generated/index.js",
+      "../validators/generated": "node_modules/@babel/generator/node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/generator/node_modules/@babel/types/lib/converters/toExpression.js": [
+    "kkG1dMCrkKbqJvnyomrjJfZTP7QSvxiDX7GWl2F+ce8=",
+    {
+      "../validators/generated": "node_modules/@babel/generator/node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/generator/node_modules/@babel/types/lib/converters/toIdentifier.js": [
+    "+0QpBCGQUKsGI4MLGmFU1Inzp3QSk7WeZoErsXDIsKs=",
+    {
+      "../validators/isValidIdentifier": "node_modules/@babel/generator/node_modules/@babel/types/lib/validators/isValidIdentifier.js"
+    }
+  ],
+  "node_modules/@babel/generator/node_modules/@babel/types/lib/converters/toKeyAlias.js": [
+    "zIb1wO9Hzuf7GjKi+HTkmNTTYvmzDPPShFca3yTdrsE=",
+    {
+      "../clone/cloneNode": "node_modules/@babel/generator/node_modules/@babel/types/lib/clone/cloneNode.js",
+      "../modifications/removePropertiesDeep": "node_modules/@babel/generator/node_modules/@babel/types/lib/modifications/removePropertiesDeep.js",
+      "../validators/generated": "node_modules/@babel/generator/node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/generator/node_modules/@babel/types/lib/converters/toSequenceExpression.js": [
+    "MK8i1eEGzuV3cz8UVH0WZWhoijMEmLmhxO8/dudZaME=",
+    {
+      "./gatherSequenceExpressions": "node_modules/@babel/generator/node_modules/@babel/types/lib/converters/gatherSequenceExpressions.js"
+    }
+  ],
+  "node_modules/@babel/generator/node_modules/@babel/types/lib/converters/toStatement.js": [
+    "ODjoLVGJar4uv2uM5mZtjwpk7ZHJKgaKzb4bKtKrstU=",
+    {
+      "../builders/generated": "node_modules/@babel/generator/node_modules/@babel/types/lib/builders/generated/index.js",
+      "../validators/generated": "node_modules/@babel/generator/node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/generator/node_modules/@babel/types/lib/converters/valueToNode.js": [
+    "dTFaesm9X5zXeGnthmurauqREZqnZLzfJSEyoQZriP8=",
+    {
+      "../builders/generated": "node_modules/@babel/generator/node_modules/@babel/types/lib/builders/generated/index.js",
+      "../validators/isValidIdentifier": "node_modules/@babel/generator/node_modules/@babel/types/lib/validators/isValidIdentifier.js",
+      "lodash/isPlainObject": "node_modules/lodash/isPlainObject.js",
+      "lodash/isRegExp": "node_modules/lodash/isRegExp.js"
+    }
+  ],
+  "node_modules/@babel/generator/node_modules/@babel/types/lib/definitions/core.js": [
+    "i1Ff+iAlsEPJRjhnDTiDpZwwe9/2ehVR1XTzIbgCJ5U=",
+    {
+      "../constants": "node_modules/@babel/generator/node_modules/@babel/types/lib/constants/index.js",
+      "../validators/is": "node_modules/@babel/generator/node_modules/@babel/types/lib/validators/is.js",
+      "./utils": "node_modules/@babel/generator/node_modules/@babel/types/lib/definitions/utils.js",
+      "esutils": "node_modules/esutils/lib/utils.js"
+    }
+  ],
+  "node_modules/@babel/generator/node_modules/@babel/types/lib/definitions/es2015.js": [
+    "yqnK85vtGWHSu1vFiIjdLZSYJfP9RU/vN9GRCUs0Na8=",
+    {
+      "../validators/is": "node_modules/@babel/generator/node_modules/@babel/types/lib/validators/is.js",
+      "./core": "node_modules/@babel/generator/node_modules/@babel/types/lib/definitions/core.js",
+      "./utils": "node_modules/@babel/generator/node_modules/@babel/types/lib/definitions/utils.js"
+    }
+  ],
+  "node_modules/@babel/generator/node_modules/@babel/types/lib/definitions/experimental.js": [
+    "3EH/NFjBrMP2hxsi2xxOA9rRKGF9eFFhsglLhNbUKPU=",
+    {
+      "./es2015": "node_modules/@babel/generator/node_modules/@babel/types/lib/definitions/es2015.js",
+      "./utils": "node_modules/@babel/generator/node_modules/@babel/types/lib/definitions/utils.js"
+    }
+  ],
+  "node_modules/@babel/generator/node_modules/@babel/types/lib/definitions/flow.js": [
+    "lcxONTSuk2FvVuhL9uHZP/cdIr3d3neLzpoLIpaeGf4=",
+    {
+      "./utils": "node_modules/@babel/generator/node_modules/@babel/types/lib/definitions/utils.js"
+    }
+  ],
+  "node_modules/@babel/generator/node_modules/@babel/types/lib/definitions/index.js": [
+    "Vucc3mwTWSUNbNyGHZCEGpidLX29DBTqrmL1iXgcQR8=",
+    {
+      "./core": "node_modules/@babel/generator/node_modules/@babel/types/lib/definitions/core.js",
+      "./es2015": "node_modules/@babel/generator/node_modules/@babel/types/lib/definitions/es2015.js",
+      "./experimental": "node_modules/@babel/generator/node_modules/@babel/types/lib/definitions/experimental.js",
+      "./flow": "node_modules/@babel/generator/node_modules/@babel/types/lib/definitions/flow.js",
+      "./jsx": "node_modules/@babel/generator/node_modules/@babel/types/lib/definitions/jsx.js",
+      "./misc": "node_modules/@babel/generator/node_modules/@babel/types/lib/definitions/misc.js",
+      "./placeholders": "node_modules/@babel/generator/node_modules/@babel/types/lib/definitions/placeholders.js",
+      "./typescript": "node_modules/@babel/generator/node_modules/@babel/types/lib/definitions/typescript.js",
+      "./utils": "node_modules/@babel/generator/node_modules/@babel/types/lib/definitions/utils.js",
+      "to-fast-properties": "node_modules/to-fast-properties/index.js"
+    }
+  ],
+  "node_modules/@babel/generator/node_modules/@babel/types/lib/definitions/jsx.js": [
+    "Wn8RjShRqT4UR/OJHPn7NNiDZhv6mVushBtA2ND5/r4=",
+    {
+      "./utils": "node_modules/@babel/generator/node_modules/@babel/types/lib/definitions/utils.js"
+    }
+  ],
+  "node_modules/@babel/generator/node_modules/@babel/types/lib/definitions/misc.js": [
+    "R8Pg6S3t/I0baPhJnZal//QZ1kMxHCQItI5dHsFsdD4=",
+    {
+      "./placeholders": "node_modules/@babel/generator/node_modules/@babel/types/lib/definitions/placeholders.js",
+      "./utils": "node_modules/@babel/generator/node_modules/@babel/types/lib/definitions/utils.js"
+    }
+  ],
+  "node_modules/@babel/generator/node_modules/@babel/types/lib/definitions/placeholders.js": [
+    "ve6xW3E0vuT2m9/FIRDRVarPPSRGzmQC7E9ObNHKE1o=",
+    {
+      "./utils": "node_modules/@babel/generator/node_modules/@babel/types/lib/definitions/utils.js"
+    }
+  ],
+  "node_modules/@babel/generator/node_modules/@babel/types/lib/definitions/typescript.js": [
+    "Bja9aehyStk1z4x8vhmnK2fsJMGmWKFrW+6y8RJRixo=",
+    {
+      "./core": "node_modules/@babel/generator/node_modules/@babel/types/lib/definitions/core.js",
+      "./es2015": "node_modules/@babel/generator/node_modules/@babel/types/lib/definitions/es2015.js",
+      "./utils": "node_modules/@babel/generator/node_modules/@babel/types/lib/definitions/utils.js"
+    }
+  ],
+  "node_modules/@babel/generator/node_modules/@babel/types/lib/definitions/utils.js": [
+    "Y7rKYdYrIV01L5WuRaQMPACZ0nJdlaktPG1qUSv4iUA=",
+    {
+      "../validators/is": "node_modules/@babel/generator/node_modules/@babel/types/lib/validators/is.js",
+      "../validators/validate": "node_modules/@babel/generator/node_modules/@babel/types/lib/validators/validate.js"
+    }
+  ],
+  "node_modules/@babel/generator/node_modules/@babel/types/lib/index.js": [
+    "iisIewwRDHXnW8mih8nhaUJ16qXRfse0fI/34iAlGbg=",
+    {
+      "./asserts/assertNode": "node_modules/@babel/generator/node_modules/@babel/types/lib/asserts/assertNode.js",
+      "./asserts/generated": "node_modules/@babel/generator/node_modules/@babel/types/lib/asserts/generated/index.js",
+      "./builders/flow/createTypeAnnotationBasedOnTypeof": "node_modules/@babel/generator/node_modules/@babel/types/lib/builders/flow/createTypeAnnotationBasedOnTypeof.js",
+      "./builders/flow/createUnionTypeAnnotation": "node_modules/@babel/generator/node_modules/@babel/types/lib/builders/flow/createUnionTypeAnnotation.js",
+      "./builders/generated": "node_modules/@babel/generator/node_modules/@babel/types/lib/builders/generated/index.js",
+      "./builders/react/buildChildren": "node_modules/@babel/generator/node_modules/@babel/types/lib/builders/react/buildChildren.js",
+      "./clone/clone": "node_modules/@babel/generator/node_modules/@babel/types/lib/clone/clone.js",
+      "./clone/cloneDeep": "node_modules/@babel/generator/node_modules/@babel/types/lib/clone/cloneDeep.js",
+      "./clone/cloneNode": "node_modules/@babel/generator/node_modules/@babel/types/lib/clone/cloneNode.js",
+      "./clone/cloneWithoutLoc": "node_modules/@babel/generator/node_modules/@babel/types/lib/clone/cloneWithoutLoc.js",
+      "./comments/addComment": "node_modules/@babel/generator/node_modules/@babel/types/lib/comments/addComment.js",
+      "./comments/addComments": "node_modules/@babel/generator/node_modules/@babel/types/lib/comments/addComments.js",
+      "./comments/inheritInnerComments": "node_modules/@babel/generator/node_modules/@babel/types/lib/comments/inheritInnerComments.js",
+      "./comments/inheritLeadingComments": "node_modules/@babel/generator/node_modules/@babel/types/lib/comments/inheritLeadingComments.js",
+      "./comments/inheritTrailingComments": "node_modules/@babel/generator/node_modules/@babel/types/lib/comments/inheritTrailingComments.js",
+      "./comments/inheritsComments": "node_modules/@babel/generator/node_modules/@babel/types/lib/comments/inheritsComments.js",
+      "./comments/removeComments": "node_modules/@babel/generator/node_modules/@babel/types/lib/comments/removeComments.js",
+      "./constants": "node_modules/@babel/generator/node_modules/@babel/types/lib/constants/index.js",
+      "./constants/generated": "node_modules/@babel/generator/node_modules/@babel/types/lib/constants/generated/index.js",
+      "./converters/ensureBlock": "node_modules/@babel/generator/node_modules/@babel/types/lib/converters/ensureBlock.js",
+      "./converters/toBindingIdentifierName": "node_modules/@babel/generator/node_modules/@babel/types/lib/converters/toBindingIdentifierName.js",
+      "./converters/toBlock": "node_modules/@babel/generator/node_modules/@babel/types/lib/converters/toBlock.js",
+      "./converters/toComputedKey": "node_modules/@babel/generator/node_modules/@babel/types/lib/converters/toComputedKey.js",
+      "./converters/toExpression": "node_modules/@babel/generator/node_modules/@babel/types/lib/converters/toExpression.js",
+      "./converters/toIdentifier": "node_modules/@babel/generator/node_modules/@babel/types/lib/converters/toIdentifier.js",
+      "./converters/toKeyAlias": "node_modules/@babel/generator/node_modules/@babel/types/lib/converters/toKeyAlias.js",
+      "./converters/toSequenceExpression": "node_modules/@babel/generator/node_modules/@babel/types/lib/converters/toSequenceExpression.js",
+      "./converters/toStatement": "node_modules/@babel/generator/node_modules/@babel/types/lib/converters/toStatement.js",
+      "./converters/valueToNode": "node_modules/@babel/generator/node_modules/@babel/types/lib/converters/valueToNode.js",
+      "./definitions": "node_modules/@babel/generator/node_modules/@babel/types/lib/definitions/index.js",
+      "./modifications/appendToMemberExpression": "node_modules/@babel/generator/node_modules/@babel/types/lib/modifications/appendToMemberExpression.js",
+      "./modifications/flow/removeTypeDuplicates": "node_modules/@babel/generator/node_modules/@babel/types/lib/modifications/flow/removeTypeDuplicates.js",
+      "./modifications/inherits": "node_modules/@babel/generator/node_modules/@babel/types/lib/modifications/inherits.js",
+      "./modifications/prependToMemberExpression": "node_modules/@babel/generator/node_modules/@babel/types/lib/modifications/prependToMemberExpression.js",
+      "./modifications/removeProperties": "node_modules/@babel/generator/node_modules/@babel/types/lib/modifications/removeProperties.js",
+      "./modifications/removePropertiesDeep": "node_modules/@babel/generator/node_modules/@babel/types/lib/modifications/removePropertiesDeep.js",
+      "./retrievers/getBindingIdentifiers": "node_modules/@babel/generator/node_modules/@babel/types/lib/retrievers/getBindingIdentifiers.js",
+      "./retrievers/getOuterBindingIdentifiers": "node_modules/@babel/generator/node_modules/@babel/types/lib/retrievers/getOuterBindingIdentifiers.js",
+      "./traverse/traverse": "node_modules/@babel/generator/node_modules/@babel/types/lib/traverse/traverse.js",
+      "./traverse/traverseFast": "node_modules/@babel/generator/node_modules/@babel/types/lib/traverse/traverseFast.js",
+      "./utils/shallowEqual": "node_modules/@babel/generator/node_modules/@babel/types/lib/utils/shallowEqual.js",
+      "./validators/buildMatchMemberExpression": "node_modules/@babel/generator/node_modules/@babel/types/lib/validators/buildMatchMemberExpression.js",
+      "./validators/generated": "node_modules/@babel/generator/node_modules/@babel/types/lib/validators/generated/index.js",
+      "./validators/is": "node_modules/@babel/generator/node_modules/@babel/types/lib/validators/is.js",
+      "./validators/isBinding": "node_modules/@babel/generator/node_modules/@babel/types/lib/validators/isBinding.js",
+      "./validators/isBlockScoped": "node_modules/@babel/generator/node_modules/@babel/types/lib/validators/isBlockScoped.js",
+      "./validators/isImmutable": "node_modules/@babel/generator/node_modules/@babel/types/lib/validators/isImmutable.js",
+      "./validators/isLet": "node_modules/@babel/generator/node_modules/@babel/types/lib/validators/isLet.js",
+      "./validators/isNode": "node_modules/@babel/generator/node_modules/@babel/types/lib/validators/isNode.js",
+      "./validators/isNodesEquivalent": "node_modules/@babel/generator/node_modules/@babel/types/lib/validators/isNodesEquivalent.js",
+      "./validators/isPlaceholderType": "node_modules/@babel/generator/node_modules/@babel/types/lib/validators/isPlaceholderType.js",
+      "./validators/isReferenced": "node_modules/@babel/generator/node_modules/@babel/types/lib/validators/isReferenced.js",
+      "./validators/isScope": "node_modules/@babel/generator/node_modules/@babel/types/lib/validators/isScope.js",
+      "./validators/isSpecifierDefault": "node_modules/@babel/generator/node_modules/@babel/types/lib/validators/isSpecifierDefault.js",
+      "./validators/isType": "node_modules/@babel/generator/node_modules/@babel/types/lib/validators/isType.js",
+      "./validators/isValidES3Identifier": "node_modules/@babel/generator/node_modules/@babel/types/lib/validators/isValidES3Identifier.js",
+      "./validators/isValidIdentifier": "node_modules/@babel/generator/node_modules/@babel/types/lib/validators/isValidIdentifier.js",
+      "./validators/isVar": "node_modules/@babel/generator/node_modules/@babel/types/lib/validators/isVar.js",
+      "./validators/matchesPattern": "node_modules/@babel/generator/node_modules/@babel/types/lib/validators/matchesPattern.js",
+      "./validators/react/isCompatTag": "node_modules/@babel/generator/node_modules/@babel/types/lib/validators/react/isCompatTag.js",
+      "./validators/react/isReactComponent": "node_modules/@babel/generator/node_modules/@babel/types/lib/validators/react/isReactComponent.js",
+      "./validators/validate": "node_modules/@babel/generator/node_modules/@babel/types/lib/validators/validate.js"
+    }
+  ],
+  "node_modules/@babel/generator/node_modules/@babel/types/lib/modifications/appendToMemberExpression.js": [
+    "9YJghcL+XfnsKEnsUKJZrkWHRHyMzhu5HbUt1r0ripE=",
+    {
+      "../builders/generated": "node_modules/@babel/generator/node_modules/@babel/types/lib/builders/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/generator/node_modules/@babel/types/lib/modifications/flow/removeTypeDuplicates.js": [
+    "v2Dy/wi2PzgeJop9tmNIXtTJCyjoSN8YIKqDafHp3Pw=",
+    {
+      "../../validators/generated": "node_modules/@babel/generator/node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/generator/node_modules/@babel/types/lib/modifications/inherits.js": [
+    "Gmvs3LHuzPbkUi9SOlCxbdpK60rYW1LAAiMNJwoVNFw=",
+    {
+      "../comments/inheritsComments": "node_modules/@babel/generator/node_modules/@babel/types/lib/comments/inheritsComments.js",
+      "../constants": "node_modules/@babel/generator/node_modules/@babel/types/lib/constants/index.js"
+    }
+  ],
+  "node_modules/@babel/generator/node_modules/@babel/types/lib/modifications/prependToMemberExpression.js": [
+    "cC3hL9uBECPWOihRmDu5tkxDccgP5AfS+h8V7FzswQY=",
+    {
+      "../builders/generated": "node_modules/@babel/generator/node_modules/@babel/types/lib/builders/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/generator/node_modules/@babel/types/lib/modifications/removeProperties.js": [
+    "DMAINP9hA7U0oea+40mBAZ8DtmEPPB/NiJzu4N1YK8g=",
+    {
+      "../constants": "node_modules/@babel/generator/node_modules/@babel/types/lib/constants/index.js"
+    }
+  ],
+  "node_modules/@babel/generator/node_modules/@babel/types/lib/modifications/removePropertiesDeep.js": [
+    "z2m7qkonb5Dxwc1zpfLDE7VGMskA2bIUYwptU0sECek=",
+    {
+      "../traverse/traverseFast": "node_modules/@babel/generator/node_modules/@babel/types/lib/traverse/traverseFast.js",
+      "./removeProperties": "node_modules/@babel/generator/node_modules/@babel/types/lib/modifications/removeProperties.js"
+    }
+  ],
+  "node_modules/@babel/generator/node_modules/@babel/types/lib/retrievers/getBindingIdentifiers.js": [
+    "3m0VnwzhDDik9rIlRE5imy1eodL9S2OgDZgnjy3qbsI=",
+    {
+      "../validators/generated": "node_modules/@babel/generator/node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/generator/node_modules/@babel/types/lib/retrievers/getOuterBindingIdentifiers.js": [
+    "drQnKeviuPPyQ9ogwSYvc3R5DNlBU4t/53R1VMLPUC4=",
+    {
+      "./getBindingIdentifiers": "node_modules/@babel/generator/node_modules/@babel/types/lib/retrievers/getBindingIdentifiers.js"
+    }
+  ],
+  "node_modules/@babel/generator/node_modules/@babel/types/lib/traverse/traverse.js": [
+    "rGuYoGfKVtra6kYUeRhWQFcb+IROwnUw3UbJOhVNgWU=",
+    {
+      "../definitions": "node_modules/@babel/generator/node_modules/@babel/types/lib/definitions/index.js"
+    }
+  ],
+  "node_modules/@babel/generator/node_modules/@babel/types/lib/traverse/traverseFast.js": [
+    "eidxShD/Jf+J+ThG+92KQ2+MbYh2VrniD+kdhjecig8=",
+    {
+      "../definitions": "node_modules/@babel/generator/node_modules/@babel/types/lib/definitions/index.js"
+    }
+  ],
+  "node_modules/@babel/generator/node_modules/@babel/types/lib/utils/inherit.js": [
+    "joje/k+q+uTdxcyudLgFgxL437ZZYeusjOJTPrksrRM=",
+    {
+      "lodash/uniq": "node_modules/lodash/uniq.js"
+    }
+  ],
+  "node_modules/@babel/generator/node_modules/@babel/types/lib/utils/react/cleanJSXElementLiteralChild.js": [
+    "kyZBdxXA2AMkslATAhCWAdOGNzrjLr3iVdXFKcGLVyg=",
+    {
+      "../../builders/generated": "node_modules/@babel/generator/node_modules/@babel/types/lib/builders/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/generator/node_modules/@babel/types/lib/utils/shallowEqual.js": [
+    "uZJZfTqourN/95kmfKTQ01Tsv0uAqRZVXNeSx+5cxFU=",
+    {}
+  ],
+  "node_modules/@babel/generator/node_modules/@babel/types/lib/validators/buildMatchMemberExpression.js": [
+    "oClvAeXRLqWQoGseUlDrUuBXj9gafzCvb8ZQ9BKezyQ=",
+    {
+      "./matchesPattern": "node_modules/@babel/generator/node_modules/@babel/types/lib/validators/matchesPattern.js"
+    }
+  ],
+  "node_modules/@babel/generator/node_modules/@babel/types/lib/validators/generated/index.js": [
+    "nGdnaU4lXlb4Pf309c4BdsWsGYw3uMLm4aFC/ETAoyg=",
+    {
+      "../../utils/shallowEqual": "node_modules/@babel/generator/node_modules/@babel/types/lib/utils/shallowEqual.js"
+    }
+  ],
+  "node_modules/@babel/generator/node_modules/@babel/types/lib/validators/is.js": [
+    "4FblfXtU8oqAFF1ZtK0BEFoIIObMX0LqXdVuv8x3Ezk=",
+    {
+      "../definitions": "node_modules/@babel/generator/node_modules/@babel/types/lib/definitions/index.js",
+      "../utils/shallowEqual": "node_modules/@babel/generator/node_modules/@babel/types/lib/utils/shallowEqual.js",
+      "./isPlaceholderType": "node_modules/@babel/generator/node_modules/@babel/types/lib/validators/isPlaceholderType.js",
+      "./isType": "node_modules/@babel/generator/node_modules/@babel/types/lib/validators/isType.js"
+    }
+  ],
+  "node_modules/@babel/generator/node_modules/@babel/types/lib/validators/isBinding.js": [
+    "a8ovNrjZsl+SAo20roAvl0g4uUgyBsoslOOo/idhoj0=",
+    {
+      "../retrievers/getBindingIdentifiers": "node_modules/@babel/generator/node_modules/@babel/types/lib/retrievers/getBindingIdentifiers.js"
+    }
+  ],
+  "node_modules/@babel/generator/node_modules/@babel/types/lib/validators/isBlockScoped.js": [
+    "R7slk8EKZmpa0fKX15Hw59YqLEYd8MnaSGDOqsa7I7E=",
+    {
+      "./generated": "node_modules/@babel/generator/node_modules/@babel/types/lib/validators/generated/index.js",
+      "./isLet": "node_modules/@babel/generator/node_modules/@babel/types/lib/validators/isLet.js"
+    }
+  ],
+  "node_modules/@babel/generator/node_modules/@babel/types/lib/validators/isImmutable.js": [
+    "jJtj4kabzipmtQ2adStZ0Jirvz+B7f//874XTja+wxM=",
+    {
+      "./generated": "node_modules/@babel/generator/node_modules/@babel/types/lib/validators/generated/index.js",
+      "./isType": "node_modules/@babel/generator/node_modules/@babel/types/lib/validators/isType.js"
+    }
+  ],
+  "node_modules/@babel/generator/node_modules/@babel/types/lib/validators/isLet.js": [
+    "OO98PKLCLkvAyfkh0TdnB13bbSpyllx3zWc3Z/BHop8=",
+    {
+      "../constants": "node_modules/@babel/generator/node_modules/@babel/types/lib/constants/index.js",
+      "./generated": "node_modules/@babel/generator/node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/generator/node_modules/@babel/types/lib/validators/isNode.js": [
+    "0QTRdIIJRTCmrM5dPPICvHsbUUABKdZLaQOq18uDZbI=",
+    {
+      "../definitions": "node_modules/@babel/generator/node_modules/@babel/types/lib/definitions/index.js"
+    }
+  ],
+  "node_modules/@babel/generator/node_modules/@babel/types/lib/validators/isNodesEquivalent.js": [
+    "n6fKXOWx1Z3pN9rOkGTIC2HwOGBRnJQVsrXrecfdqXk=",
+    {
+      "../definitions": "node_modules/@babel/generator/node_modules/@babel/types/lib/definitions/index.js"
+    }
+  ],
+  "node_modules/@babel/generator/node_modules/@babel/types/lib/validators/isPlaceholderType.js": [
+    "yghj8z9wiTZ0ztktRaqC4iGPcEmx1CP2rDfn2wEP1Qk=",
+    {
+      "../definitions": "node_modules/@babel/generator/node_modules/@babel/types/lib/definitions/index.js"
+    }
+  ],
+  "node_modules/@babel/generator/node_modules/@babel/types/lib/validators/isReferenced.js": [
+    "iLJgM1TYZVfQWJijfaI5zElxZrxLmiR0G5NqyY7jCII=",
+    {}
+  ],
+  "node_modules/@babel/generator/node_modules/@babel/types/lib/validators/isScope.js": [
+    "o89/Kjz4LL28uAO9rY4eiVUfJMxwb/9OKDctsdRWUxk=",
+    {
+      "./generated": "node_modules/@babel/generator/node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/generator/node_modules/@babel/types/lib/validators/isSpecifierDefault.js": [
+    "8yuEfHdHtXTJkF1PQYY8U423zVh4Ee7xS8RY7u0UgM8=",
+    {
+      "./generated": "node_modules/@babel/generator/node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/generator/node_modules/@babel/types/lib/validators/isType.js": [
+    "FIMgkJHkBlbepdNH1OFyNoQVvUOZWbpj1IiQDvdyDBk=",
+    {
+      "../definitions": "node_modules/@babel/generator/node_modules/@babel/types/lib/definitions/index.js"
+    }
+  ],
+  "node_modules/@babel/generator/node_modules/@babel/types/lib/validators/isValidES3Identifier.js": [
+    "KvewbGVXPKvZxtjVULE+xNTAgaE1USkjir7DdBs5Y74=",
+    {
+      "./isValidIdentifier": "node_modules/@babel/generator/node_modules/@babel/types/lib/validators/isValidIdentifier.js"
+    }
+  ],
+  "node_modules/@babel/generator/node_modules/@babel/types/lib/validators/isValidIdentifier.js": [
+    "wldxEUQ7yA70n4bdNrqvbMfXRSXlXgkVIpwdh9vZeJs=",
+    {
+      "esutils": "node_modules/esutils/lib/utils.js"
+    }
+  ],
+  "node_modules/@babel/generator/node_modules/@babel/types/lib/validators/isVar.js": [
+    "qeOihIPgGUuZL5tk48OGgYN3gAvgFcpWd633RCL5a+M=",
+    {
+      "../constants": "node_modules/@babel/generator/node_modules/@babel/types/lib/constants/index.js",
+      "./generated": "node_modules/@babel/generator/node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/generator/node_modules/@babel/types/lib/validators/matchesPattern.js": [
+    "DYD/Rmf5GvP3XBa5/E/2D74dxUiZD/vYrGP0uu0bU04=",
+    {
+      "./generated": "node_modules/@babel/generator/node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/generator/node_modules/@babel/types/lib/validators/react/isCompatTag.js": [
+    "afmc5kFRMVCo4ynIM8E+caOGJO4uAypKSmVINxfajBE=",
+    {}
+  ],
+  "node_modules/@babel/generator/node_modules/@babel/types/lib/validators/react/isReactComponent.js": [
+    "sm/ghRu9uws4VgkVNq+sxSIZDA3Hp9qtHF/wzaQ20n8=",
+    {
+      "../buildMatchMemberExpression": "node_modules/@babel/generator/node_modules/@babel/types/lib/validators/buildMatchMemberExpression.js"
+    }
+  ],
+  "node_modules/@babel/generator/node_modules/@babel/types/lib/validators/validate.js": [
+    "3rAW6rGOd/eCmzk4oFN8QI5EPhY2vK3/xdC9Q6SLA10=",
+    {
+      "../definitions": "node_modules/@babel/generator/node_modules/@babel/types/lib/definitions/index.js"
+    }
+  ],
   "node_modules/@babel/helper-function-name/lib/index.js": [
     "b01Zs99bXNa9nHa6YhLs3smI2HljP6uRyg9vinb8988=",
     {
       "@babel/helper-get-function-arity": "node_modules/@babel/helper-get-function-arity/lib/index.js",
       "@babel/template": "node_modules/@babel/template/lib/index.js",
-      "@babel/types": "node_modules/@babel/types/lib/index.js"
+      "@babel/types": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/asserts/assertNode.js": [
+    "mfekKBICa0wkDoFcjQuz46wWi31d6lNVKf3WyaT2JhE=",
+    {
+      "../validators/isNode": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/validators/isNode.js"
+    }
+  ],
+  "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/asserts/generated/index.js": [
+    "mT6/nEVmdwoaaoIJM4vcwvk7KRFXgO8QSrZ9aU8qMfg=",
+    {
+      "../../validators/is": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/validators/is.js"
+    }
+  ],
+  "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/builders/builder.js": [
+    "mTXSk+hzEwbmQXYWEvqqqkbjGEcCNt2WpdArKm37zGk=",
+    {
+      "../definitions": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/definitions/index.js",
+      "../validators/validate": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/validators/validate.js",
+      "lodash/clone": "node_modules/lodash/clone.js"
+    }
+  ],
+  "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/builders/flow/createTypeAnnotationBasedOnTypeof.js": [
+    "U7eCycl/8DiBcGlEgIxhGfjChvNw2NZUN6CbflgH4X8=",
+    {
+      "../generated": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/builders/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/builders/flow/createUnionTypeAnnotation.js": [
+    "tcblNNM9C/1eHiqi3NYG/hHcMloDz7Q7/aVoguTfSxg=",
+    {
+      "../../modifications/flow/removeTypeDuplicates": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/modifications/flow/removeTypeDuplicates.js",
+      "../generated": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/builders/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/builders/generated/index.js": [
+    "557DwixyQv6EPRCB6HJunqEqKIcoBXlcB7AhZ7eQHg0=",
+    {
+      "../builder": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/builders/builder.js"
+    }
+  ],
+  "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/builders/react/buildChildren.js": [
+    "A0k2ncE8Oz5CX2pN+Kpo7PluvMj1gXw95+nzZKa+Ve8=",
+    {
+      "../../utils/react/cleanJSXElementLiteralChild": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/utils/react/cleanJSXElementLiteralChild.js",
+      "../../validators/generated": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/clone/clone.js": [
+    "THkH4wFFQUVzIJ0nw7GWOEHFgsjNUMA11okf/2jeHFY=",
+    {
+      "./cloneNode": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/clone/cloneNode.js"
+    }
+  ],
+  "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/clone/cloneDeep.js": [
+    "4hGR0sww7W+NuT6hEDLKf3gP9hzRwIfN/bi6Pr40OLs=",
+    {
+      "./cloneNode": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/clone/cloneNode.js"
+    }
+  ],
+  "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/clone/cloneNode.js": [
+    "5xw78htLt4zrMZGWP3gschKGsBpiB3Iu5Vgvr9D2eBQ=",
+    {
+      "../definitions": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/definitions/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/clone/cloneWithoutLoc.js": [
+    "usonzIhNZhBCwU1/WAW9GcW71AzOyaEQXGBhN1WVu/0=",
+    {
+      "./clone": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/clone/clone.js"
+    }
+  ],
+  "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/comments/addComment.js": [
+    "a+hWI3NJdEiIVqI1DnZam3XE/fwBzZuF6v15O+DFs+Y=",
+    {
+      "./addComments": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/comments/addComments.js"
+    }
+  ],
+  "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/comments/addComments.js": [
+    "NHqJP6zaX5sMqS0Anx5abFuzcOumKxLJSYi5Ufu+qOo=",
+    {}
+  ],
+  "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/comments/inheritInnerComments.js": [
+    "usyEeify3ZPuB/QJVWJqwfHFjDY4ngOJR2+BCGg71m8=",
+    {
+      "../utils/inherit": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/utils/inherit.js"
+    }
+  ],
+  "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/comments/inheritLeadingComments.js": [
+    "dSBd50YQRz6cQDMqbLcacTW0XSvrDccSAWYTI9KGsHo=",
+    {
+      "../utils/inherit": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/utils/inherit.js"
+    }
+  ],
+  "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/comments/inheritTrailingComments.js": [
+    "vUH3HrhkXqUIWN42PTpx9/vzJVub/zAq6HWf/7LRovs=",
+    {
+      "../utils/inherit": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/utils/inherit.js"
+    }
+  ],
+  "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/comments/inheritsComments.js": [
+    "Xyg5Dn5f1attr+37AGZVIklShIuf/An/KJfcsEIlj9Y=",
+    {
+      "./inheritInnerComments": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/comments/inheritInnerComments.js",
+      "./inheritLeadingComments": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/comments/inheritLeadingComments.js",
+      "./inheritTrailingComments": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/comments/inheritTrailingComments.js"
+    }
+  ],
+  "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/comments/removeComments.js": [
+    "IPergGqpjvMc8ziFTCXPNcFFHyeKIHYcVZ+Ovj8s2Hg=",
+    {
+      "../constants": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/constants/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/constants/generated/index.js": [
+    "XM2x9B42aoxgxBqzlJvVmP45ZBFuNCcesjeeiEgOfNU=",
+    {
+      "../../definitions": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/definitions/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/constants/index.js": [
+    "9cztyx6J568P994lqUPI6yCAD+D7kt75qdBajn2+5hw=",
+    {}
+  ],
+  "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/converters/ensureBlock.js": [
+    "B2UP3sICM3EW0d2yaGZTrhJyssvIqYh9iVNyOV85wFg=",
+    {
+      "./toBlock": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/converters/toBlock.js"
+    }
+  ],
+  "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/converters/gatherSequenceExpressions.js": [
+    "OoZe9skvIZocS/GGEWep7a3eLq+l2Cvm7Kgq4C2En3M=",
+    {
+      "../builders/generated": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/builders/generated/index.js",
+      "../clone/cloneNode": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/clone/cloneNode.js",
+      "../retrievers/getBindingIdentifiers": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/retrievers/getBindingIdentifiers.js",
+      "../validators/generated": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/converters/toBindingIdentifierName.js": [
+    "bzUfn6/LdzG8xS+PG22PK85sW5/6iKu7uiU7CjD1igc=",
+    {
+      "./toIdentifier": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/converters/toIdentifier.js"
+    }
+  ],
+  "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/converters/toBlock.js": [
+    "07eFsSZ5+oMolNdbhr0ys254AmUX1szgBinWd6cPkTg=",
+    {
+      "../builders/generated": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/builders/generated/index.js",
+      "../validators/generated": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/converters/toComputedKey.js": [
+    "UzpqkgFycRTTttVkVcx+W4iaGvtgfEAg7zDUvah1JV4=",
+    {
+      "../builders/generated": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/builders/generated/index.js",
+      "../validators/generated": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/converters/toExpression.js": [
+    "kkG1dMCrkKbqJvnyomrjJfZTP7QSvxiDX7GWl2F+ce8=",
+    {
+      "../validators/generated": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/converters/toIdentifier.js": [
+    "+0QpBCGQUKsGI4MLGmFU1Inzp3QSk7WeZoErsXDIsKs=",
+    {
+      "../validators/isValidIdentifier": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/validators/isValidIdentifier.js"
+    }
+  ],
+  "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/converters/toKeyAlias.js": [
+    "zIb1wO9Hzuf7GjKi+HTkmNTTYvmzDPPShFca3yTdrsE=",
+    {
+      "../clone/cloneNode": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/clone/cloneNode.js",
+      "../modifications/removePropertiesDeep": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/modifications/removePropertiesDeep.js",
+      "../validators/generated": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/converters/toSequenceExpression.js": [
+    "MK8i1eEGzuV3cz8UVH0WZWhoijMEmLmhxO8/dudZaME=",
+    {
+      "./gatherSequenceExpressions": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/converters/gatherSequenceExpressions.js"
+    }
+  ],
+  "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/converters/toStatement.js": [
+    "ODjoLVGJar4uv2uM5mZtjwpk7ZHJKgaKzb4bKtKrstU=",
+    {
+      "../builders/generated": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/builders/generated/index.js",
+      "../validators/generated": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/converters/valueToNode.js": [
+    "dTFaesm9X5zXeGnthmurauqREZqnZLzfJSEyoQZriP8=",
+    {
+      "../builders/generated": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/builders/generated/index.js",
+      "../validators/isValidIdentifier": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/validators/isValidIdentifier.js",
+      "lodash/isPlainObject": "node_modules/lodash/isPlainObject.js",
+      "lodash/isRegExp": "node_modules/lodash/isRegExp.js"
+    }
+  ],
+  "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/definitions/core.js": [
+    "i1Ff+iAlsEPJRjhnDTiDpZwwe9/2ehVR1XTzIbgCJ5U=",
+    {
+      "../constants": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/constants/index.js",
+      "../validators/is": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/validators/is.js",
+      "./utils": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/definitions/utils.js",
+      "esutils": "node_modules/esutils/lib/utils.js"
+    }
+  ],
+  "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/definitions/es2015.js": [
+    "yqnK85vtGWHSu1vFiIjdLZSYJfP9RU/vN9GRCUs0Na8=",
+    {
+      "../validators/is": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/validators/is.js",
+      "./core": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/definitions/core.js",
+      "./utils": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/definitions/utils.js"
+    }
+  ],
+  "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/definitions/experimental.js": [
+    "3EH/NFjBrMP2hxsi2xxOA9rRKGF9eFFhsglLhNbUKPU=",
+    {
+      "./es2015": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/definitions/es2015.js",
+      "./utils": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/definitions/utils.js"
+    }
+  ],
+  "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/definitions/flow.js": [
+    "lcxONTSuk2FvVuhL9uHZP/cdIr3d3neLzpoLIpaeGf4=",
+    {
+      "./utils": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/definitions/utils.js"
+    }
+  ],
+  "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/definitions/index.js": [
+    "Vucc3mwTWSUNbNyGHZCEGpidLX29DBTqrmL1iXgcQR8=",
+    {
+      "./core": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/definitions/core.js",
+      "./es2015": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/definitions/es2015.js",
+      "./experimental": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/definitions/experimental.js",
+      "./flow": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/definitions/flow.js",
+      "./jsx": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/definitions/jsx.js",
+      "./misc": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/definitions/misc.js",
+      "./placeholders": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/definitions/placeholders.js",
+      "./typescript": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/definitions/typescript.js",
+      "./utils": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/definitions/utils.js",
+      "to-fast-properties": "node_modules/to-fast-properties/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/definitions/jsx.js": [
+    "Wn8RjShRqT4UR/OJHPn7NNiDZhv6mVushBtA2ND5/r4=",
+    {
+      "./utils": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/definitions/utils.js"
+    }
+  ],
+  "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/definitions/misc.js": [
+    "R8Pg6S3t/I0baPhJnZal//QZ1kMxHCQItI5dHsFsdD4=",
+    {
+      "./placeholders": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/definitions/placeholders.js",
+      "./utils": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/definitions/utils.js"
+    }
+  ],
+  "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/definitions/placeholders.js": [
+    "ve6xW3E0vuT2m9/FIRDRVarPPSRGzmQC7E9ObNHKE1o=",
+    {
+      "./utils": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/definitions/utils.js"
+    }
+  ],
+  "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/definitions/typescript.js": [
+    "Bja9aehyStk1z4x8vhmnK2fsJMGmWKFrW+6y8RJRixo=",
+    {
+      "./core": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/definitions/core.js",
+      "./es2015": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/definitions/es2015.js",
+      "./utils": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/definitions/utils.js"
+    }
+  ],
+  "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/definitions/utils.js": [
+    "Y7rKYdYrIV01L5WuRaQMPACZ0nJdlaktPG1qUSv4iUA=",
+    {
+      "../validators/is": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/validators/is.js",
+      "../validators/validate": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/validators/validate.js"
+    }
+  ],
+  "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/index.js": [
+    "iisIewwRDHXnW8mih8nhaUJ16qXRfse0fI/34iAlGbg=",
+    {
+      "./asserts/assertNode": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/asserts/assertNode.js",
+      "./asserts/generated": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/asserts/generated/index.js",
+      "./builders/flow/createTypeAnnotationBasedOnTypeof": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/builders/flow/createTypeAnnotationBasedOnTypeof.js",
+      "./builders/flow/createUnionTypeAnnotation": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/builders/flow/createUnionTypeAnnotation.js",
+      "./builders/generated": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/builders/generated/index.js",
+      "./builders/react/buildChildren": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/builders/react/buildChildren.js",
+      "./clone/clone": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/clone/clone.js",
+      "./clone/cloneDeep": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/clone/cloneDeep.js",
+      "./clone/cloneNode": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/clone/cloneNode.js",
+      "./clone/cloneWithoutLoc": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/clone/cloneWithoutLoc.js",
+      "./comments/addComment": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/comments/addComment.js",
+      "./comments/addComments": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/comments/addComments.js",
+      "./comments/inheritInnerComments": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/comments/inheritInnerComments.js",
+      "./comments/inheritLeadingComments": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/comments/inheritLeadingComments.js",
+      "./comments/inheritTrailingComments": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/comments/inheritTrailingComments.js",
+      "./comments/inheritsComments": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/comments/inheritsComments.js",
+      "./comments/removeComments": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/comments/removeComments.js",
+      "./constants": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/constants/index.js",
+      "./constants/generated": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/constants/generated/index.js",
+      "./converters/ensureBlock": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/converters/ensureBlock.js",
+      "./converters/toBindingIdentifierName": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/converters/toBindingIdentifierName.js",
+      "./converters/toBlock": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/converters/toBlock.js",
+      "./converters/toComputedKey": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/converters/toComputedKey.js",
+      "./converters/toExpression": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/converters/toExpression.js",
+      "./converters/toIdentifier": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/converters/toIdentifier.js",
+      "./converters/toKeyAlias": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/converters/toKeyAlias.js",
+      "./converters/toSequenceExpression": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/converters/toSequenceExpression.js",
+      "./converters/toStatement": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/converters/toStatement.js",
+      "./converters/valueToNode": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/converters/valueToNode.js",
+      "./definitions": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/definitions/index.js",
+      "./modifications/appendToMemberExpression": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/modifications/appendToMemberExpression.js",
+      "./modifications/flow/removeTypeDuplicates": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/modifications/flow/removeTypeDuplicates.js",
+      "./modifications/inherits": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/modifications/inherits.js",
+      "./modifications/prependToMemberExpression": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/modifications/prependToMemberExpression.js",
+      "./modifications/removeProperties": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/modifications/removeProperties.js",
+      "./modifications/removePropertiesDeep": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/modifications/removePropertiesDeep.js",
+      "./retrievers/getBindingIdentifiers": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/retrievers/getBindingIdentifiers.js",
+      "./retrievers/getOuterBindingIdentifiers": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/retrievers/getOuterBindingIdentifiers.js",
+      "./traverse/traverse": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/traverse/traverse.js",
+      "./traverse/traverseFast": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/traverse/traverseFast.js",
+      "./utils/shallowEqual": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/utils/shallowEqual.js",
+      "./validators/buildMatchMemberExpression": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/validators/buildMatchMemberExpression.js",
+      "./validators/generated": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/validators/generated/index.js",
+      "./validators/is": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/validators/is.js",
+      "./validators/isBinding": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/validators/isBinding.js",
+      "./validators/isBlockScoped": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/validators/isBlockScoped.js",
+      "./validators/isImmutable": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/validators/isImmutable.js",
+      "./validators/isLet": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/validators/isLet.js",
+      "./validators/isNode": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/validators/isNode.js",
+      "./validators/isNodesEquivalent": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/validators/isNodesEquivalent.js",
+      "./validators/isPlaceholderType": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/validators/isPlaceholderType.js",
+      "./validators/isReferenced": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/validators/isReferenced.js",
+      "./validators/isScope": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/validators/isScope.js",
+      "./validators/isSpecifierDefault": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/validators/isSpecifierDefault.js",
+      "./validators/isType": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/validators/isType.js",
+      "./validators/isValidES3Identifier": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/validators/isValidES3Identifier.js",
+      "./validators/isValidIdentifier": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/validators/isValidIdentifier.js",
+      "./validators/isVar": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/validators/isVar.js",
+      "./validators/matchesPattern": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/validators/matchesPattern.js",
+      "./validators/react/isCompatTag": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/validators/react/isCompatTag.js",
+      "./validators/react/isReactComponent": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/validators/react/isReactComponent.js",
+      "./validators/validate": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/validators/validate.js"
+    }
+  ],
+  "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/modifications/appendToMemberExpression.js": [
+    "9YJghcL+XfnsKEnsUKJZrkWHRHyMzhu5HbUt1r0ripE=",
+    {
+      "../builders/generated": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/builders/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/modifications/flow/removeTypeDuplicates.js": [
+    "v2Dy/wi2PzgeJop9tmNIXtTJCyjoSN8YIKqDafHp3Pw=",
+    {
+      "../../validators/generated": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/modifications/inherits.js": [
+    "Gmvs3LHuzPbkUi9SOlCxbdpK60rYW1LAAiMNJwoVNFw=",
+    {
+      "../comments/inheritsComments": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/comments/inheritsComments.js",
+      "../constants": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/constants/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/modifications/prependToMemberExpression.js": [
+    "cC3hL9uBECPWOihRmDu5tkxDccgP5AfS+h8V7FzswQY=",
+    {
+      "../builders/generated": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/builders/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/modifications/removeProperties.js": [
+    "DMAINP9hA7U0oea+40mBAZ8DtmEPPB/NiJzu4N1YK8g=",
+    {
+      "../constants": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/constants/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/modifications/removePropertiesDeep.js": [
+    "z2m7qkonb5Dxwc1zpfLDE7VGMskA2bIUYwptU0sECek=",
+    {
+      "../traverse/traverseFast": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/traverse/traverseFast.js",
+      "./removeProperties": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/modifications/removeProperties.js"
+    }
+  ],
+  "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/retrievers/getBindingIdentifiers.js": [
+    "3m0VnwzhDDik9rIlRE5imy1eodL9S2OgDZgnjy3qbsI=",
+    {
+      "../validators/generated": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/retrievers/getOuterBindingIdentifiers.js": [
+    "drQnKeviuPPyQ9ogwSYvc3R5DNlBU4t/53R1VMLPUC4=",
+    {
+      "./getBindingIdentifiers": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/retrievers/getBindingIdentifiers.js"
+    }
+  ],
+  "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/traverse/traverse.js": [
+    "rGuYoGfKVtra6kYUeRhWQFcb+IROwnUw3UbJOhVNgWU=",
+    {
+      "../definitions": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/definitions/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/traverse/traverseFast.js": [
+    "eidxShD/Jf+J+ThG+92KQ2+MbYh2VrniD+kdhjecig8=",
+    {
+      "../definitions": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/definitions/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/utils/inherit.js": [
+    "joje/k+q+uTdxcyudLgFgxL437ZZYeusjOJTPrksrRM=",
+    {
+      "lodash/uniq": "node_modules/lodash/uniq.js"
+    }
+  ],
+  "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/utils/react/cleanJSXElementLiteralChild.js": [
+    "kyZBdxXA2AMkslATAhCWAdOGNzrjLr3iVdXFKcGLVyg=",
+    {
+      "../../builders/generated": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/builders/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/utils/shallowEqual.js": [
+    "uZJZfTqourN/95kmfKTQ01Tsv0uAqRZVXNeSx+5cxFU=",
+    {}
+  ],
+  "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/validators/buildMatchMemberExpression.js": [
+    "oClvAeXRLqWQoGseUlDrUuBXj9gafzCvb8ZQ9BKezyQ=",
+    {
+      "./matchesPattern": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/validators/matchesPattern.js"
+    }
+  ],
+  "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/validators/generated/index.js": [
+    "nGdnaU4lXlb4Pf309c4BdsWsGYw3uMLm4aFC/ETAoyg=",
+    {
+      "../../utils/shallowEqual": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/utils/shallowEqual.js"
+    }
+  ],
+  "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/validators/is.js": [
+    "4FblfXtU8oqAFF1ZtK0BEFoIIObMX0LqXdVuv8x3Ezk=",
+    {
+      "../definitions": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/definitions/index.js",
+      "../utils/shallowEqual": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/utils/shallowEqual.js",
+      "./isPlaceholderType": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/validators/isPlaceholderType.js",
+      "./isType": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/validators/isType.js"
+    }
+  ],
+  "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/validators/isBinding.js": [
+    "a8ovNrjZsl+SAo20roAvl0g4uUgyBsoslOOo/idhoj0=",
+    {
+      "../retrievers/getBindingIdentifiers": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/retrievers/getBindingIdentifiers.js"
+    }
+  ],
+  "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/validators/isBlockScoped.js": [
+    "R7slk8EKZmpa0fKX15Hw59YqLEYd8MnaSGDOqsa7I7E=",
+    {
+      "./generated": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/validators/generated/index.js",
+      "./isLet": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/validators/isLet.js"
+    }
+  ],
+  "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/validators/isImmutable.js": [
+    "jJtj4kabzipmtQ2adStZ0Jirvz+B7f//874XTja+wxM=",
+    {
+      "./generated": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/validators/generated/index.js",
+      "./isType": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/validators/isType.js"
+    }
+  ],
+  "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/validators/isLet.js": [
+    "OO98PKLCLkvAyfkh0TdnB13bbSpyllx3zWc3Z/BHop8=",
+    {
+      "../constants": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/constants/index.js",
+      "./generated": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/validators/isNode.js": [
+    "0QTRdIIJRTCmrM5dPPICvHsbUUABKdZLaQOq18uDZbI=",
+    {
+      "../definitions": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/definitions/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/validators/isNodesEquivalent.js": [
+    "n6fKXOWx1Z3pN9rOkGTIC2HwOGBRnJQVsrXrecfdqXk=",
+    {
+      "../definitions": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/definitions/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/validators/isPlaceholderType.js": [
+    "yghj8z9wiTZ0ztktRaqC4iGPcEmx1CP2rDfn2wEP1Qk=",
+    {
+      "../definitions": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/definitions/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/validators/isReferenced.js": [
+    "iLJgM1TYZVfQWJijfaI5zElxZrxLmiR0G5NqyY7jCII=",
+    {}
+  ],
+  "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/validators/isScope.js": [
+    "o89/Kjz4LL28uAO9rY4eiVUfJMxwb/9OKDctsdRWUxk=",
+    {
+      "./generated": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/validators/isSpecifierDefault.js": [
+    "8yuEfHdHtXTJkF1PQYY8U423zVh4Ee7xS8RY7u0UgM8=",
+    {
+      "./generated": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/validators/isType.js": [
+    "FIMgkJHkBlbepdNH1OFyNoQVvUOZWbpj1IiQDvdyDBk=",
+    {
+      "../definitions": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/definitions/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/validators/isValidES3Identifier.js": [
+    "KvewbGVXPKvZxtjVULE+xNTAgaE1USkjir7DdBs5Y74=",
+    {
+      "./isValidIdentifier": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/validators/isValidIdentifier.js"
+    }
+  ],
+  "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/validators/isValidIdentifier.js": [
+    "wldxEUQ7yA70n4bdNrqvbMfXRSXlXgkVIpwdh9vZeJs=",
+    {
+      "esutils": "node_modules/esutils/lib/utils.js"
+    }
+  ],
+  "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/validators/isVar.js": [
+    "qeOihIPgGUuZL5tk48OGgYN3gAvgFcpWd633RCL5a+M=",
+    {
+      "../constants": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/constants/index.js",
+      "./generated": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/validators/matchesPattern.js": [
+    "DYD/Rmf5GvP3XBa5/E/2D74dxUiZD/vYrGP0uu0bU04=",
+    {
+      "./generated": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/validators/react/isCompatTag.js": [
+    "afmc5kFRMVCo4ynIM8E+caOGJO4uAypKSmVINxfajBE=",
+    {}
+  ],
+  "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/validators/react/isReactComponent.js": [
+    "sm/ghRu9uws4VgkVNq+sxSIZDA3Hp9qtHF/wzaQ20n8=",
+    {
+      "../buildMatchMemberExpression": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/validators/buildMatchMemberExpression.js"
+    }
+  ],
+  "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/validators/validate.js": [
+    "3rAW6rGOd/eCmzk4oFN8QI5EPhY2vK3/xdC9Q6SLA10=",
+    {
+      "../definitions": "node_modules/@babel/helper-function-name/node_modules/@babel/types/lib/definitions/index.js"
     }
   ],
   "node_modules/@babel/helper-get-function-arity/lib/index.js": [
     "pWlX9a1+jU5vVxkKnSgk3AXAcjQ1+iyTC2QWr7NXOUQ=",
     {
-      "@babel/types": "node_modules/@babel/types/lib/index.js"
+      "@babel/types": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/asserts/assertNode.js": [
+    "mfekKBICa0wkDoFcjQuz46wWi31d6lNVKf3WyaT2JhE=",
+    {
+      "../validators/isNode": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/validators/isNode.js"
+    }
+  ],
+  "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/asserts/generated/index.js": [
+    "mT6/nEVmdwoaaoIJM4vcwvk7KRFXgO8QSrZ9aU8qMfg=",
+    {
+      "../../validators/is": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/validators/is.js"
+    }
+  ],
+  "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/builders/builder.js": [
+    "mTXSk+hzEwbmQXYWEvqqqkbjGEcCNt2WpdArKm37zGk=",
+    {
+      "../definitions": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/definitions/index.js",
+      "../validators/validate": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/validators/validate.js",
+      "lodash/clone": "node_modules/lodash/clone.js"
+    }
+  ],
+  "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/builders/flow/createTypeAnnotationBasedOnTypeof.js": [
+    "U7eCycl/8DiBcGlEgIxhGfjChvNw2NZUN6CbflgH4X8=",
+    {
+      "../generated": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/builders/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/builders/flow/createUnionTypeAnnotation.js": [
+    "tcblNNM9C/1eHiqi3NYG/hHcMloDz7Q7/aVoguTfSxg=",
+    {
+      "../../modifications/flow/removeTypeDuplicates": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/modifications/flow/removeTypeDuplicates.js",
+      "../generated": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/builders/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/builders/generated/index.js": [
+    "557DwixyQv6EPRCB6HJunqEqKIcoBXlcB7AhZ7eQHg0=",
+    {
+      "../builder": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/builders/builder.js"
+    }
+  ],
+  "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/builders/react/buildChildren.js": [
+    "A0k2ncE8Oz5CX2pN+Kpo7PluvMj1gXw95+nzZKa+Ve8=",
+    {
+      "../../utils/react/cleanJSXElementLiteralChild": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/utils/react/cleanJSXElementLiteralChild.js",
+      "../../validators/generated": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/clone/clone.js": [
+    "THkH4wFFQUVzIJ0nw7GWOEHFgsjNUMA11okf/2jeHFY=",
+    {
+      "./cloneNode": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/clone/cloneNode.js"
+    }
+  ],
+  "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/clone/cloneDeep.js": [
+    "4hGR0sww7W+NuT6hEDLKf3gP9hzRwIfN/bi6Pr40OLs=",
+    {
+      "./cloneNode": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/clone/cloneNode.js"
+    }
+  ],
+  "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/clone/cloneNode.js": [
+    "5xw78htLt4zrMZGWP3gschKGsBpiB3Iu5Vgvr9D2eBQ=",
+    {
+      "../definitions": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/definitions/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/clone/cloneWithoutLoc.js": [
+    "usonzIhNZhBCwU1/WAW9GcW71AzOyaEQXGBhN1WVu/0=",
+    {
+      "./clone": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/clone/clone.js"
+    }
+  ],
+  "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/comments/addComment.js": [
+    "a+hWI3NJdEiIVqI1DnZam3XE/fwBzZuF6v15O+DFs+Y=",
+    {
+      "./addComments": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/comments/addComments.js"
+    }
+  ],
+  "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/comments/addComments.js": [
+    "NHqJP6zaX5sMqS0Anx5abFuzcOumKxLJSYi5Ufu+qOo=",
+    {}
+  ],
+  "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/comments/inheritInnerComments.js": [
+    "usyEeify3ZPuB/QJVWJqwfHFjDY4ngOJR2+BCGg71m8=",
+    {
+      "../utils/inherit": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/utils/inherit.js"
+    }
+  ],
+  "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/comments/inheritLeadingComments.js": [
+    "dSBd50YQRz6cQDMqbLcacTW0XSvrDccSAWYTI9KGsHo=",
+    {
+      "../utils/inherit": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/utils/inherit.js"
+    }
+  ],
+  "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/comments/inheritTrailingComments.js": [
+    "vUH3HrhkXqUIWN42PTpx9/vzJVub/zAq6HWf/7LRovs=",
+    {
+      "../utils/inherit": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/utils/inherit.js"
+    }
+  ],
+  "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/comments/inheritsComments.js": [
+    "Xyg5Dn5f1attr+37AGZVIklShIuf/An/KJfcsEIlj9Y=",
+    {
+      "./inheritInnerComments": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/comments/inheritInnerComments.js",
+      "./inheritLeadingComments": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/comments/inheritLeadingComments.js",
+      "./inheritTrailingComments": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/comments/inheritTrailingComments.js"
+    }
+  ],
+  "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/comments/removeComments.js": [
+    "IPergGqpjvMc8ziFTCXPNcFFHyeKIHYcVZ+Ovj8s2Hg=",
+    {
+      "../constants": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/constants/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/constants/generated/index.js": [
+    "XM2x9B42aoxgxBqzlJvVmP45ZBFuNCcesjeeiEgOfNU=",
+    {
+      "../../definitions": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/definitions/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/constants/index.js": [
+    "9cztyx6J568P994lqUPI6yCAD+D7kt75qdBajn2+5hw=",
+    {}
+  ],
+  "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/converters/ensureBlock.js": [
+    "B2UP3sICM3EW0d2yaGZTrhJyssvIqYh9iVNyOV85wFg=",
+    {
+      "./toBlock": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/converters/toBlock.js"
+    }
+  ],
+  "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/converters/gatherSequenceExpressions.js": [
+    "OoZe9skvIZocS/GGEWep7a3eLq+l2Cvm7Kgq4C2En3M=",
+    {
+      "../builders/generated": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/builders/generated/index.js",
+      "../clone/cloneNode": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/clone/cloneNode.js",
+      "../retrievers/getBindingIdentifiers": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/retrievers/getBindingIdentifiers.js",
+      "../validators/generated": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/converters/toBindingIdentifierName.js": [
+    "bzUfn6/LdzG8xS+PG22PK85sW5/6iKu7uiU7CjD1igc=",
+    {
+      "./toIdentifier": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/converters/toIdentifier.js"
+    }
+  ],
+  "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/converters/toBlock.js": [
+    "07eFsSZ5+oMolNdbhr0ys254AmUX1szgBinWd6cPkTg=",
+    {
+      "../builders/generated": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/builders/generated/index.js",
+      "../validators/generated": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/converters/toComputedKey.js": [
+    "UzpqkgFycRTTttVkVcx+W4iaGvtgfEAg7zDUvah1JV4=",
+    {
+      "../builders/generated": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/builders/generated/index.js",
+      "../validators/generated": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/converters/toExpression.js": [
+    "kkG1dMCrkKbqJvnyomrjJfZTP7QSvxiDX7GWl2F+ce8=",
+    {
+      "../validators/generated": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/converters/toIdentifier.js": [
+    "+0QpBCGQUKsGI4MLGmFU1Inzp3QSk7WeZoErsXDIsKs=",
+    {
+      "../validators/isValidIdentifier": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/validators/isValidIdentifier.js"
+    }
+  ],
+  "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/converters/toKeyAlias.js": [
+    "zIb1wO9Hzuf7GjKi+HTkmNTTYvmzDPPShFca3yTdrsE=",
+    {
+      "../clone/cloneNode": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/clone/cloneNode.js",
+      "../modifications/removePropertiesDeep": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/modifications/removePropertiesDeep.js",
+      "../validators/generated": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/converters/toSequenceExpression.js": [
+    "MK8i1eEGzuV3cz8UVH0WZWhoijMEmLmhxO8/dudZaME=",
+    {
+      "./gatherSequenceExpressions": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/converters/gatherSequenceExpressions.js"
+    }
+  ],
+  "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/converters/toStatement.js": [
+    "ODjoLVGJar4uv2uM5mZtjwpk7ZHJKgaKzb4bKtKrstU=",
+    {
+      "../builders/generated": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/builders/generated/index.js",
+      "../validators/generated": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/converters/valueToNode.js": [
+    "dTFaesm9X5zXeGnthmurauqREZqnZLzfJSEyoQZriP8=",
+    {
+      "../builders/generated": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/builders/generated/index.js",
+      "../validators/isValidIdentifier": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/validators/isValidIdentifier.js",
+      "lodash/isPlainObject": "node_modules/lodash/isPlainObject.js",
+      "lodash/isRegExp": "node_modules/lodash/isRegExp.js"
+    }
+  ],
+  "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/definitions/core.js": [
+    "i1Ff+iAlsEPJRjhnDTiDpZwwe9/2ehVR1XTzIbgCJ5U=",
+    {
+      "../constants": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/constants/index.js",
+      "../validators/is": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/validators/is.js",
+      "./utils": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/definitions/utils.js",
+      "esutils": "node_modules/esutils/lib/utils.js"
+    }
+  ],
+  "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/definitions/es2015.js": [
+    "yqnK85vtGWHSu1vFiIjdLZSYJfP9RU/vN9GRCUs0Na8=",
+    {
+      "../validators/is": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/validators/is.js",
+      "./core": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/definitions/core.js",
+      "./utils": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/definitions/utils.js"
+    }
+  ],
+  "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/definitions/experimental.js": [
+    "3EH/NFjBrMP2hxsi2xxOA9rRKGF9eFFhsglLhNbUKPU=",
+    {
+      "./es2015": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/definitions/es2015.js",
+      "./utils": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/definitions/utils.js"
+    }
+  ],
+  "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/definitions/flow.js": [
+    "lcxONTSuk2FvVuhL9uHZP/cdIr3d3neLzpoLIpaeGf4=",
+    {
+      "./utils": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/definitions/utils.js"
+    }
+  ],
+  "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/definitions/index.js": [
+    "Vucc3mwTWSUNbNyGHZCEGpidLX29DBTqrmL1iXgcQR8=",
+    {
+      "./core": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/definitions/core.js",
+      "./es2015": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/definitions/es2015.js",
+      "./experimental": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/definitions/experimental.js",
+      "./flow": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/definitions/flow.js",
+      "./jsx": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/definitions/jsx.js",
+      "./misc": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/definitions/misc.js",
+      "./placeholders": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/definitions/placeholders.js",
+      "./typescript": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/definitions/typescript.js",
+      "./utils": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/definitions/utils.js",
+      "to-fast-properties": "node_modules/to-fast-properties/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/definitions/jsx.js": [
+    "Wn8RjShRqT4UR/OJHPn7NNiDZhv6mVushBtA2ND5/r4=",
+    {
+      "./utils": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/definitions/utils.js"
+    }
+  ],
+  "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/definitions/misc.js": [
+    "R8Pg6S3t/I0baPhJnZal//QZ1kMxHCQItI5dHsFsdD4=",
+    {
+      "./placeholders": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/definitions/placeholders.js",
+      "./utils": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/definitions/utils.js"
+    }
+  ],
+  "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/definitions/placeholders.js": [
+    "ve6xW3E0vuT2m9/FIRDRVarPPSRGzmQC7E9ObNHKE1o=",
+    {
+      "./utils": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/definitions/utils.js"
+    }
+  ],
+  "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/definitions/typescript.js": [
+    "Bja9aehyStk1z4x8vhmnK2fsJMGmWKFrW+6y8RJRixo=",
+    {
+      "./core": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/definitions/core.js",
+      "./es2015": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/definitions/es2015.js",
+      "./utils": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/definitions/utils.js"
+    }
+  ],
+  "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/definitions/utils.js": [
+    "Y7rKYdYrIV01L5WuRaQMPACZ0nJdlaktPG1qUSv4iUA=",
+    {
+      "../validators/is": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/validators/is.js",
+      "../validators/validate": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/validators/validate.js"
+    }
+  ],
+  "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/index.js": [
+    "iisIewwRDHXnW8mih8nhaUJ16qXRfse0fI/34iAlGbg=",
+    {
+      "./asserts/assertNode": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/asserts/assertNode.js",
+      "./asserts/generated": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/asserts/generated/index.js",
+      "./builders/flow/createTypeAnnotationBasedOnTypeof": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/builders/flow/createTypeAnnotationBasedOnTypeof.js",
+      "./builders/flow/createUnionTypeAnnotation": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/builders/flow/createUnionTypeAnnotation.js",
+      "./builders/generated": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/builders/generated/index.js",
+      "./builders/react/buildChildren": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/builders/react/buildChildren.js",
+      "./clone/clone": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/clone/clone.js",
+      "./clone/cloneDeep": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/clone/cloneDeep.js",
+      "./clone/cloneNode": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/clone/cloneNode.js",
+      "./clone/cloneWithoutLoc": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/clone/cloneWithoutLoc.js",
+      "./comments/addComment": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/comments/addComment.js",
+      "./comments/addComments": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/comments/addComments.js",
+      "./comments/inheritInnerComments": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/comments/inheritInnerComments.js",
+      "./comments/inheritLeadingComments": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/comments/inheritLeadingComments.js",
+      "./comments/inheritTrailingComments": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/comments/inheritTrailingComments.js",
+      "./comments/inheritsComments": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/comments/inheritsComments.js",
+      "./comments/removeComments": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/comments/removeComments.js",
+      "./constants": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/constants/index.js",
+      "./constants/generated": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/constants/generated/index.js",
+      "./converters/ensureBlock": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/converters/ensureBlock.js",
+      "./converters/toBindingIdentifierName": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/converters/toBindingIdentifierName.js",
+      "./converters/toBlock": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/converters/toBlock.js",
+      "./converters/toComputedKey": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/converters/toComputedKey.js",
+      "./converters/toExpression": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/converters/toExpression.js",
+      "./converters/toIdentifier": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/converters/toIdentifier.js",
+      "./converters/toKeyAlias": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/converters/toKeyAlias.js",
+      "./converters/toSequenceExpression": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/converters/toSequenceExpression.js",
+      "./converters/toStatement": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/converters/toStatement.js",
+      "./converters/valueToNode": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/converters/valueToNode.js",
+      "./definitions": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/definitions/index.js",
+      "./modifications/appendToMemberExpression": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/modifications/appendToMemberExpression.js",
+      "./modifications/flow/removeTypeDuplicates": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/modifications/flow/removeTypeDuplicates.js",
+      "./modifications/inherits": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/modifications/inherits.js",
+      "./modifications/prependToMemberExpression": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/modifications/prependToMemberExpression.js",
+      "./modifications/removeProperties": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/modifications/removeProperties.js",
+      "./modifications/removePropertiesDeep": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/modifications/removePropertiesDeep.js",
+      "./retrievers/getBindingIdentifiers": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/retrievers/getBindingIdentifiers.js",
+      "./retrievers/getOuterBindingIdentifiers": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/retrievers/getOuterBindingIdentifiers.js",
+      "./traverse/traverse": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/traverse/traverse.js",
+      "./traverse/traverseFast": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/traverse/traverseFast.js",
+      "./utils/shallowEqual": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/utils/shallowEqual.js",
+      "./validators/buildMatchMemberExpression": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/validators/buildMatchMemberExpression.js",
+      "./validators/generated": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/validators/generated/index.js",
+      "./validators/is": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/validators/is.js",
+      "./validators/isBinding": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/validators/isBinding.js",
+      "./validators/isBlockScoped": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/validators/isBlockScoped.js",
+      "./validators/isImmutable": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/validators/isImmutable.js",
+      "./validators/isLet": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/validators/isLet.js",
+      "./validators/isNode": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/validators/isNode.js",
+      "./validators/isNodesEquivalent": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/validators/isNodesEquivalent.js",
+      "./validators/isPlaceholderType": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/validators/isPlaceholderType.js",
+      "./validators/isReferenced": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/validators/isReferenced.js",
+      "./validators/isScope": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/validators/isScope.js",
+      "./validators/isSpecifierDefault": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/validators/isSpecifierDefault.js",
+      "./validators/isType": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/validators/isType.js",
+      "./validators/isValidES3Identifier": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/validators/isValidES3Identifier.js",
+      "./validators/isValidIdentifier": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/validators/isValidIdentifier.js",
+      "./validators/isVar": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/validators/isVar.js",
+      "./validators/matchesPattern": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/validators/matchesPattern.js",
+      "./validators/react/isCompatTag": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/validators/react/isCompatTag.js",
+      "./validators/react/isReactComponent": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/validators/react/isReactComponent.js",
+      "./validators/validate": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/validators/validate.js"
+    }
+  ],
+  "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/modifications/appendToMemberExpression.js": [
+    "9YJghcL+XfnsKEnsUKJZrkWHRHyMzhu5HbUt1r0ripE=",
+    {
+      "../builders/generated": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/builders/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/modifications/flow/removeTypeDuplicates.js": [
+    "v2Dy/wi2PzgeJop9tmNIXtTJCyjoSN8YIKqDafHp3Pw=",
+    {
+      "../../validators/generated": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/modifications/inherits.js": [
+    "Gmvs3LHuzPbkUi9SOlCxbdpK60rYW1LAAiMNJwoVNFw=",
+    {
+      "../comments/inheritsComments": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/comments/inheritsComments.js",
+      "../constants": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/constants/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/modifications/prependToMemberExpression.js": [
+    "cC3hL9uBECPWOihRmDu5tkxDccgP5AfS+h8V7FzswQY=",
+    {
+      "../builders/generated": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/builders/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/modifications/removeProperties.js": [
+    "DMAINP9hA7U0oea+40mBAZ8DtmEPPB/NiJzu4N1YK8g=",
+    {
+      "../constants": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/constants/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/modifications/removePropertiesDeep.js": [
+    "z2m7qkonb5Dxwc1zpfLDE7VGMskA2bIUYwptU0sECek=",
+    {
+      "../traverse/traverseFast": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/traverse/traverseFast.js",
+      "./removeProperties": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/modifications/removeProperties.js"
+    }
+  ],
+  "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/retrievers/getBindingIdentifiers.js": [
+    "3m0VnwzhDDik9rIlRE5imy1eodL9S2OgDZgnjy3qbsI=",
+    {
+      "../validators/generated": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/retrievers/getOuterBindingIdentifiers.js": [
+    "drQnKeviuPPyQ9ogwSYvc3R5DNlBU4t/53R1VMLPUC4=",
+    {
+      "./getBindingIdentifiers": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/retrievers/getBindingIdentifiers.js"
+    }
+  ],
+  "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/traverse/traverse.js": [
+    "rGuYoGfKVtra6kYUeRhWQFcb+IROwnUw3UbJOhVNgWU=",
+    {
+      "../definitions": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/definitions/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/traverse/traverseFast.js": [
+    "eidxShD/Jf+J+ThG+92KQ2+MbYh2VrniD+kdhjecig8=",
+    {
+      "../definitions": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/definitions/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/utils/inherit.js": [
+    "joje/k+q+uTdxcyudLgFgxL437ZZYeusjOJTPrksrRM=",
+    {
+      "lodash/uniq": "node_modules/lodash/uniq.js"
+    }
+  ],
+  "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/utils/react/cleanJSXElementLiteralChild.js": [
+    "kyZBdxXA2AMkslATAhCWAdOGNzrjLr3iVdXFKcGLVyg=",
+    {
+      "../../builders/generated": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/builders/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/utils/shallowEqual.js": [
+    "uZJZfTqourN/95kmfKTQ01Tsv0uAqRZVXNeSx+5cxFU=",
+    {}
+  ],
+  "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/validators/buildMatchMemberExpression.js": [
+    "oClvAeXRLqWQoGseUlDrUuBXj9gafzCvb8ZQ9BKezyQ=",
+    {
+      "./matchesPattern": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/validators/matchesPattern.js"
+    }
+  ],
+  "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/validators/generated/index.js": [
+    "nGdnaU4lXlb4Pf309c4BdsWsGYw3uMLm4aFC/ETAoyg=",
+    {
+      "../../utils/shallowEqual": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/utils/shallowEqual.js"
+    }
+  ],
+  "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/validators/is.js": [
+    "4FblfXtU8oqAFF1ZtK0BEFoIIObMX0LqXdVuv8x3Ezk=",
+    {
+      "../definitions": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/definitions/index.js",
+      "../utils/shallowEqual": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/utils/shallowEqual.js",
+      "./isPlaceholderType": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/validators/isPlaceholderType.js",
+      "./isType": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/validators/isType.js"
+    }
+  ],
+  "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/validators/isBinding.js": [
+    "a8ovNrjZsl+SAo20roAvl0g4uUgyBsoslOOo/idhoj0=",
+    {
+      "../retrievers/getBindingIdentifiers": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/retrievers/getBindingIdentifiers.js"
+    }
+  ],
+  "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/validators/isBlockScoped.js": [
+    "R7slk8EKZmpa0fKX15Hw59YqLEYd8MnaSGDOqsa7I7E=",
+    {
+      "./generated": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/validators/generated/index.js",
+      "./isLet": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/validators/isLet.js"
+    }
+  ],
+  "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/validators/isImmutable.js": [
+    "jJtj4kabzipmtQ2adStZ0Jirvz+B7f//874XTja+wxM=",
+    {
+      "./generated": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/validators/generated/index.js",
+      "./isType": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/validators/isType.js"
+    }
+  ],
+  "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/validators/isLet.js": [
+    "OO98PKLCLkvAyfkh0TdnB13bbSpyllx3zWc3Z/BHop8=",
+    {
+      "../constants": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/constants/index.js",
+      "./generated": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/validators/isNode.js": [
+    "0QTRdIIJRTCmrM5dPPICvHsbUUABKdZLaQOq18uDZbI=",
+    {
+      "../definitions": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/definitions/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/validators/isNodesEquivalent.js": [
+    "n6fKXOWx1Z3pN9rOkGTIC2HwOGBRnJQVsrXrecfdqXk=",
+    {
+      "../definitions": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/definitions/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/validators/isPlaceholderType.js": [
+    "yghj8z9wiTZ0ztktRaqC4iGPcEmx1CP2rDfn2wEP1Qk=",
+    {
+      "../definitions": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/definitions/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/validators/isReferenced.js": [
+    "iLJgM1TYZVfQWJijfaI5zElxZrxLmiR0G5NqyY7jCII=",
+    {}
+  ],
+  "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/validators/isScope.js": [
+    "o89/Kjz4LL28uAO9rY4eiVUfJMxwb/9OKDctsdRWUxk=",
+    {
+      "./generated": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/validators/isSpecifierDefault.js": [
+    "8yuEfHdHtXTJkF1PQYY8U423zVh4Ee7xS8RY7u0UgM8=",
+    {
+      "./generated": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/validators/isType.js": [
+    "FIMgkJHkBlbepdNH1OFyNoQVvUOZWbpj1IiQDvdyDBk=",
+    {
+      "../definitions": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/definitions/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/validators/isValidES3Identifier.js": [
+    "KvewbGVXPKvZxtjVULE+xNTAgaE1USkjir7DdBs5Y74=",
+    {
+      "./isValidIdentifier": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/validators/isValidIdentifier.js"
+    }
+  ],
+  "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/validators/isValidIdentifier.js": [
+    "wldxEUQ7yA70n4bdNrqvbMfXRSXlXgkVIpwdh9vZeJs=",
+    {
+      "esutils": "node_modules/esutils/lib/utils.js"
+    }
+  ],
+  "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/validators/isVar.js": [
+    "qeOihIPgGUuZL5tk48OGgYN3gAvgFcpWd633RCL5a+M=",
+    {
+      "../constants": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/constants/index.js",
+      "./generated": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/validators/matchesPattern.js": [
+    "DYD/Rmf5GvP3XBa5/E/2D74dxUiZD/vYrGP0uu0bU04=",
+    {
+      "./generated": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/validators/react/isCompatTag.js": [
+    "afmc5kFRMVCo4ynIM8E+caOGJO4uAypKSmVINxfajBE=",
+    {}
+  ],
+  "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/validators/react/isReactComponent.js": [
+    "sm/ghRu9uws4VgkVNq+sxSIZDA3Hp9qtHF/wzaQ20n8=",
+    {
+      "../buildMatchMemberExpression": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/validators/buildMatchMemberExpression.js"
+    }
+  ],
+  "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/validators/validate.js": [
+    "3rAW6rGOd/eCmzk4oFN8QI5EPhY2vK3/xdC9Q6SLA10=",
+    {
+      "../definitions": "node_modules/@babel/helper-get-function-arity/node_modules/@babel/types/lib/definitions/index.js"
     }
   ],
   "node_modules/@babel/helper-split-export-declaration/lib/index.js": [
     "+AfCco+RtQJHLe0OIBGYCXZIIFyFLR91JC20w8Aiqtc=",
     {
-      "@babel/types": "node_modules/@babel/types/lib/index.js"
+      "@babel/types": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/index.js"
     }
+  ],
+  "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/asserts/assertNode.js": [
+    "mfekKBICa0wkDoFcjQuz46wWi31d6lNVKf3WyaT2JhE=",
+    {
+      "../validators/isNode": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/validators/isNode.js"
+    }
+  ],
+  "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/asserts/generated/index.js": [
+    "mT6/nEVmdwoaaoIJM4vcwvk7KRFXgO8QSrZ9aU8qMfg=",
+    {
+      "../../validators/is": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/validators/is.js"
+    }
+  ],
+  "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/builders/builder.js": [
+    "mTXSk+hzEwbmQXYWEvqqqkbjGEcCNt2WpdArKm37zGk=",
+    {
+      "../definitions": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/definitions/index.js",
+      "../validators/validate": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/validators/validate.js",
+      "lodash/clone": "node_modules/lodash/clone.js"
+    }
+  ],
+  "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/builders/flow/createTypeAnnotationBasedOnTypeof.js": [
+    "U7eCycl/8DiBcGlEgIxhGfjChvNw2NZUN6CbflgH4X8=",
+    {
+      "../generated": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/builders/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/builders/flow/createUnionTypeAnnotation.js": [
+    "tcblNNM9C/1eHiqi3NYG/hHcMloDz7Q7/aVoguTfSxg=",
+    {
+      "../../modifications/flow/removeTypeDuplicates": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/modifications/flow/removeTypeDuplicates.js",
+      "../generated": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/builders/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/builders/generated/index.js": [
+    "557DwixyQv6EPRCB6HJunqEqKIcoBXlcB7AhZ7eQHg0=",
+    {
+      "../builder": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/builders/builder.js"
+    }
+  ],
+  "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/builders/react/buildChildren.js": [
+    "A0k2ncE8Oz5CX2pN+Kpo7PluvMj1gXw95+nzZKa+Ve8=",
+    {
+      "../../utils/react/cleanJSXElementLiteralChild": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/utils/react/cleanJSXElementLiteralChild.js",
+      "../../validators/generated": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/clone/clone.js": [
+    "THkH4wFFQUVzIJ0nw7GWOEHFgsjNUMA11okf/2jeHFY=",
+    {
+      "./cloneNode": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/clone/cloneNode.js"
+    }
+  ],
+  "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/clone/cloneDeep.js": [
+    "4hGR0sww7W+NuT6hEDLKf3gP9hzRwIfN/bi6Pr40OLs=",
+    {
+      "./cloneNode": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/clone/cloneNode.js"
+    }
+  ],
+  "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/clone/cloneNode.js": [
+    "5xw78htLt4zrMZGWP3gschKGsBpiB3Iu5Vgvr9D2eBQ=",
+    {
+      "../definitions": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/definitions/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/clone/cloneWithoutLoc.js": [
+    "usonzIhNZhBCwU1/WAW9GcW71AzOyaEQXGBhN1WVu/0=",
+    {
+      "./clone": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/clone/clone.js"
+    }
+  ],
+  "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/comments/addComment.js": [
+    "a+hWI3NJdEiIVqI1DnZam3XE/fwBzZuF6v15O+DFs+Y=",
+    {
+      "./addComments": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/comments/addComments.js"
+    }
+  ],
+  "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/comments/addComments.js": [
+    "NHqJP6zaX5sMqS0Anx5abFuzcOumKxLJSYi5Ufu+qOo=",
+    {}
+  ],
+  "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/comments/inheritInnerComments.js": [
+    "usyEeify3ZPuB/QJVWJqwfHFjDY4ngOJR2+BCGg71m8=",
+    {
+      "../utils/inherit": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/utils/inherit.js"
+    }
+  ],
+  "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/comments/inheritLeadingComments.js": [
+    "dSBd50YQRz6cQDMqbLcacTW0XSvrDccSAWYTI9KGsHo=",
+    {
+      "../utils/inherit": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/utils/inherit.js"
+    }
+  ],
+  "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/comments/inheritTrailingComments.js": [
+    "vUH3HrhkXqUIWN42PTpx9/vzJVub/zAq6HWf/7LRovs=",
+    {
+      "../utils/inherit": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/utils/inherit.js"
+    }
+  ],
+  "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/comments/inheritsComments.js": [
+    "Xyg5Dn5f1attr+37AGZVIklShIuf/An/KJfcsEIlj9Y=",
+    {
+      "./inheritInnerComments": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/comments/inheritInnerComments.js",
+      "./inheritLeadingComments": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/comments/inheritLeadingComments.js",
+      "./inheritTrailingComments": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/comments/inheritTrailingComments.js"
+    }
+  ],
+  "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/comments/removeComments.js": [
+    "IPergGqpjvMc8ziFTCXPNcFFHyeKIHYcVZ+Ovj8s2Hg=",
+    {
+      "../constants": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/constants/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/constants/generated/index.js": [
+    "XM2x9B42aoxgxBqzlJvVmP45ZBFuNCcesjeeiEgOfNU=",
+    {
+      "../../definitions": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/definitions/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/constants/index.js": [
+    "9cztyx6J568P994lqUPI6yCAD+D7kt75qdBajn2+5hw=",
+    {}
+  ],
+  "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/converters/ensureBlock.js": [
+    "B2UP3sICM3EW0d2yaGZTrhJyssvIqYh9iVNyOV85wFg=",
+    {
+      "./toBlock": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/converters/toBlock.js"
+    }
+  ],
+  "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/converters/gatherSequenceExpressions.js": [
+    "OoZe9skvIZocS/GGEWep7a3eLq+l2Cvm7Kgq4C2En3M=",
+    {
+      "../builders/generated": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/builders/generated/index.js",
+      "../clone/cloneNode": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/clone/cloneNode.js",
+      "../retrievers/getBindingIdentifiers": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/retrievers/getBindingIdentifiers.js",
+      "../validators/generated": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/converters/toBindingIdentifierName.js": [
+    "bzUfn6/LdzG8xS+PG22PK85sW5/6iKu7uiU7CjD1igc=",
+    {
+      "./toIdentifier": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/converters/toIdentifier.js"
+    }
+  ],
+  "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/converters/toBlock.js": [
+    "07eFsSZ5+oMolNdbhr0ys254AmUX1szgBinWd6cPkTg=",
+    {
+      "../builders/generated": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/builders/generated/index.js",
+      "../validators/generated": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/converters/toComputedKey.js": [
+    "UzpqkgFycRTTttVkVcx+W4iaGvtgfEAg7zDUvah1JV4=",
+    {
+      "../builders/generated": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/builders/generated/index.js",
+      "../validators/generated": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/converters/toExpression.js": [
+    "kkG1dMCrkKbqJvnyomrjJfZTP7QSvxiDX7GWl2F+ce8=",
+    {
+      "../validators/generated": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/converters/toIdentifier.js": [
+    "+0QpBCGQUKsGI4MLGmFU1Inzp3QSk7WeZoErsXDIsKs=",
+    {
+      "../validators/isValidIdentifier": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/validators/isValidIdentifier.js"
+    }
+  ],
+  "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/converters/toKeyAlias.js": [
+    "zIb1wO9Hzuf7GjKi+HTkmNTTYvmzDPPShFca3yTdrsE=",
+    {
+      "../clone/cloneNode": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/clone/cloneNode.js",
+      "../modifications/removePropertiesDeep": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/modifications/removePropertiesDeep.js",
+      "../validators/generated": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/converters/toSequenceExpression.js": [
+    "MK8i1eEGzuV3cz8UVH0WZWhoijMEmLmhxO8/dudZaME=",
+    {
+      "./gatherSequenceExpressions": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/converters/gatherSequenceExpressions.js"
+    }
+  ],
+  "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/converters/toStatement.js": [
+    "ODjoLVGJar4uv2uM5mZtjwpk7ZHJKgaKzb4bKtKrstU=",
+    {
+      "../builders/generated": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/builders/generated/index.js",
+      "../validators/generated": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/converters/valueToNode.js": [
+    "dTFaesm9X5zXeGnthmurauqREZqnZLzfJSEyoQZriP8=",
+    {
+      "../builders/generated": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/builders/generated/index.js",
+      "../validators/isValidIdentifier": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/validators/isValidIdentifier.js",
+      "lodash/isPlainObject": "node_modules/lodash/isPlainObject.js",
+      "lodash/isRegExp": "node_modules/lodash/isRegExp.js"
+    }
+  ],
+  "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/definitions/core.js": [
+    "i1Ff+iAlsEPJRjhnDTiDpZwwe9/2ehVR1XTzIbgCJ5U=",
+    {
+      "../constants": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/constants/index.js",
+      "../validators/is": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/validators/is.js",
+      "./utils": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/definitions/utils.js",
+      "esutils": "node_modules/esutils/lib/utils.js"
+    }
+  ],
+  "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/definitions/es2015.js": [
+    "yqnK85vtGWHSu1vFiIjdLZSYJfP9RU/vN9GRCUs0Na8=",
+    {
+      "../validators/is": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/validators/is.js",
+      "./core": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/definitions/core.js",
+      "./utils": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/definitions/utils.js"
+    }
+  ],
+  "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/definitions/experimental.js": [
+    "3EH/NFjBrMP2hxsi2xxOA9rRKGF9eFFhsglLhNbUKPU=",
+    {
+      "./es2015": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/definitions/es2015.js",
+      "./utils": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/definitions/utils.js"
+    }
+  ],
+  "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/definitions/flow.js": [
+    "lcxONTSuk2FvVuhL9uHZP/cdIr3d3neLzpoLIpaeGf4=",
+    {
+      "./utils": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/definitions/utils.js"
+    }
+  ],
+  "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/definitions/index.js": [
+    "Vucc3mwTWSUNbNyGHZCEGpidLX29DBTqrmL1iXgcQR8=",
+    {
+      "./core": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/definitions/core.js",
+      "./es2015": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/definitions/es2015.js",
+      "./experimental": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/definitions/experimental.js",
+      "./flow": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/definitions/flow.js",
+      "./jsx": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/definitions/jsx.js",
+      "./misc": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/definitions/misc.js",
+      "./placeholders": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/definitions/placeholders.js",
+      "./typescript": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/definitions/typescript.js",
+      "./utils": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/definitions/utils.js",
+      "to-fast-properties": "node_modules/to-fast-properties/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/definitions/jsx.js": [
+    "Wn8RjShRqT4UR/OJHPn7NNiDZhv6mVushBtA2ND5/r4=",
+    {
+      "./utils": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/definitions/utils.js"
+    }
+  ],
+  "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/definitions/misc.js": [
+    "R8Pg6S3t/I0baPhJnZal//QZ1kMxHCQItI5dHsFsdD4=",
+    {
+      "./placeholders": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/definitions/placeholders.js",
+      "./utils": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/definitions/utils.js"
+    }
+  ],
+  "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/definitions/placeholders.js": [
+    "ve6xW3E0vuT2m9/FIRDRVarPPSRGzmQC7E9ObNHKE1o=",
+    {
+      "./utils": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/definitions/utils.js"
+    }
+  ],
+  "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/definitions/typescript.js": [
+    "Bja9aehyStk1z4x8vhmnK2fsJMGmWKFrW+6y8RJRixo=",
+    {
+      "./core": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/definitions/core.js",
+      "./es2015": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/definitions/es2015.js",
+      "./utils": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/definitions/utils.js"
+    }
+  ],
+  "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/definitions/utils.js": [
+    "Y7rKYdYrIV01L5WuRaQMPACZ0nJdlaktPG1qUSv4iUA=",
+    {
+      "../validators/is": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/validators/is.js",
+      "../validators/validate": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/validators/validate.js"
+    }
+  ],
+  "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/index.js": [
+    "iisIewwRDHXnW8mih8nhaUJ16qXRfse0fI/34iAlGbg=",
+    {
+      "./asserts/assertNode": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/asserts/assertNode.js",
+      "./asserts/generated": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/asserts/generated/index.js",
+      "./builders/flow/createTypeAnnotationBasedOnTypeof": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/builders/flow/createTypeAnnotationBasedOnTypeof.js",
+      "./builders/flow/createUnionTypeAnnotation": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/builders/flow/createUnionTypeAnnotation.js",
+      "./builders/generated": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/builders/generated/index.js",
+      "./builders/react/buildChildren": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/builders/react/buildChildren.js",
+      "./clone/clone": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/clone/clone.js",
+      "./clone/cloneDeep": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/clone/cloneDeep.js",
+      "./clone/cloneNode": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/clone/cloneNode.js",
+      "./clone/cloneWithoutLoc": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/clone/cloneWithoutLoc.js",
+      "./comments/addComment": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/comments/addComment.js",
+      "./comments/addComments": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/comments/addComments.js",
+      "./comments/inheritInnerComments": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/comments/inheritInnerComments.js",
+      "./comments/inheritLeadingComments": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/comments/inheritLeadingComments.js",
+      "./comments/inheritTrailingComments": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/comments/inheritTrailingComments.js",
+      "./comments/inheritsComments": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/comments/inheritsComments.js",
+      "./comments/removeComments": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/comments/removeComments.js",
+      "./constants": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/constants/index.js",
+      "./constants/generated": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/constants/generated/index.js",
+      "./converters/ensureBlock": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/converters/ensureBlock.js",
+      "./converters/toBindingIdentifierName": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/converters/toBindingIdentifierName.js",
+      "./converters/toBlock": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/converters/toBlock.js",
+      "./converters/toComputedKey": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/converters/toComputedKey.js",
+      "./converters/toExpression": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/converters/toExpression.js",
+      "./converters/toIdentifier": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/converters/toIdentifier.js",
+      "./converters/toKeyAlias": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/converters/toKeyAlias.js",
+      "./converters/toSequenceExpression": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/converters/toSequenceExpression.js",
+      "./converters/toStatement": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/converters/toStatement.js",
+      "./converters/valueToNode": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/converters/valueToNode.js",
+      "./definitions": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/definitions/index.js",
+      "./modifications/appendToMemberExpression": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/modifications/appendToMemberExpression.js",
+      "./modifications/flow/removeTypeDuplicates": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/modifications/flow/removeTypeDuplicates.js",
+      "./modifications/inherits": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/modifications/inherits.js",
+      "./modifications/prependToMemberExpression": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/modifications/prependToMemberExpression.js",
+      "./modifications/removeProperties": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/modifications/removeProperties.js",
+      "./modifications/removePropertiesDeep": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/modifications/removePropertiesDeep.js",
+      "./retrievers/getBindingIdentifiers": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/retrievers/getBindingIdentifiers.js",
+      "./retrievers/getOuterBindingIdentifiers": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/retrievers/getOuterBindingIdentifiers.js",
+      "./traverse/traverse": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/traverse/traverse.js",
+      "./traverse/traverseFast": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/traverse/traverseFast.js",
+      "./utils/shallowEqual": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/utils/shallowEqual.js",
+      "./validators/buildMatchMemberExpression": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/validators/buildMatchMemberExpression.js",
+      "./validators/generated": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/validators/generated/index.js",
+      "./validators/is": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/validators/is.js",
+      "./validators/isBinding": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/validators/isBinding.js",
+      "./validators/isBlockScoped": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/validators/isBlockScoped.js",
+      "./validators/isImmutable": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/validators/isImmutable.js",
+      "./validators/isLet": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/validators/isLet.js",
+      "./validators/isNode": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/validators/isNode.js",
+      "./validators/isNodesEquivalent": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/validators/isNodesEquivalent.js",
+      "./validators/isPlaceholderType": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/validators/isPlaceholderType.js",
+      "./validators/isReferenced": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/validators/isReferenced.js",
+      "./validators/isScope": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/validators/isScope.js",
+      "./validators/isSpecifierDefault": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/validators/isSpecifierDefault.js",
+      "./validators/isType": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/validators/isType.js",
+      "./validators/isValidES3Identifier": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/validators/isValidES3Identifier.js",
+      "./validators/isValidIdentifier": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/validators/isValidIdentifier.js",
+      "./validators/isVar": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/validators/isVar.js",
+      "./validators/matchesPattern": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/validators/matchesPattern.js",
+      "./validators/react/isCompatTag": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/validators/react/isCompatTag.js",
+      "./validators/react/isReactComponent": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/validators/react/isReactComponent.js",
+      "./validators/validate": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/validators/validate.js"
+    }
+  ],
+  "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/modifications/appendToMemberExpression.js": [
+    "9YJghcL+XfnsKEnsUKJZrkWHRHyMzhu5HbUt1r0ripE=",
+    {
+      "../builders/generated": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/builders/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/modifications/flow/removeTypeDuplicates.js": [
+    "v2Dy/wi2PzgeJop9tmNIXtTJCyjoSN8YIKqDafHp3Pw=",
+    {
+      "../../validators/generated": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/modifications/inherits.js": [
+    "Gmvs3LHuzPbkUi9SOlCxbdpK60rYW1LAAiMNJwoVNFw=",
+    {
+      "../comments/inheritsComments": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/comments/inheritsComments.js",
+      "../constants": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/constants/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/modifications/prependToMemberExpression.js": [
+    "cC3hL9uBECPWOihRmDu5tkxDccgP5AfS+h8V7FzswQY=",
+    {
+      "../builders/generated": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/builders/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/modifications/removeProperties.js": [
+    "DMAINP9hA7U0oea+40mBAZ8DtmEPPB/NiJzu4N1YK8g=",
+    {
+      "../constants": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/constants/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/modifications/removePropertiesDeep.js": [
+    "z2m7qkonb5Dxwc1zpfLDE7VGMskA2bIUYwptU0sECek=",
+    {
+      "../traverse/traverseFast": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/traverse/traverseFast.js",
+      "./removeProperties": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/modifications/removeProperties.js"
+    }
+  ],
+  "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/retrievers/getBindingIdentifiers.js": [
+    "3m0VnwzhDDik9rIlRE5imy1eodL9S2OgDZgnjy3qbsI=",
+    {
+      "../validators/generated": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/retrievers/getOuterBindingIdentifiers.js": [
+    "drQnKeviuPPyQ9ogwSYvc3R5DNlBU4t/53R1VMLPUC4=",
+    {
+      "./getBindingIdentifiers": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/retrievers/getBindingIdentifiers.js"
+    }
+  ],
+  "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/traverse/traverse.js": [
+    "rGuYoGfKVtra6kYUeRhWQFcb+IROwnUw3UbJOhVNgWU=",
+    {
+      "../definitions": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/definitions/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/traverse/traverseFast.js": [
+    "eidxShD/Jf+J+ThG+92KQ2+MbYh2VrniD+kdhjecig8=",
+    {
+      "../definitions": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/definitions/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/utils/inherit.js": [
+    "joje/k+q+uTdxcyudLgFgxL437ZZYeusjOJTPrksrRM=",
+    {
+      "lodash/uniq": "node_modules/lodash/uniq.js"
+    }
+  ],
+  "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/utils/react/cleanJSXElementLiteralChild.js": [
+    "kyZBdxXA2AMkslATAhCWAdOGNzrjLr3iVdXFKcGLVyg=",
+    {
+      "../../builders/generated": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/builders/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/utils/shallowEqual.js": [
+    "uZJZfTqourN/95kmfKTQ01Tsv0uAqRZVXNeSx+5cxFU=",
+    {}
+  ],
+  "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/validators/buildMatchMemberExpression.js": [
+    "oClvAeXRLqWQoGseUlDrUuBXj9gafzCvb8ZQ9BKezyQ=",
+    {
+      "./matchesPattern": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/validators/matchesPattern.js"
+    }
+  ],
+  "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/validators/generated/index.js": [
+    "nGdnaU4lXlb4Pf309c4BdsWsGYw3uMLm4aFC/ETAoyg=",
+    {
+      "../../utils/shallowEqual": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/utils/shallowEqual.js"
+    }
+  ],
+  "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/validators/is.js": [
+    "4FblfXtU8oqAFF1ZtK0BEFoIIObMX0LqXdVuv8x3Ezk=",
+    {
+      "../definitions": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/definitions/index.js",
+      "../utils/shallowEqual": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/utils/shallowEqual.js",
+      "./isPlaceholderType": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/validators/isPlaceholderType.js",
+      "./isType": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/validators/isType.js"
+    }
+  ],
+  "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/validators/isBinding.js": [
+    "a8ovNrjZsl+SAo20roAvl0g4uUgyBsoslOOo/idhoj0=",
+    {
+      "../retrievers/getBindingIdentifiers": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/retrievers/getBindingIdentifiers.js"
+    }
+  ],
+  "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/validators/isBlockScoped.js": [
+    "R7slk8EKZmpa0fKX15Hw59YqLEYd8MnaSGDOqsa7I7E=",
+    {
+      "./generated": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/validators/generated/index.js",
+      "./isLet": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/validators/isLet.js"
+    }
+  ],
+  "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/validators/isImmutable.js": [
+    "jJtj4kabzipmtQ2adStZ0Jirvz+B7f//874XTja+wxM=",
+    {
+      "./generated": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/validators/generated/index.js",
+      "./isType": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/validators/isType.js"
+    }
+  ],
+  "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/validators/isLet.js": [
+    "OO98PKLCLkvAyfkh0TdnB13bbSpyllx3zWc3Z/BHop8=",
+    {
+      "../constants": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/constants/index.js",
+      "./generated": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/validators/isNode.js": [
+    "0QTRdIIJRTCmrM5dPPICvHsbUUABKdZLaQOq18uDZbI=",
+    {
+      "../definitions": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/definitions/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/validators/isNodesEquivalent.js": [
+    "n6fKXOWx1Z3pN9rOkGTIC2HwOGBRnJQVsrXrecfdqXk=",
+    {
+      "../definitions": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/definitions/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/validators/isPlaceholderType.js": [
+    "yghj8z9wiTZ0ztktRaqC4iGPcEmx1CP2rDfn2wEP1Qk=",
+    {
+      "../definitions": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/definitions/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/validators/isReferenced.js": [
+    "iLJgM1TYZVfQWJijfaI5zElxZrxLmiR0G5NqyY7jCII=",
+    {}
+  ],
+  "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/validators/isScope.js": [
+    "o89/Kjz4LL28uAO9rY4eiVUfJMxwb/9OKDctsdRWUxk=",
+    {
+      "./generated": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/validators/isSpecifierDefault.js": [
+    "8yuEfHdHtXTJkF1PQYY8U423zVh4Ee7xS8RY7u0UgM8=",
+    {
+      "./generated": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/validators/isType.js": [
+    "FIMgkJHkBlbepdNH1OFyNoQVvUOZWbpj1IiQDvdyDBk=",
+    {
+      "../definitions": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/definitions/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/validators/isValidES3Identifier.js": [
+    "KvewbGVXPKvZxtjVULE+xNTAgaE1USkjir7DdBs5Y74=",
+    {
+      "./isValidIdentifier": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/validators/isValidIdentifier.js"
+    }
+  ],
+  "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/validators/isValidIdentifier.js": [
+    "wldxEUQ7yA70n4bdNrqvbMfXRSXlXgkVIpwdh9vZeJs=",
+    {
+      "esutils": "node_modules/esutils/lib/utils.js"
+    }
+  ],
+  "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/validators/isVar.js": [
+    "qeOihIPgGUuZL5tk48OGgYN3gAvgFcpWd633RCL5a+M=",
+    {
+      "../constants": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/constants/index.js",
+      "./generated": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/validators/matchesPattern.js": [
+    "DYD/Rmf5GvP3XBa5/E/2D74dxUiZD/vYrGP0uu0bU04=",
+    {
+      "./generated": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/validators/react/isCompatTag.js": [
+    "afmc5kFRMVCo4ynIM8E+caOGJO4uAypKSmVINxfajBE=",
+    {}
+  ],
+  "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/validators/react/isReactComponent.js": [
+    "sm/ghRu9uws4VgkVNq+sxSIZDA3Hp9qtHF/wzaQ20n8=",
+    {
+      "../buildMatchMemberExpression": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/validators/buildMatchMemberExpression.js"
+    }
+  ],
+  "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/validators/validate.js": [
+    "3rAW6rGOd/eCmzk4oFN8QI5EPhY2vK3/xdC9Q6SLA10=",
+    {
+      "../definitions": "node_modules/@babel/helper-split-export-declaration/node_modules/@babel/types/lib/definitions/index.js"
+    }
+  ],
+  "node_modules/@babel/helper-validator-identifier/lib/identifier.js": [
+    "2y/HriHGzXBiaruNkLwo8lp+eakIB4CMaHEDGudUkDA=",
+    {}
+  ],
+  "node_modules/@babel/helper-validator-identifier/lib/index.js": [
+    "woTQ643kOQvp+lFvAYj31hthWvLaPrIiqUjhkRWCdnU=",
+    {
+      "./identifier": "node_modules/@babel/helper-validator-identifier/lib/identifier.js",
+      "./keyword": "node_modules/@babel/helper-validator-identifier/lib/keyword.js"
+    }
+  ],
+  "node_modules/@babel/helper-validator-identifier/lib/keyword.js": [
+    "kM68ZI90hPG6OVj5ji+uzv/Pf1ta9ORAjgKbFlZqnNY=",
+    {}
   ],
   "node_modules/@babel/highlight/lib/index.js": [
     "l+ZvLh/fu8JsxNV6eY1ydRlsTOCXamMxDM2HHyDNDe0=",
@@ -67520,13 +81121,13 @@ module.exports = cacheHas;
     {
       "@babel/code-frame": "node_modules/@babel/code-frame/lib/index.js",
       "@babel/parser": "node_modules/@babel/parser/lib/index.js",
-      "@babel/types": "node_modules/@babel/types/lib/index.js"
+      "@babel/types": "node_modules/@babel/template/node_modules/@babel/types/lib/index.js"
     }
   ],
   "node_modules/@babel/template/lib/populate.js": [
     "Z6Sq9uuFY9URcIbg9HO7JXil5LFLf6H0I0W6NzIJ/sk=",
     {
-      "@babel/types": "node_modules/@babel/types/lib/index.js"
+      "@babel/types": "node_modules/@babel/template/node_modules/@babel/types/lib/index.js"
     }
   ],
   "node_modules/@babel/template/lib/string.js": [
@@ -67537,6 +81138,558 @@ module.exports = cacheHas;
       "./populate": "node_modules/@babel/template/lib/populate.js"
     }
   ],
+  "node_modules/@babel/template/node_modules/@babel/types/lib/asserts/assertNode.js": [
+    "mfekKBICa0wkDoFcjQuz46wWi31d6lNVKf3WyaT2JhE=",
+    {
+      "../validators/isNode": "node_modules/@babel/template/node_modules/@babel/types/lib/validators/isNode.js"
+    }
+  ],
+  "node_modules/@babel/template/node_modules/@babel/types/lib/asserts/generated/index.js": [
+    "mT6/nEVmdwoaaoIJM4vcwvk7KRFXgO8QSrZ9aU8qMfg=",
+    {
+      "../../validators/is": "node_modules/@babel/template/node_modules/@babel/types/lib/validators/is.js"
+    }
+  ],
+  "node_modules/@babel/template/node_modules/@babel/types/lib/builders/builder.js": [
+    "mTXSk+hzEwbmQXYWEvqqqkbjGEcCNt2WpdArKm37zGk=",
+    {
+      "../definitions": "node_modules/@babel/template/node_modules/@babel/types/lib/definitions/index.js",
+      "../validators/validate": "node_modules/@babel/template/node_modules/@babel/types/lib/validators/validate.js",
+      "lodash/clone": "node_modules/lodash/clone.js"
+    }
+  ],
+  "node_modules/@babel/template/node_modules/@babel/types/lib/builders/flow/createTypeAnnotationBasedOnTypeof.js": [
+    "U7eCycl/8DiBcGlEgIxhGfjChvNw2NZUN6CbflgH4X8=",
+    {
+      "../generated": "node_modules/@babel/template/node_modules/@babel/types/lib/builders/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/template/node_modules/@babel/types/lib/builders/flow/createUnionTypeAnnotation.js": [
+    "tcblNNM9C/1eHiqi3NYG/hHcMloDz7Q7/aVoguTfSxg=",
+    {
+      "../../modifications/flow/removeTypeDuplicates": "node_modules/@babel/template/node_modules/@babel/types/lib/modifications/flow/removeTypeDuplicates.js",
+      "../generated": "node_modules/@babel/template/node_modules/@babel/types/lib/builders/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/template/node_modules/@babel/types/lib/builders/generated/index.js": [
+    "557DwixyQv6EPRCB6HJunqEqKIcoBXlcB7AhZ7eQHg0=",
+    {
+      "../builder": "node_modules/@babel/template/node_modules/@babel/types/lib/builders/builder.js"
+    }
+  ],
+  "node_modules/@babel/template/node_modules/@babel/types/lib/builders/react/buildChildren.js": [
+    "A0k2ncE8Oz5CX2pN+Kpo7PluvMj1gXw95+nzZKa+Ve8=",
+    {
+      "../../utils/react/cleanJSXElementLiteralChild": "node_modules/@babel/template/node_modules/@babel/types/lib/utils/react/cleanJSXElementLiteralChild.js",
+      "../../validators/generated": "node_modules/@babel/template/node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/template/node_modules/@babel/types/lib/clone/clone.js": [
+    "THkH4wFFQUVzIJ0nw7GWOEHFgsjNUMA11okf/2jeHFY=",
+    {
+      "./cloneNode": "node_modules/@babel/template/node_modules/@babel/types/lib/clone/cloneNode.js"
+    }
+  ],
+  "node_modules/@babel/template/node_modules/@babel/types/lib/clone/cloneDeep.js": [
+    "4hGR0sww7W+NuT6hEDLKf3gP9hzRwIfN/bi6Pr40OLs=",
+    {
+      "./cloneNode": "node_modules/@babel/template/node_modules/@babel/types/lib/clone/cloneNode.js"
+    }
+  ],
+  "node_modules/@babel/template/node_modules/@babel/types/lib/clone/cloneNode.js": [
+    "5xw78htLt4zrMZGWP3gschKGsBpiB3Iu5Vgvr9D2eBQ=",
+    {
+      "../definitions": "node_modules/@babel/template/node_modules/@babel/types/lib/definitions/index.js"
+    }
+  ],
+  "node_modules/@babel/template/node_modules/@babel/types/lib/clone/cloneWithoutLoc.js": [
+    "usonzIhNZhBCwU1/WAW9GcW71AzOyaEQXGBhN1WVu/0=",
+    {
+      "./clone": "node_modules/@babel/template/node_modules/@babel/types/lib/clone/clone.js"
+    }
+  ],
+  "node_modules/@babel/template/node_modules/@babel/types/lib/comments/addComment.js": [
+    "a+hWI3NJdEiIVqI1DnZam3XE/fwBzZuF6v15O+DFs+Y=",
+    {
+      "./addComments": "node_modules/@babel/template/node_modules/@babel/types/lib/comments/addComments.js"
+    }
+  ],
+  "node_modules/@babel/template/node_modules/@babel/types/lib/comments/addComments.js": [
+    "NHqJP6zaX5sMqS0Anx5abFuzcOumKxLJSYi5Ufu+qOo=",
+    {}
+  ],
+  "node_modules/@babel/template/node_modules/@babel/types/lib/comments/inheritInnerComments.js": [
+    "usyEeify3ZPuB/QJVWJqwfHFjDY4ngOJR2+BCGg71m8=",
+    {
+      "../utils/inherit": "node_modules/@babel/template/node_modules/@babel/types/lib/utils/inherit.js"
+    }
+  ],
+  "node_modules/@babel/template/node_modules/@babel/types/lib/comments/inheritLeadingComments.js": [
+    "dSBd50YQRz6cQDMqbLcacTW0XSvrDccSAWYTI9KGsHo=",
+    {
+      "../utils/inherit": "node_modules/@babel/template/node_modules/@babel/types/lib/utils/inherit.js"
+    }
+  ],
+  "node_modules/@babel/template/node_modules/@babel/types/lib/comments/inheritTrailingComments.js": [
+    "vUH3HrhkXqUIWN42PTpx9/vzJVub/zAq6HWf/7LRovs=",
+    {
+      "../utils/inherit": "node_modules/@babel/template/node_modules/@babel/types/lib/utils/inherit.js"
+    }
+  ],
+  "node_modules/@babel/template/node_modules/@babel/types/lib/comments/inheritsComments.js": [
+    "Xyg5Dn5f1attr+37AGZVIklShIuf/An/KJfcsEIlj9Y=",
+    {
+      "./inheritInnerComments": "node_modules/@babel/template/node_modules/@babel/types/lib/comments/inheritInnerComments.js",
+      "./inheritLeadingComments": "node_modules/@babel/template/node_modules/@babel/types/lib/comments/inheritLeadingComments.js",
+      "./inheritTrailingComments": "node_modules/@babel/template/node_modules/@babel/types/lib/comments/inheritTrailingComments.js"
+    }
+  ],
+  "node_modules/@babel/template/node_modules/@babel/types/lib/comments/removeComments.js": [
+    "IPergGqpjvMc8ziFTCXPNcFFHyeKIHYcVZ+Ovj8s2Hg=",
+    {
+      "../constants": "node_modules/@babel/template/node_modules/@babel/types/lib/constants/index.js"
+    }
+  ],
+  "node_modules/@babel/template/node_modules/@babel/types/lib/constants/generated/index.js": [
+    "XM2x9B42aoxgxBqzlJvVmP45ZBFuNCcesjeeiEgOfNU=",
+    {
+      "../../definitions": "node_modules/@babel/template/node_modules/@babel/types/lib/definitions/index.js"
+    }
+  ],
+  "node_modules/@babel/template/node_modules/@babel/types/lib/constants/index.js": [
+    "9cztyx6J568P994lqUPI6yCAD+D7kt75qdBajn2+5hw=",
+    {}
+  ],
+  "node_modules/@babel/template/node_modules/@babel/types/lib/converters/ensureBlock.js": [
+    "B2UP3sICM3EW0d2yaGZTrhJyssvIqYh9iVNyOV85wFg=",
+    {
+      "./toBlock": "node_modules/@babel/template/node_modules/@babel/types/lib/converters/toBlock.js"
+    }
+  ],
+  "node_modules/@babel/template/node_modules/@babel/types/lib/converters/gatherSequenceExpressions.js": [
+    "OoZe9skvIZocS/GGEWep7a3eLq+l2Cvm7Kgq4C2En3M=",
+    {
+      "../builders/generated": "node_modules/@babel/template/node_modules/@babel/types/lib/builders/generated/index.js",
+      "../clone/cloneNode": "node_modules/@babel/template/node_modules/@babel/types/lib/clone/cloneNode.js",
+      "../retrievers/getBindingIdentifiers": "node_modules/@babel/template/node_modules/@babel/types/lib/retrievers/getBindingIdentifiers.js",
+      "../validators/generated": "node_modules/@babel/template/node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/template/node_modules/@babel/types/lib/converters/toBindingIdentifierName.js": [
+    "bzUfn6/LdzG8xS+PG22PK85sW5/6iKu7uiU7CjD1igc=",
+    {
+      "./toIdentifier": "node_modules/@babel/template/node_modules/@babel/types/lib/converters/toIdentifier.js"
+    }
+  ],
+  "node_modules/@babel/template/node_modules/@babel/types/lib/converters/toBlock.js": [
+    "07eFsSZ5+oMolNdbhr0ys254AmUX1szgBinWd6cPkTg=",
+    {
+      "../builders/generated": "node_modules/@babel/template/node_modules/@babel/types/lib/builders/generated/index.js",
+      "../validators/generated": "node_modules/@babel/template/node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/template/node_modules/@babel/types/lib/converters/toComputedKey.js": [
+    "UzpqkgFycRTTttVkVcx+W4iaGvtgfEAg7zDUvah1JV4=",
+    {
+      "../builders/generated": "node_modules/@babel/template/node_modules/@babel/types/lib/builders/generated/index.js",
+      "../validators/generated": "node_modules/@babel/template/node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/template/node_modules/@babel/types/lib/converters/toExpression.js": [
+    "kkG1dMCrkKbqJvnyomrjJfZTP7QSvxiDX7GWl2F+ce8=",
+    {
+      "../validators/generated": "node_modules/@babel/template/node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/template/node_modules/@babel/types/lib/converters/toIdentifier.js": [
+    "+0QpBCGQUKsGI4MLGmFU1Inzp3QSk7WeZoErsXDIsKs=",
+    {
+      "../validators/isValidIdentifier": "node_modules/@babel/template/node_modules/@babel/types/lib/validators/isValidIdentifier.js"
+    }
+  ],
+  "node_modules/@babel/template/node_modules/@babel/types/lib/converters/toKeyAlias.js": [
+    "zIb1wO9Hzuf7GjKi+HTkmNTTYvmzDPPShFca3yTdrsE=",
+    {
+      "../clone/cloneNode": "node_modules/@babel/template/node_modules/@babel/types/lib/clone/cloneNode.js",
+      "../modifications/removePropertiesDeep": "node_modules/@babel/template/node_modules/@babel/types/lib/modifications/removePropertiesDeep.js",
+      "../validators/generated": "node_modules/@babel/template/node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/template/node_modules/@babel/types/lib/converters/toSequenceExpression.js": [
+    "MK8i1eEGzuV3cz8UVH0WZWhoijMEmLmhxO8/dudZaME=",
+    {
+      "./gatherSequenceExpressions": "node_modules/@babel/template/node_modules/@babel/types/lib/converters/gatherSequenceExpressions.js"
+    }
+  ],
+  "node_modules/@babel/template/node_modules/@babel/types/lib/converters/toStatement.js": [
+    "ODjoLVGJar4uv2uM5mZtjwpk7ZHJKgaKzb4bKtKrstU=",
+    {
+      "../builders/generated": "node_modules/@babel/template/node_modules/@babel/types/lib/builders/generated/index.js",
+      "../validators/generated": "node_modules/@babel/template/node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/template/node_modules/@babel/types/lib/converters/valueToNode.js": [
+    "dTFaesm9X5zXeGnthmurauqREZqnZLzfJSEyoQZriP8=",
+    {
+      "../builders/generated": "node_modules/@babel/template/node_modules/@babel/types/lib/builders/generated/index.js",
+      "../validators/isValidIdentifier": "node_modules/@babel/template/node_modules/@babel/types/lib/validators/isValidIdentifier.js",
+      "lodash/isPlainObject": "node_modules/lodash/isPlainObject.js",
+      "lodash/isRegExp": "node_modules/lodash/isRegExp.js"
+    }
+  ],
+  "node_modules/@babel/template/node_modules/@babel/types/lib/definitions/core.js": [
+    "i1Ff+iAlsEPJRjhnDTiDpZwwe9/2ehVR1XTzIbgCJ5U=",
+    {
+      "../constants": "node_modules/@babel/template/node_modules/@babel/types/lib/constants/index.js",
+      "../validators/is": "node_modules/@babel/template/node_modules/@babel/types/lib/validators/is.js",
+      "./utils": "node_modules/@babel/template/node_modules/@babel/types/lib/definitions/utils.js",
+      "esutils": "node_modules/esutils/lib/utils.js"
+    }
+  ],
+  "node_modules/@babel/template/node_modules/@babel/types/lib/definitions/es2015.js": [
+    "yqnK85vtGWHSu1vFiIjdLZSYJfP9RU/vN9GRCUs0Na8=",
+    {
+      "../validators/is": "node_modules/@babel/template/node_modules/@babel/types/lib/validators/is.js",
+      "./core": "node_modules/@babel/template/node_modules/@babel/types/lib/definitions/core.js",
+      "./utils": "node_modules/@babel/template/node_modules/@babel/types/lib/definitions/utils.js"
+    }
+  ],
+  "node_modules/@babel/template/node_modules/@babel/types/lib/definitions/experimental.js": [
+    "3EH/NFjBrMP2hxsi2xxOA9rRKGF9eFFhsglLhNbUKPU=",
+    {
+      "./es2015": "node_modules/@babel/template/node_modules/@babel/types/lib/definitions/es2015.js",
+      "./utils": "node_modules/@babel/template/node_modules/@babel/types/lib/definitions/utils.js"
+    }
+  ],
+  "node_modules/@babel/template/node_modules/@babel/types/lib/definitions/flow.js": [
+    "lcxONTSuk2FvVuhL9uHZP/cdIr3d3neLzpoLIpaeGf4=",
+    {
+      "./utils": "node_modules/@babel/template/node_modules/@babel/types/lib/definitions/utils.js"
+    }
+  ],
+  "node_modules/@babel/template/node_modules/@babel/types/lib/definitions/index.js": [
+    "Vucc3mwTWSUNbNyGHZCEGpidLX29DBTqrmL1iXgcQR8=",
+    {
+      "./core": "node_modules/@babel/template/node_modules/@babel/types/lib/definitions/core.js",
+      "./es2015": "node_modules/@babel/template/node_modules/@babel/types/lib/definitions/es2015.js",
+      "./experimental": "node_modules/@babel/template/node_modules/@babel/types/lib/definitions/experimental.js",
+      "./flow": "node_modules/@babel/template/node_modules/@babel/types/lib/definitions/flow.js",
+      "./jsx": "node_modules/@babel/template/node_modules/@babel/types/lib/definitions/jsx.js",
+      "./misc": "node_modules/@babel/template/node_modules/@babel/types/lib/definitions/misc.js",
+      "./placeholders": "node_modules/@babel/template/node_modules/@babel/types/lib/definitions/placeholders.js",
+      "./typescript": "node_modules/@babel/template/node_modules/@babel/types/lib/definitions/typescript.js",
+      "./utils": "node_modules/@babel/template/node_modules/@babel/types/lib/definitions/utils.js",
+      "to-fast-properties": "node_modules/to-fast-properties/index.js"
+    }
+  ],
+  "node_modules/@babel/template/node_modules/@babel/types/lib/definitions/jsx.js": [
+    "Wn8RjShRqT4UR/OJHPn7NNiDZhv6mVushBtA2ND5/r4=",
+    {
+      "./utils": "node_modules/@babel/template/node_modules/@babel/types/lib/definitions/utils.js"
+    }
+  ],
+  "node_modules/@babel/template/node_modules/@babel/types/lib/definitions/misc.js": [
+    "R8Pg6S3t/I0baPhJnZal//QZ1kMxHCQItI5dHsFsdD4=",
+    {
+      "./placeholders": "node_modules/@babel/template/node_modules/@babel/types/lib/definitions/placeholders.js",
+      "./utils": "node_modules/@babel/template/node_modules/@babel/types/lib/definitions/utils.js"
+    }
+  ],
+  "node_modules/@babel/template/node_modules/@babel/types/lib/definitions/placeholders.js": [
+    "ve6xW3E0vuT2m9/FIRDRVarPPSRGzmQC7E9ObNHKE1o=",
+    {
+      "./utils": "node_modules/@babel/template/node_modules/@babel/types/lib/definitions/utils.js"
+    }
+  ],
+  "node_modules/@babel/template/node_modules/@babel/types/lib/definitions/typescript.js": [
+    "Bja9aehyStk1z4x8vhmnK2fsJMGmWKFrW+6y8RJRixo=",
+    {
+      "./core": "node_modules/@babel/template/node_modules/@babel/types/lib/definitions/core.js",
+      "./es2015": "node_modules/@babel/template/node_modules/@babel/types/lib/definitions/es2015.js",
+      "./utils": "node_modules/@babel/template/node_modules/@babel/types/lib/definitions/utils.js"
+    }
+  ],
+  "node_modules/@babel/template/node_modules/@babel/types/lib/definitions/utils.js": [
+    "Y7rKYdYrIV01L5WuRaQMPACZ0nJdlaktPG1qUSv4iUA=",
+    {
+      "../validators/is": "node_modules/@babel/template/node_modules/@babel/types/lib/validators/is.js",
+      "../validators/validate": "node_modules/@babel/template/node_modules/@babel/types/lib/validators/validate.js"
+    }
+  ],
+  "node_modules/@babel/template/node_modules/@babel/types/lib/index.js": [
+    "iisIewwRDHXnW8mih8nhaUJ16qXRfse0fI/34iAlGbg=",
+    {
+      "./asserts/assertNode": "node_modules/@babel/template/node_modules/@babel/types/lib/asserts/assertNode.js",
+      "./asserts/generated": "node_modules/@babel/template/node_modules/@babel/types/lib/asserts/generated/index.js",
+      "./builders/flow/createTypeAnnotationBasedOnTypeof": "node_modules/@babel/template/node_modules/@babel/types/lib/builders/flow/createTypeAnnotationBasedOnTypeof.js",
+      "./builders/flow/createUnionTypeAnnotation": "node_modules/@babel/template/node_modules/@babel/types/lib/builders/flow/createUnionTypeAnnotation.js",
+      "./builders/generated": "node_modules/@babel/template/node_modules/@babel/types/lib/builders/generated/index.js",
+      "./builders/react/buildChildren": "node_modules/@babel/template/node_modules/@babel/types/lib/builders/react/buildChildren.js",
+      "./clone/clone": "node_modules/@babel/template/node_modules/@babel/types/lib/clone/clone.js",
+      "./clone/cloneDeep": "node_modules/@babel/template/node_modules/@babel/types/lib/clone/cloneDeep.js",
+      "./clone/cloneNode": "node_modules/@babel/template/node_modules/@babel/types/lib/clone/cloneNode.js",
+      "./clone/cloneWithoutLoc": "node_modules/@babel/template/node_modules/@babel/types/lib/clone/cloneWithoutLoc.js",
+      "./comments/addComment": "node_modules/@babel/template/node_modules/@babel/types/lib/comments/addComment.js",
+      "./comments/addComments": "node_modules/@babel/template/node_modules/@babel/types/lib/comments/addComments.js",
+      "./comments/inheritInnerComments": "node_modules/@babel/template/node_modules/@babel/types/lib/comments/inheritInnerComments.js",
+      "./comments/inheritLeadingComments": "node_modules/@babel/template/node_modules/@babel/types/lib/comments/inheritLeadingComments.js",
+      "./comments/inheritTrailingComments": "node_modules/@babel/template/node_modules/@babel/types/lib/comments/inheritTrailingComments.js",
+      "./comments/inheritsComments": "node_modules/@babel/template/node_modules/@babel/types/lib/comments/inheritsComments.js",
+      "./comments/removeComments": "node_modules/@babel/template/node_modules/@babel/types/lib/comments/removeComments.js",
+      "./constants": "node_modules/@babel/template/node_modules/@babel/types/lib/constants/index.js",
+      "./constants/generated": "node_modules/@babel/template/node_modules/@babel/types/lib/constants/generated/index.js",
+      "./converters/ensureBlock": "node_modules/@babel/template/node_modules/@babel/types/lib/converters/ensureBlock.js",
+      "./converters/toBindingIdentifierName": "node_modules/@babel/template/node_modules/@babel/types/lib/converters/toBindingIdentifierName.js",
+      "./converters/toBlock": "node_modules/@babel/template/node_modules/@babel/types/lib/converters/toBlock.js",
+      "./converters/toComputedKey": "node_modules/@babel/template/node_modules/@babel/types/lib/converters/toComputedKey.js",
+      "./converters/toExpression": "node_modules/@babel/template/node_modules/@babel/types/lib/converters/toExpression.js",
+      "./converters/toIdentifier": "node_modules/@babel/template/node_modules/@babel/types/lib/converters/toIdentifier.js",
+      "./converters/toKeyAlias": "node_modules/@babel/template/node_modules/@babel/types/lib/converters/toKeyAlias.js",
+      "./converters/toSequenceExpression": "node_modules/@babel/template/node_modules/@babel/types/lib/converters/toSequenceExpression.js",
+      "./converters/toStatement": "node_modules/@babel/template/node_modules/@babel/types/lib/converters/toStatement.js",
+      "./converters/valueToNode": "node_modules/@babel/template/node_modules/@babel/types/lib/converters/valueToNode.js",
+      "./definitions": "node_modules/@babel/template/node_modules/@babel/types/lib/definitions/index.js",
+      "./modifications/appendToMemberExpression": "node_modules/@babel/template/node_modules/@babel/types/lib/modifications/appendToMemberExpression.js",
+      "./modifications/flow/removeTypeDuplicates": "node_modules/@babel/template/node_modules/@babel/types/lib/modifications/flow/removeTypeDuplicates.js",
+      "./modifications/inherits": "node_modules/@babel/template/node_modules/@babel/types/lib/modifications/inherits.js",
+      "./modifications/prependToMemberExpression": "node_modules/@babel/template/node_modules/@babel/types/lib/modifications/prependToMemberExpression.js",
+      "./modifications/removeProperties": "node_modules/@babel/template/node_modules/@babel/types/lib/modifications/removeProperties.js",
+      "./modifications/removePropertiesDeep": "node_modules/@babel/template/node_modules/@babel/types/lib/modifications/removePropertiesDeep.js",
+      "./retrievers/getBindingIdentifiers": "node_modules/@babel/template/node_modules/@babel/types/lib/retrievers/getBindingIdentifiers.js",
+      "./retrievers/getOuterBindingIdentifiers": "node_modules/@babel/template/node_modules/@babel/types/lib/retrievers/getOuterBindingIdentifiers.js",
+      "./traverse/traverse": "node_modules/@babel/template/node_modules/@babel/types/lib/traverse/traverse.js",
+      "./traverse/traverseFast": "node_modules/@babel/template/node_modules/@babel/types/lib/traverse/traverseFast.js",
+      "./utils/shallowEqual": "node_modules/@babel/template/node_modules/@babel/types/lib/utils/shallowEqual.js",
+      "./validators/buildMatchMemberExpression": "node_modules/@babel/template/node_modules/@babel/types/lib/validators/buildMatchMemberExpression.js",
+      "./validators/generated": "node_modules/@babel/template/node_modules/@babel/types/lib/validators/generated/index.js",
+      "./validators/is": "node_modules/@babel/template/node_modules/@babel/types/lib/validators/is.js",
+      "./validators/isBinding": "node_modules/@babel/template/node_modules/@babel/types/lib/validators/isBinding.js",
+      "./validators/isBlockScoped": "node_modules/@babel/template/node_modules/@babel/types/lib/validators/isBlockScoped.js",
+      "./validators/isImmutable": "node_modules/@babel/template/node_modules/@babel/types/lib/validators/isImmutable.js",
+      "./validators/isLet": "node_modules/@babel/template/node_modules/@babel/types/lib/validators/isLet.js",
+      "./validators/isNode": "node_modules/@babel/template/node_modules/@babel/types/lib/validators/isNode.js",
+      "./validators/isNodesEquivalent": "node_modules/@babel/template/node_modules/@babel/types/lib/validators/isNodesEquivalent.js",
+      "./validators/isPlaceholderType": "node_modules/@babel/template/node_modules/@babel/types/lib/validators/isPlaceholderType.js",
+      "./validators/isReferenced": "node_modules/@babel/template/node_modules/@babel/types/lib/validators/isReferenced.js",
+      "./validators/isScope": "node_modules/@babel/template/node_modules/@babel/types/lib/validators/isScope.js",
+      "./validators/isSpecifierDefault": "node_modules/@babel/template/node_modules/@babel/types/lib/validators/isSpecifierDefault.js",
+      "./validators/isType": "node_modules/@babel/template/node_modules/@babel/types/lib/validators/isType.js",
+      "./validators/isValidES3Identifier": "node_modules/@babel/template/node_modules/@babel/types/lib/validators/isValidES3Identifier.js",
+      "./validators/isValidIdentifier": "node_modules/@babel/template/node_modules/@babel/types/lib/validators/isValidIdentifier.js",
+      "./validators/isVar": "node_modules/@babel/template/node_modules/@babel/types/lib/validators/isVar.js",
+      "./validators/matchesPattern": "node_modules/@babel/template/node_modules/@babel/types/lib/validators/matchesPattern.js",
+      "./validators/react/isCompatTag": "node_modules/@babel/template/node_modules/@babel/types/lib/validators/react/isCompatTag.js",
+      "./validators/react/isReactComponent": "node_modules/@babel/template/node_modules/@babel/types/lib/validators/react/isReactComponent.js",
+      "./validators/validate": "node_modules/@babel/template/node_modules/@babel/types/lib/validators/validate.js"
+    }
+  ],
+  "node_modules/@babel/template/node_modules/@babel/types/lib/modifications/appendToMemberExpression.js": [
+    "9YJghcL+XfnsKEnsUKJZrkWHRHyMzhu5HbUt1r0ripE=",
+    {
+      "../builders/generated": "node_modules/@babel/template/node_modules/@babel/types/lib/builders/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/template/node_modules/@babel/types/lib/modifications/flow/removeTypeDuplicates.js": [
+    "v2Dy/wi2PzgeJop9tmNIXtTJCyjoSN8YIKqDafHp3Pw=",
+    {
+      "../../validators/generated": "node_modules/@babel/template/node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/template/node_modules/@babel/types/lib/modifications/inherits.js": [
+    "Gmvs3LHuzPbkUi9SOlCxbdpK60rYW1LAAiMNJwoVNFw=",
+    {
+      "../comments/inheritsComments": "node_modules/@babel/template/node_modules/@babel/types/lib/comments/inheritsComments.js",
+      "../constants": "node_modules/@babel/template/node_modules/@babel/types/lib/constants/index.js"
+    }
+  ],
+  "node_modules/@babel/template/node_modules/@babel/types/lib/modifications/prependToMemberExpression.js": [
+    "cC3hL9uBECPWOihRmDu5tkxDccgP5AfS+h8V7FzswQY=",
+    {
+      "../builders/generated": "node_modules/@babel/template/node_modules/@babel/types/lib/builders/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/template/node_modules/@babel/types/lib/modifications/removeProperties.js": [
+    "DMAINP9hA7U0oea+40mBAZ8DtmEPPB/NiJzu4N1YK8g=",
+    {
+      "../constants": "node_modules/@babel/template/node_modules/@babel/types/lib/constants/index.js"
+    }
+  ],
+  "node_modules/@babel/template/node_modules/@babel/types/lib/modifications/removePropertiesDeep.js": [
+    "z2m7qkonb5Dxwc1zpfLDE7VGMskA2bIUYwptU0sECek=",
+    {
+      "../traverse/traverseFast": "node_modules/@babel/template/node_modules/@babel/types/lib/traverse/traverseFast.js",
+      "./removeProperties": "node_modules/@babel/template/node_modules/@babel/types/lib/modifications/removeProperties.js"
+    }
+  ],
+  "node_modules/@babel/template/node_modules/@babel/types/lib/retrievers/getBindingIdentifiers.js": [
+    "3m0VnwzhDDik9rIlRE5imy1eodL9S2OgDZgnjy3qbsI=",
+    {
+      "../validators/generated": "node_modules/@babel/template/node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/template/node_modules/@babel/types/lib/retrievers/getOuterBindingIdentifiers.js": [
+    "drQnKeviuPPyQ9ogwSYvc3R5DNlBU4t/53R1VMLPUC4=",
+    {
+      "./getBindingIdentifiers": "node_modules/@babel/template/node_modules/@babel/types/lib/retrievers/getBindingIdentifiers.js"
+    }
+  ],
+  "node_modules/@babel/template/node_modules/@babel/types/lib/traverse/traverse.js": [
+    "rGuYoGfKVtra6kYUeRhWQFcb+IROwnUw3UbJOhVNgWU=",
+    {
+      "../definitions": "node_modules/@babel/template/node_modules/@babel/types/lib/definitions/index.js"
+    }
+  ],
+  "node_modules/@babel/template/node_modules/@babel/types/lib/traverse/traverseFast.js": [
+    "eidxShD/Jf+J+ThG+92KQ2+MbYh2VrniD+kdhjecig8=",
+    {
+      "../definitions": "node_modules/@babel/template/node_modules/@babel/types/lib/definitions/index.js"
+    }
+  ],
+  "node_modules/@babel/template/node_modules/@babel/types/lib/utils/inherit.js": [
+    "joje/k+q+uTdxcyudLgFgxL437ZZYeusjOJTPrksrRM=",
+    {
+      "lodash/uniq": "node_modules/lodash/uniq.js"
+    }
+  ],
+  "node_modules/@babel/template/node_modules/@babel/types/lib/utils/react/cleanJSXElementLiteralChild.js": [
+    "kyZBdxXA2AMkslATAhCWAdOGNzrjLr3iVdXFKcGLVyg=",
+    {
+      "../../builders/generated": "node_modules/@babel/template/node_modules/@babel/types/lib/builders/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/template/node_modules/@babel/types/lib/utils/shallowEqual.js": [
+    "uZJZfTqourN/95kmfKTQ01Tsv0uAqRZVXNeSx+5cxFU=",
+    {}
+  ],
+  "node_modules/@babel/template/node_modules/@babel/types/lib/validators/buildMatchMemberExpression.js": [
+    "oClvAeXRLqWQoGseUlDrUuBXj9gafzCvb8ZQ9BKezyQ=",
+    {
+      "./matchesPattern": "node_modules/@babel/template/node_modules/@babel/types/lib/validators/matchesPattern.js"
+    }
+  ],
+  "node_modules/@babel/template/node_modules/@babel/types/lib/validators/generated/index.js": [
+    "nGdnaU4lXlb4Pf309c4BdsWsGYw3uMLm4aFC/ETAoyg=",
+    {
+      "../../utils/shallowEqual": "node_modules/@babel/template/node_modules/@babel/types/lib/utils/shallowEqual.js"
+    }
+  ],
+  "node_modules/@babel/template/node_modules/@babel/types/lib/validators/is.js": [
+    "4FblfXtU8oqAFF1ZtK0BEFoIIObMX0LqXdVuv8x3Ezk=",
+    {
+      "../definitions": "node_modules/@babel/template/node_modules/@babel/types/lib/definitions/index.js",
+      "../utils/shallowEqual": "node_modules/@babel/template/node_modules/@babel/types/lib/utils/shallowEqual.js",
+      "./isPlaceholderType": "node_modules/@babel/template/node_modules/@babel/types/lib/validators/isPlaceholderType.js",
+      "./isType": "node_modules/@babel/template/node_modules/@babel/types/lib/validators/isType.js"
+    }
+  ],
+  "node_modules/@babel/template/node_modules/@babel/types/lib/validators/isBinding.js": [
+    "a8ovNrjZsl+SAo20roAvl0g4uUgyBsoslOOo/idhoj0=",
+    {
+      "../retrievers/getBindingIdentifiers": "node_modules/@babel/template/node_modules/@babel/types/lib/retrievers/getBindingIdentifiers.js"
+    }
+  ],
+  "node_modules/@babel/template/node_modules/@babel/types/lib/validators/isBlockScoped.js": [
+    "R7slk8EKZmpa0fKX15Hw59YqLEYd8MnaSGDOqsa7I7E=",
+    {
+      "./generated": "node_modules/@babel/template/node_modules/@babel/types/lib/validators/generated/index.js",
+      "./isLet": "node_modules/@babel/template/node_modules/@babel/types/lib/validators/isLet.js"
+    }
+  ],
+  "node_modules/@babel/template/node_modules/@babel/types/lib/validators/isImmutable.js": [
+    "jJtj4kabzipmtQ2adStZ0Jirvz+B7f//874XTja+wxM=",
+    {
+      "./generated": "node_modules/@babel/template/node_modules/@babel/types/lib/validators/generated/index.js",
+      "./isType": "node_modules/@babel/template/node_modules/@babel/types/lib/validators/isType.js"
+    }
+  ],
+  "node_modules/@babel/template/node_modules/@babel/types/lib/validators/isLet.js": [
+    "OO98PKLCLkvAyfkh0TdnB13bbSpyllx3zWc3Z/BHop8=",
+    {
+      "../constants": "node_modules/@babel/template/node_modules/@babel/types/lib/constants/index.js",
+      "./generated": "node_modules/@babel/template/node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/template/node_modules/@babel/types/lib/validators/isNode.js": [
+    "0QTRdIIJRTCmrM5dPPICvHsbUUABKdZLaQOq18uDZbI=",
+    {
+      "../definitions": "node_modules/@babel/template/node_modules/@babel/types/lib/definitions/index.js"
+    }
+  ],
+  "node_modules/@babel/template/node_modules/@babel/types/lib/validators/isNodesEquivalent.js": [
+    "n6fKXOWx1Z3pN9rOkGTIC2HwOGBRnJQVsrXrecfdqXk=",
+    {
+      "../definitions": "node_modules/@babel/template/node_modules/@babel/types/lib/definitions/index.js"
+    }
+  ],
+  "node_modules/@babel/template/node_modules/@babel/types/lib/validators/isPlaceholderType.js": [
+    "yghj8z9wiTZ0ztktRaqC4iGPcEmx1CP2rDfn2wEP1Qk=",
+    {
+      "../definitions": "node_modules/@babel/template/node_modules/@babel/types/lib/definitions/index.js"
+    }
+  ],
+  "node_modules/@babel/template/node_modules/@babel/types/lib/validators/isReferenced.js": [
+    "iLJgM1TYZVfQWJijfaI5zElxZrxLmiR0G5NqyY7jCII=",
+    {}
+  ],
+  "node_modules/@babel/template/node_modules/@babel/types/lib/validators/isScope.js": [
+    "o89/Kjz4LL28uAO9rY4eiVUfJMxwb/9OKDctsdRWUxk=",
+    {
+      "./generated": "node_modules/@babel/template/node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/template/node_modules/@babel/types/lib/validators/isSpecifierDefault.js": [
+    "8yuEfHdHtXTJkF1PQYY8U423zVh4Ee7xS8RY7u0UgM8=",
+    {
+      "./generated": "node_modules/@babel/template/node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/template/node_modules/@babel/types/lib/validators/isType.js": [
+    "FIMgkJHkBlbepdNH1OFyNoQVvUOZWbpj1IiQDvdyDBk=",
+    {
+      "../definitions": "node_modules/@babel/template/node_modules/@babel/types/lib/definitions/index.js"
+    }
+  ],
+  "node_modules/@babel/template/node_modules/@babel/types/lib/validators/isValidES3Identifier.js": [
+    "KvewbGVXPKvZxtjVULE+xNTAgaE1USkjir7DdBs5Y74=",
+    {
+      "./isValidIdentifier": "node_modules/@babel/template/node_modules/@babel/types/lib/validators/isValidIdentifier.js"
+    }
+  ],
+  "node_modules/@babel/template/node_modules/@babel/types/lib/validators/isValidIdentifier.js": [
+    "wldxEUQ7yA70n4bdNrqvbMfXRSXlXgkVIpwdh9vZeJs=",
+    {
+      "esutils": "node_modules/esutils/lib/utils.js"
+    }
+  ],
+  "node_modules/@babel/template/node_modules/@babel/types/lib/validators/isVar.js": [
+    "qeOihIPgGUuZL5tk48OGgYN3gAvgFcpWd633RCL5a+M=",
+    {
+      "../constants": "node_modules/@babel/template/node_modules/@babel/types/lib/constants/index.js",
+      "./generated": "node_modules/@babel/template/node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/template/node_modules/@babel/types/lib/validators/matchesPattern.js": [
+    "DYD/Rmf5GvP3XBa5/E/2D74dxUiZD/vYrGP0uu0bU04=",
+    {
+      "./generated": "node_modules/@babel/template/node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/template/node_modules/@babel/types/lib/validators/react/isCompatTag.js": [
+    "afmc5kFRMVCo4ynIM8E+caOGJO4uAypKSmVINxfajBE=",
+    {}
+  ],
+  "node_modules/@babel/template/node_modules/@babel/types/lib/validators/react/isReactComponent.js": [
+    "sm/ghRu9uws4VgkVNq+sxSIZDA3Hp9qtHF/wzaQ20n8=",
+    {
+      "../buildMatchMemberExpression": "node_modules/@babel/template/node_modules/@babel/types/lib/validators/buildMatchMemberExpression.js"
+    }
+  ],
+  "node_modules/@babel/template/node_modules/@babel/types/lib/validators/validate.js": [
+    "3rAW6rGOd/eCmzk4oFN8QI5EPhY2vK3/xdC9Q6SLA10=",
+    {
+      "../definitions": "node_modules/@babel/template/node_modules/@babel/types/lib/definitions/index.js"
+    }
+  ],
   "node_modules/@babel/traverse/lib/cache.js": [
     "SWmSihNNP/zZLsPxTtdiPKCnKjnAnsReRCkN3nFuy4A=",
     {}
@@ -67545,7 +81698,7 @@ module.exports = cacheHas;
     "u6uXNb1l4LiwJABgt+S9JXqJLiiKgr2zChiMesLpj6Y=",
     {
       "./path": "node_modules/@babel/traverse/lib/path/index.js",
-      "@babel/types": "node_modules/@babel/types/lib/index.js"
+      "@babel/types": "node_modules/@babel/traverse/node_modules/@babel/types/lib/index.js"
     }
   ],
   "node_modules/@babel/traverse/lib/hub.js": [
@@ -67561,7 +81714,7 @@ module.exports = cacheHas;
       "./path": "node_modules/@babel/traverse/lib/path/index.js",
       "./scope": "node_modules/@babel/traverse/lib/scope/index.js",
       "./visitors": "node_modules/@babel/traverse/lib/visitors.js",
-      "@babel/types": "node_modules/@babel/types/lib/index.js",
+      "@babel/types": "node_modules/@babel/traverse/node_modules/@babel/types/lib/index.js",
       "lodash/includes": "node_modules/lodash/includes.js"
     }
   ],
@@ -67569,13 +81722,13 @@ module.exports = cacheHas;
     "zAnzxMBGUPXNCingd5bfe5RY3u0aVEwekLsBzdiDIQs=",
     {
       "./index": "node_modules/@babel/traverse/lib/path/index.js",
-      "@babel/types": "node_modules/@babel/types/lib/index.js"
+      "@babel/types": "node_modules/@babel/traverse/node_modules/@babel/types/lib/index.js"
     }
   ],
   "node_modules/@babel/traverse/lib/path/comments.js": [
     "ueHAp0XUZJVN3LdlgKtHlkKAaUkbz1hQL34LUXDka0Q=",
     {
-      "@babel/types": "node_modules/@babel/types/lib/index.js"
+      "@babel/types": "node_modules/@babel/traverse/node_modules/@babel/types/lib/index.js"
     }
   ],
   "node_modules/@babel/traverse/lib/path/context.js": [
@@ -67589,7 +81742,7 @@ module.exports = cacheHas;
     "I1O6kfl69OLdfqOo4FlIobwDCfGero/Db1HYCpTkd4c=",
     {
       "@babel/helper-function-name": "node_modules/@babel/helper-function-name/lib/index.js",
-      "@babel/types": "node_modules/@babel/types/lib/index.js"
+      "@babel/types": "node_modules/@babel/traverse/node_modules/@babel/types/lib/index.js"
     }
   ],
   "node_modules/@babel/traverse/lib/path/evaluation.js": [
@@ -67600,7 +81753,7 @@ module.exports = cacheHas;
     "QpNEO9ixcGa7vxw7tVXm7QfFcOLOeIHFZLyfiVGIbuk=",
     {
       "./index": "node_modules/@babel/traverse/lib/path/index.js",
-      "@babel/types": "node_modules/@babel/types/lib/index.js"
+      "@babel/types": "node_modules/@babel/traverse/node_modules/@babel/types/lib/index.js"
     }
   ],
   "node_modules/@babel/traverse/lib/path/index.js": [
@@ -67622,7 +81775,7 @@ module.exports = cacheHas;
       "./removal": "node_modules/@babel/traverse/lib/path/removal.js",
       "./replacement": "node_modules/@babel/traverse/lib/path/replacement.js",
       "@babel/generator": "node_modules/@babel/generator/lib/index.js",
-      "@babel/types": "node_modules/@babel/types/lib/index.js",
+      "@babel/types": "node_modules/@babel/traverse/node_modules/@babel/types/lib/index.js",
       "debug": "node_modules/debug/src/index.js"
     }
   ],
@@ -67630,33 +81783,33 @@ module.exports = cacheHas;
     "DvscKpThR+CyKDevCK2oZS5X+Z7sIMR2pHQFp7fbTyg=",
     {
       "./inferers": "node_modules/@babel/traverse/lib/path/inference/inferers.js",
-      "@babel/types": "node_modules/@babel/types/lib/index.js"
+      "@babel/types": "node_modules/@babel/traverse/node_modules/@babel/types/lib/index.js"
     }
   ],
   "node_modules/@babel/traverse/lib/path/inference/inferer-reference.js": [
     "QErQYcQLLuwSG+N/hi8c6rp4HFH0FEE8Tb9HjRzRzZw=",
     {
-      "@babel/types": "node_modules/@babel/types/lib/index.js"
+      "@babel/types": "node_modules/@babel/traverse/node_modules/@babel/types/lib/index.js"
     }
   ],
   "node_modules/@babel/traverse/lib/path/inference/inferers.js": [
     "/7GcLvjJVPqSud20v0Ze/RseuFCkExA+fMLh5axmbIQ=",
     {
       "./inferer-reference": "node_modules/@babel/traverse/lib/path/inference/inferer-reference.js",
-      "@babel/types": "node_modules/@babel/types/lib/index.js"
+      "@babel/types": "node_modules/@babel/traverse/node_modules/@babel/types/lib/index.js"
     }
   ],
   "node_modules/@babel/traverse/lib/path/introspection.js": [
     "UAvxQDHsbb8NG68A93LM3vdTBk44apzFJTmPgl8QJoU=",
     {
-      "@babel/types": "node_modules/@babel/types/lib/index.js",
+      "@babel/types": "node_modules/@babel/traverse/node_modules/@babel/types/lib/index.js",
       "lodash/includes": "node_modules/lodash/includes.js"
     }
   ],
   "node_modules/@babel/traverse/lib/path/lib/hoister.js": [
     "8NzXnPiWl1u6V9DAaec6h2w1CL39hUcoYPprdAeTu0Y=",
     {
-      "@babel/types": "node_modules/@babel/types/lib/index.js"
+      "@babel/types": "node_modules/@babel/traverse/node_modules/@babel/types/lib/index.js"
     }
   ],
   "node_modules/@babel/traverse/lib/path/lib/removal-hooks.js": [
@@ -67666,7 +81819,7 @@ module.exports = cacheHas;
   "node_modules/@babel/traverse/lib/path/lib/virtual-types.js": [
     "H9TDdj7tRS5XiJurojNXdN7oQt4J+UA+2exrEneJ5rM=",
     {
-      "@babel/types": "node_modules/@babel/types/lib/index.js"
+      "@babel/types": "node_modules/@babel/traverse/node_modules/@babel/types/lib/index.js"
     }
   ],
   "node_modules/@babel/traverse/lib/path/modification.js": [
@@ -67675,7 +81828,7 @@ module.exports = cacheHas;
       "../cache": "node_modules/@babel/traverse/lib/cache.js",
       "./index": "node_modules/@babel/traverse/lib/path/index.js",
       "./lib/hoister": "node_modules/@babel/traverse/lib/path/lib/hoister.js",
-      "@babel/types": "node_modules/@babel/types/lib/index.js"
+      "@babel/types": "node_modules/@babel/traverse/node_modules/@babel/types/lib/index.js"
     }
   ],
   "node_modules/@babel/traverse/lib/path/removal.js": [
@@ -67692,7 +81845,7 @@ module.exports = cacheHas;
       "./index": "node_modules/@babel/traverse/lib/path/index.js",
       "@babel/code-frame": "node_modules/@babel/code-frame/lib/index.js",
       "@babel/parser": "node_modules/@babel/parser/lib/index.js",
-      "@babel/types": "node_modules/@babel/types/lib/index.js"
+      "@babel/types": "node_modules/@babel/traverse/node_modules/@babel/types/lib/index.js"
     }
   ],
   "node_modules/@babel/traverse/lib/scope/binding.js": [
@@ -67706,7 +81859,7 @@ module.exports = cacheHas;
       "../index": "node_modules/@babel/traverse/lib/index.js",
       "./binding": "node_modules/@babel/traverse/lib/scope/binding.js",
       "./lib/renamer": "node_modules/@babel/traverse/lib/scope/lib/renamer.js",
-      "@babel/types": "node_modules/@babel/types/lib/index.js",
+      "@babel/types": "node_modules/@babel/traverse/node_modules/@babel/types/lib/index.js",
       "globals": "node_modules/globals/index.js",
       "lodash/defaults": "node_modules/lodash/defaults.js",
       "lodash/includes": "node_modules/lodash/includes.js",
@@ -67718,15 +81871,567 @@ module.exports = cacheHas;
     {
       "../binding": "node_modules/@babel/traverse/lib/scope/binding.js",
       "@babel/helper-split-export-declaration": "node_modules/@babel/helper-split-export-declaration/lib/index.js",
-      "@babel/types": "node_modules/@babel/types/lib/index.js"
+      "@babel/types": "node_modules/@babel/traverse/node_modules/@babel/types/lib/index.js"
     }
   ],
   "node_modules/@babel/traverse/lib/visitors.js": [
     "7t8m5VurQMAANZn+yEmeyeMMkazRrg0xXA/eCyP7D7Y=",
     {
       "./path/lib/virtual-types": "node_modules/@babel/traverse/lib/path/lib/virtual-types.js",
-      "@babel/types": "node_modules/@babel/types/lib/index.js",
+      "@babel/types": "node_modules/@babel/traverse/node_modules/@babel/types/lib/index.js",
       "lodash/clone": "node_modules/lodash/clone.js"
+    }
+  ],
+  "node_modules/@babel/traverse/node_modules/@babel/types/lib/asserts/assertNode.js": [
+    "mfekKBICa0wkDoFcjQuz46wWi31d6lNVKf3WyaT2JhE=",
+    {
+      "../validators/isNode": "node_modules/@babel/traverse/node_modules/@babel/types/lib/validators/isNode.js"
+    }
+  ],
+  "node_modules/@babel/traverse/node_modules/@babel/types/lib/asserts/generated/index.js": [
+    "mT6/nEVmdwoaaoIJM4vcwvk7KRFXgO8QSrZ9aU8qMfg=",
+    {
+      "../../validators/is": "node_modules/@babel/traverse/node_modules/@babel/types/lib/validators/is.js"
+    }
+  ],
+  "node_modules/@babel/traverse/node_modules/@babel/types/lib/builders/builder.js": [
+    "mTXSk+hzEwbmQXYWEvqqqkbjGEcCNt2WpdArKm37zGk=",
+    {
+      "../definitions": "node_modules/@babel/traverse/node_modules/@babel/types/lib/definitions/index.js",
+      "../validators/validate": "node_modules/@babel/traverse/node_modules/@babel/types/lib/validators/validate.js",
+      "lodash/clone": "node_modules/lodash/clone.js"
+    }
+  ],
+  "node_modules/@babel/traverse/node_modules/@babel/types/lib/builders/flow/createTypeAnnotationBasedOnTypeof.js": [
+    "U7eCycl/8DiBcGlEgIxhGfjChvNw2NZUN6CbflgH4X8=",
+    {
+      "../generated": "node_modules/@babel/traverse/node_modules/@babel/types/lib/builders/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/traverse/node_modules/@babel/types/lib/builders/flow/createUnionTypeAnnotation.js": [
+    "tcblNNM9C/1eHiqi3NYG/hHcMloDz7Q7/aVoguTfSxg=",
+    {
+      "../../modifications/flow/removeTypeDuplicates": "node_modules/@babel/traverse/node_modules/@babel/types/lib/modifications/flow/removeTypeDuplicates.js",
+      "../generated": "node_modules/@babel/traverse/node_modules/@babel/types/lib/builders/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/traverse/node_modules/@babel/types/lib/builders/generated/index.js": [
+    "557DwixyQv6EPRCB6HJunqEqKIcoBXlcB7AhZ7eQHg0=",
+    {
+      "../builder": "node_modules/@babel/traverse/node_modules/@babel/types/lib/builders/builder.js"
+    }
+  ],
+  "node_modules/@babel/traverse/node_modules/@babel/types/lib/builders/react/buildChildren.js": [
+    "A0k2ncE8Oz5CX2pN+Kpo7PluvMj1gXw95+nzZKa+Ve8=",
+    {
+      "../../utils/react/cleanJSXElementLiteralChild": "node_modules/@babel/traverse/node_modules/@babel/types/lib/utils/react/cleanJSXElementLiteralChild.js",
+      "../../validators/generated": "node_modules/@babel/traverse/node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/traverse/node_modules/@babel/types/lib/clone/clone.js": [
+    "THkH4wFFQUVzIJ0nw7GWOEHFgsjNUMA11okf/2jeHFY=",
+    {
+      "./cloneNode": "node_modules/@babel/traverse/node_modules/@babel/types/lib/clone/cloneNode.js"
+    }
+  ],
+  "node_modules/@babel/traverse/node_modules/@babel/types/lib/clone/cloneDeep.js": [
+    "4hGR0sww7W+NuT6hEDLKf3gP9hzRwIfN/bi6Pr40OLs=",
+    {
+      "./cloneNode": "node_modules/@babel/traverse/node_modules/@babel/types/lib/clone/cloneNode.js"
+    }
+  ],
+  "node_modules/@babel/traverse/node_modules/@babel/types/lib/clone/cloneNode.js": [
+    "5xw78htLt4zrMZGWP3gschKGsBpiB3Iu5Vgvr9D2eBQ=",
+    {
+      "../definitions": "node_modules/@babel/traverse/node_modules/@babel/types/lib/definitions/index.js"
+    }
+  ],
+  "node_modules/@babel/traverse/node_modules/@babel/types/lib/clone/cloneWithoutLoc.js": [
+    "usonzIhNZhBCwU1/WAW9GcW71AzOyaEQXGBhN1WVu/0=",
+    {
+      "./clone": "node_modules/@babel/traverse/node_modules/@babel/types/lib/clone/clone.js"
+    }
+  ],
+  "node_modules/@babel/traverse/node_modules/@babel/types/lib/comments/addComment.js": [
+    "a+hWI3NJdEiIVqI1DnZam3XE/fwBzZuF6v15O+DFs+Y=",
+    {
+      "./addComments": "node_modules/@babel/traverse/node_modules/@babel/types/lib/comments/addComments.js"
+    }
+  ],
+  "node_modules/@babel/traverse/node_modules/@babel/types/lib/comments/addComments.js": [
+    "NHqJP6zaX5sMqS0Anx5abFuzcOumKxLJSYi5Ufu+qOo=",
+    {}
+  ],
+  "node_modules/@babel/traverse/node_modules/@babel/types/lib/comments/inheritInnerComments.js": [
+    "usyEeify3ZPuB/QJVWJqwfHFjDY4ngOJR2+BCGg71m8=",
+    {
+      "../utils/inherit": "node_modules/@babel/traverse/node_modules/@babel/types/lib/utils/inherit.js"
+    }
+  ],
+  "node_modules/@babel/traverse/node_modules/@babel/types/lib/comments/inheritLeadingComments.js": [
+    "dSBd50YQRz6cQDMqbLcacTW0XSvrDccSAWYTI9KGsHo=",
+    {
+      "../utils/inherit": "node_modules/@babel/traverse/node_modules/@babel/types/lib/utils/inherit.js"
+    }
+  ],
+  "node_modules/@babel/traverse/node_modules/@babel/types/lib/comments/inheritTrailingComments.js": [
+    "vUH3HrhkXqUIWN42PTpx9/vzJVub/zAq6HWf/7LRovs=",
+    {
+      "../utils/inherit": "node_modules/@babel/traverse/node_modules/@babel/types/lib/utils/inherit.js"
+    }
+  ],
+  "node_modules/@babel/traverse/node_modules/@babel/types/lib/comments/inheritsComments.js": [
+    "Xyg5Dn5f1attr+37AGZVIklShIuf/An/KJfcsEIlj9Y=",
+    {
+      "./inheritInnerComments": "node_modules/@babel/traverse/node_modules/@babel/types/lib/comments/inheritInnerComments.js",
+      "./inheritLeadingComments": "node_modules/@babel/traverse/node_modules/@babel/types/lib/comments/inheritLeadingComments.js",
+      "./inheritTrailingComments": "node_modules/@babel/traverse/node_modules/@babel/types/lib/comments/inheritTrailingComments.js"
+    }
+  ],
+  "node_modules/@babel/traverse/node_modules/@babel/types/lib/comments/removeComments.js": [
+    "IPergGqpjvMc8ziFTCXPNcFFHyeKIHYcVZ+Ovj8s2Hg=",
+    {
+      "../constants": "node_modules/@babel/traverse/node_modules/@babel/types/lib/constants/index.js"
+    }
+  ],
+  "node_modules/@babel/traverse/node_modules/@babel/types/lib/constants/generated/index.js": [
+    "XM2x9B42aoxgxBqzlJvVmP45ZBFuNCcesjeeiEgOfNU=",
+    {
+      "../../definitions": "node_modules/@babel/traverse/node_modules/@babel/types/lib/definitions/index.js"
+    }
+  ],
+  "node_modules/@babel/traverse/node_modules/@babel/types/lib/constants/index.js": [
+    "9cztyx6J568P994lqUPI6yCAD+D7kt75qdBajn2+5hw=",
+    {}
+  ],
+  "node_modules/@babel/traverse/node_modules/@babel/types/lib/converters/ensureBlock.js": [
+    "B2UP3sICM3EW0d2yaGZTrhJyssvIqYh9iVNyOV85wFg=",
+    {
+      "./toBlock": "node_modules/@babel/traverse/node_modules/@babel/types/lib/converters/toBlock.js"
+    }
+  ],
+  "node_modules/@babel/traverse/node_modules/@babel/types/lib/converters/gatherSequenceExpressions.js": [
+    "OoZe9skvIZocS/GGEWep7a3eLq+l2Cvm7Kgq4C2En3M=",
+    {
+      "../builders/generated": "node_modules/@babel/traverse/node_modules/@babel/types/lib/builders/generated/index.js",
+      "../clone/cloneNode": "node_modules/@babel/traverse/node_modules/@babel/types/lib/clone/cloneNode.js",
+      "../retrievers/getBindingIdentifiers": "node_modules/@babel/traverse/node_modules/@babel/types/lib/retrievers/getBindingIdentifiers.js",
+      "../validators/generated": "node_modules/@babel/traverse/node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/traverse/node_modules/@babel/types/lib/converters/toBindingIdentifierName.js": [
+    "bzUfn6/LdzG8xS+PG22PK85sW5/6iKu7uiU7CjD1igc=",
+    {
+      "./toIdentifier": "node_modules/@babel/traverse/node_modules/@babel/types/lib/converters/toIdentifier.js"
+    }
+  ],
+  "node_modules/@babel/traverse/node_modules/@babel/types/lib/converters/toBlock.js": [
+    "07eFsSZ5+oMolNdbhr0ys254AmUX1szgBinWd6cPkTg=",
+    {
+      "../builders/generated": "node_modules/@babel/traverse/node_modules/@babel/types/lib/builders/generated/index.js",
+      "../validators/generated": "node_modules/@babel/traverse/node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/traverse/node_modules/@babel/types/lib/converters/toComputedKey.js": [
+    "UzpqkgFycRTTttVkVcx+W4iaGvtgfEAg7zDUvah1JV4=",
+    {
+      "../builders/generated": "node_modules/@babel/traverse/node_modules/@babel/types/lib/builders/generated/index.js",
+      "../validators/generated": "node_modules/@babel/traverse/node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/traverse/node_modules/@babel/types/lib/converters/toExpression.js": [
+    "kkG1dMCrkKbqJvnyomrjJfZTP7QSvxiDX7GWl2F+ce8=",
+    {
+      "../validators/generated": "node_modules/@babel/traverse/node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/traverse/node_modules/@babel/types/lib/converters/toIdentifier.js": [
+    "+0QpBCGQUKsGI4MLGmFU1Inzp3QSk7WeZoErsXDIsKs=",
+    {
+      "../validators/isValidIdentifier": "node_modules/@babel/traverse/node_modules/@babel/types/lib/validators/isValidIdentifier.js"
+    }
+  ],
+  "node_modules/@babel/traverse/node_modules/@babel/types/lib/converters/toKeyAlias.js": [
+    "zIb1wO9Hzuf7GjKi+HTkmNTTYvmzDPPShFca3yTdrsE=",
+    {
+      "../clone/cloneNode": "node_modules/@babel/traverse/node_modules/@babel/types/lib/clone/cloneNode.js",
+      "../modifications/removePropertiesDeep": "node_modules/@babel/traverse/node_modules/@babel/types/lib/modifications/removePropertiesDeep.js",
+      "../validators/generated": "node_modules/@babel/traverse/node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/traverse/node_modules/@babel/types/lib/converters/toSequenceExpression.js": [
+    "MK8i1eEGzuV3cz8UVH0WZWhoijMEmLmhxO8/dudZaME=",
+    {
+      "./gatherSequenceExpressions": "node_modules/@babel/traverse/node_modules/@babel/types/lib/converters/gatherSequenceExpressions.js"
+    }
+  ],
+  "node_modules/@babel/traverse/node_modules/@babel/types/lib/converters/toStatement.js": [
+    "ODjoLVGJar4uv2uM5mZtjwpk7ZHJKgaKzb4bKtKrstU=",
+    {
+      "../builders/generated": "node_modules/@babel/traverse/node_modules/@babel/types/lib/builders/generated/index.js",
+      "../validators/generated": "node_modules/@babel/traverse/node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/traverse/node_modules/@babel/types/lib/converters/valueToNode.js": [
+    "dTFaesm9X5zXeGnthmurauqREZqnZLzfJSEyoQZriP8=",
+    {
+      "../builders/generated": "node_modules/@babel/traverse/node_modules/@babel/types/lib/builders/generated/index.js",
+      "../validators/isValidIdentifier": "node_modules/@babel/traverse/node_modules/@babel/types/lib/validators/isValidIdentifier.js",
+      "lodash/isPlainObject": "node_modules/lodash/isPlainObject.js",
+      "lodash/isRegExp": "node_modules/lodash/isRegExp.js"
+    }
+  ],
+  "node_modules/@babel/traverse/node_modules/@babel/types/lib/definitions/core.js": [
+    "i1Ff+iAlsEPJRjhnDTiDpZwwe9/2ehVR1XTzIbgCJ5U=",
+    {
+      "../constants": "node_modules/@babel/traverse/node_modules/@babel/types/lib/constants/index.js",
+      "../validators/is": "node_modules/@babel/traverse/node_modules/@babel/types/lib/validators/is.js",
+      "./utils": "node_modules/@babel/traverse/node_modules/@babel/types/lib/definitions/utils.js",
+      "esutils": "node_modules/esutils/lib/utils.js"
+    }
+  ],
+  "node_modules/@babel/traverse/node_modules/@babel/types/lib/definitions/es2015.js": [
+    "yqnK85vtGWHSu1vFiIjdLZSYJfP9RU/vN9GRCUs0Na8=",
+    {
+      "../validators/is": "node_modules/@babel/traverse/node_modules/@babel/types/lib/validators/is.js",
+      "./core": "node_modules/@babel/traverse/node_modules/@babel/types/lib/definitions/core.js",
+      "./utils": "node_modules/@babel/traverse/node_modules/@babel/types/lib/definitions/utils.js"
+    }
+  ],
+  "node_modules/@babel/traverse/node_modules/@babel/types/lib/definitions/experimental.js": [
+    "3EH/NFjBrMP2hxsi2xxOA9rRKGF9eFFhsglLhNbUKPU=",
+    {
+      "./es2015": "node_modules/@babel/traverse/node_modules/@babel/types/lib/definitions/es2015.js",
+      "./utils": "node_modules/@babel/traverse/node_modules/@babel/types/lib/definitions/utils.js"
+    }
+  ],
+  "node_modules/@babel/traverse/node_modules/@babel/types/lib/definitions/flow.js": [
+    "lcxONTSuk2FvVuhL9uHZP/cdIr3d3neLzpoLIpaeGf4=",
+    {
+      "./utils": "node_modules/@babel/traverse/node_modules/@babel/types/lib/definitions/utils.js"
+    }
+  ],
+  "node_modules/@babel/traverse/node_modules/@babel/types/lib/definitions/index.js": [
+    "Vucc3mwTWSUNbNyGHZCEGpidLX29DBTqrmL1iXgcQR8=",
+    {
+      "./core": "node_modules/@babel/traverse/node_modules/@babel/types/lib/definitions/core.js",
+      "./es2015": "node_modules/@babel/traverse/node_modules/@babel/types/lib/definitions/es2015.js",
+      "./experimental": "node_modules/@babel/traverse/node_modules/@babel/types/lib/definitions/experimental.js",
+      "./flow": "node_modules/@babel/traverse/node_modules/@babel/types/lib/definitions/flow.js",
+      "./jsx": "node_modules/@babel/traverse/node_modules/@babel/types/lib/definitions/jsx.js",
+      "./misc": "node_modules/@babel/traverse/node_modules/@babel/types/lib/definitions/misc.js",
+      "./placeholders": "node_modules/@babel/traverse/node_modules/@babel/types/lib/definitions/placeholders.js",
+      "./typescript": "node_modules/@babel/traverse/node_modules/@babel/types/lib/definitions/typescript.js",
+      "./utils": "node_modules/@babel/traverse/node_modules/@babel/types/lib/definitions/utils.js",
+      "to-fast-properties": "node_modules/to-fast-properties/index.js"
+    }
+  ],
+  "node_modules/@babel/traverse/node_modules/@babel/types/lib/definitions/jsx.js": [
+    "Wn8RjShRqT4UR/OJHPn7NNiDZhv6mVushBtA2ND5/r4=",
+    {
+      "./utils": "node_modules/@babel/traverse/node_modules/@babel/types/lib/definitions/utils.js"
+    }
+  ],
+  "node_modules/@babel/traverse/node_modules/@babel/types/lib/definitions/misc.js": [
+    "R8Pg6S3t/I0baPhJnZal//QZ1kMxHCQItI5dHsFsdD4=",
+    {
+      "./placeholders": "node_modules/@babel/traverse/node_modules/@babel/types/lib/definitions/placeholders.js",
+      "./utils": "node_modules/@babel/traverse/node_modules/@babel/types/lib/definitions/utils.js"
+    }
+  ],
+  "node_modules/@babel/traverse/node_modules/@babel/types/lib/definitions/placeholders.js": [
+    "ve6xW3E0vuT2m9/FIRDRVarPPSRGzmQC7E9ObNHKE1o=",
+    {
+      "./utils": "node_modules/@babel/traverse/node_modules/@babel/types/lib/definitions/utils.js"
+    }
+  ],
+  "node_modules/@babel/traverse/node_modules/@babel/types/lib/definitions/typescript.js": [
+    "Bja9aehyStk1z4x8vhmnK2fsJMGmWKFrW+6y8RJRixo=",
+    {
+      "./core": "node_modules/@babel/traverse/node_modules/@babel/types/lib/definitions/core.js",
+      "./es2015": "node_modules/@babel/traverse/node_modules/@babel/types/lib/definitions/es2015.js",
+      "./utils": "node_modules/@babel/traverse/node_modules/@babel/types/lib/definitions/utils.js"
+    }
+  ],
+  "node_modules/@babel/traverse/node_modules/@babel/types/lib/definitions/utils.js": [
+    "Y7rKYdYrIV01L5WuRaQMPACZ0nJdlaktPG1qUSv4iUA=",
+    {
+      "../validators/is": "node_modules/@babel/traverse/node_modules/@babel/types/lib/validators/is.js",
+      "../validators/validate": "node_modules/@babel/traverse/node_modules/@babel/types/lib/validators/validate.js"
+    }
+  ],
+  "node_modules/@babel/traverse/node_modules/@babel/types/lib/index.js": [
+    "iisIewwRDHXnW8mih8nhaUJ16qXRfse0fI/34iAlGbg=",
+    {
+      "./asserts/assertNode": "node_modules/@babel/traverse/node_modules/@babel/types/lib/asserts/assertNode.js",
+      "./asserts/generated": "node_modules/@babel/traverse/node_modules/@babel/types/lib/asserts/generated/index.js",
+      "./builders/flow/createTypeAnnotationBasedOnTypeof": "node_modules/@babel/traverse/node_modules/@babel/types/lib/builders/flow/createTypeAnnotationBasedOnTypeof.js",
+      "./builders/flow/createUnionTypeAnnotation": "node_modules/@babel/traverse/node_modules/@babel/types/lib/builders/flow/createUnionTypeAnnotation.js",
+      "./builders/generated": "node_modules/@babel/traverse/node_modules/@babel/types/lib/builders/generated/index.js",
+      "./builders/react/buildChildren": "node_modules/@babel/traverse/node_modules/@babel/types/lib/builders/react/buildChildren.js",
+      "./clone/clone": "node_modules/@babel/traverse/node_modules/@babel/types/lib/clone/clone.js",
+      "./clone/cloneDeep": "node_modules/@babel/traverse/node_modules/@babel/types/lib/clone/cloneDeep.js",
+      "./clone/cloneNode": "node_modules/@babel/traverse/node_modules/@babel/types/lib/clone/cloneNode.js",
+      "./clone/cloneWithoutLoc": "node_modules/@babel/traverse/node_modules/@babel/types/lib/clone/cloneWithoutLoc.js",
+      "./comments/addComment": "node_modules/@babel/traverse/node_modules/@babel/types/lib/comments/addComment.js",
+      "./comments/addComments": "node_modules/@babel/traverse/node_modules/@babel/types/lib/comments/addComments.js",
+      "./comments/inheritInnerComments": "node_modules/@babel/traverse/node_modules/@babel/types/lib/comments/inheritInnerComments.js",
+      "./comments/inheritLeadingComments": "node_modules/@babel/traverse/node_modules/@babel/types/lib/comments/inheritLeadingComments.js",
+      "./comments/inheritTrailingComments": "node_modules/@babel/traverse/node_modules/@babel/types/lib/comments/inheritTrailingComments.js",
+      "./comments/inheritsComments": "node_modules/@babel/traverse/node_modules/@babel/types/lib/comments/inheritsComments.js",
+      "./comments/removeComments": "node_modules/@babel/traverse/node_modules/@babel/types/lib/comments/removeComments.js",
+      "./constants": "node_modules/@babel/traverse/node_modules/@babel/types/lib/constants/index.js",
+      "./constants/generated": "node_modules/@babel/traverse/node_modules/@babel/types/lib/constants/generated/index.js",
+      "./converters/ensureBlock": "node_modules/@babel/traverse/node_modules/@babel/types/lib/converters/ensureBlock.js",
+      "./converters/toBindingIdentifierName": "node_modules/@babel/traverse/node_modules/@babel/types/lib/converters/toBindingIdentifierName.js",
+      "./converters/toBlock": "node_modules/@babel/traverse/node_modules/@babel/types/lib/converters/toBlock.js",
+      "./converters/toComputedKey": "node_modules/@babel/traverse/node_modules/@babel/types/lib/converters/toComputedKey.js",
+      "./converters/toExpression": "node_modules/@babel/traverse/node_modules/@babel/types/lib/converters/toExpression.js",
+      "./converters/toIdentifier": "node_modules/@babel/traverse/node_modules/@babel/types/lib/converters/toIdentifier.js",
+      "./converters/toKeyAlias": "node_modules/@babel/traverse/node_modules/@babel/types/lib/converters/toKeyAlias.js",
+      "./converters/toSequenceExpression": "node_modules/@babel/traverse/node_modules/@babel/types/lib/converters/toSequenceExpression.js",
+      "./converters/toStatement": "node_modules/@babel/traverse/node_modules/@babel/types/lib/converters/toStatement.js",
+      "./converters/valueToNode": "node_modules/@babel/traverse/node_modules/@babel/types/lib/converters/valueToNode.js",
+      "./definitions": "node_modules/@babel/traverse/node_modules/@babel/types/lib/definitions/index.js",
+      "./modifications/appendToMemberExpression": "node_modules/@babel/traverse/node_modules/@babel/types/lib/modifications/appendToMemberExpression.js",
+      "./modifications/flow/removeTypeDuplicates": "node_modules/@babel/traverse/node_modules/@babel/types/lib/modifications/flow/removeTypeDuplicates.js",
+      "./modifications/inherits": "node_modules/@babel/traverse/node_modules/@babel/types/lib/modifications/inherits.js",
+      "./modifications/prependToMemberExpression": "node_modules/@babel/traverse/node_modules/@babel/types/lib/modifications/prependToMemberExpression.js",
+      "./modifications/removeProperties": "node_modules/@babel/traverse/node_modules/@babel/types/lib/modifications/removeProperties.js",
+      "./modifications/removePropertiesDeep": "node_modules/@babel/traverse/node_modules/@babel/types/lib/modifications/removePropertiesDeep.js",
+      "./retrievers/getBindingIdentifiers": "node_modules/@babel/traverse/node_modules/@babel/types/lib/retrievers/getBindingIdentifiers.js",
+      "./retrievers/getOuterBindingIdentifiers": "node_modules/@babel/traverse/node_modules/@babel/types/lib/retrievers/getOuterBindingIdentifiers.js",
+      "./traverse/traverse": "node_modules/@babel/traverse/node_modules/@babel/types/lib/traverse/traverse.js",
+      "./traverse/traverseFast": "node_modules/@babel/traverse/node_modules/@babel/types/lib/traverse/traverseFast.js",
+      "./utils/shallowEqual": "node_modules/@babel/traverse/node_modules/@babel/types/lib/utils/shallowEqual.js",
+      "./validators/buildMatchMemberExpression": "node_modules/@babel/traverse/node_modules/@babel/types/lib/validators/buildMatchMemberExpression.js",
+      "./validators/generated": "node_modules/@babel/traverse/node_modules/@babel/types/lib/validators/generated/index.js",
+      "./validators/is": "node_modules/@babel/traverse/node_modules/@babel/types/lib/validators/is.js",
+      "./validators/isBinding": "node_modules/@babel/traverse/node_modules/@babel/types/lib/validators/isBinding.js",
+      "./validators/isBlockScoped": "node_modules/@babel/traverse/node_modules/@babel/types/lib/validators/isBlockScoped.js",
+      "./validators/isImmutable": "node_modules/@babel/traverse/node_modules/@babel/types/lib/validators/isImmutable.js",
+      "./validators/isLet": "node_modules/@babel/traverse/node_modules/@babel/types/lib/validators/isLet.js",
+      "./validators/isNode": "node_modules/@babel/traverse/node_modules/@babel/types/lib/validators/isNode.js",
+      "./validators/isNodesEquivalent": "node_modules/@babel/traverse/node_modules/@babel/types/lib/validators/isNodesEquivalent.js",
+      "./validators/isPlaceholderType": "node_modules/@babel/traverse/node_modules/@babel/types/lib/validators/isPlaceholderType.js",
+      "./validators/isReferenced": "node_modules/@babel/traverse/node_modules/@babel/types/lib/validators/isReferenced.js",
+      "./validators/isScope": "node_modules/@babel/traverse/node_modules/@babel/types/lib/validators/isScope.js",
+      "./validators/isSpecifierDefault": "node_modules/@babel/traverse/node_modules/@babel/types/lib/validators/isSpecifierDefault.js",
+      "./validators/isType": "node_modules/@babel/traverse/node_modules/@babel/types/lib/validators/isType.js",
+      "./validators/isValidES3Identifier": "node_modules/@babel/traverse/node_modules/@babel/types/lib/validators/isValidES3Identifier.js",
+      "./validators/isValidIdentifier": "node_modules/@babel/traverse/node_modules/@babel/types/lib/validators/isValidIdentifier.js",
+      "./validators/isVar": "node_modules/@babel/traverse/node_modules/@babel/types/lib/validators/isVar.js",
+      "./validators/matchesPattern": "node_modules/@babel/traverse/node_modules/@babel/types/lib/validators/matchesPattern.js",
+      "./validators/react/isCompatTag": "node_modules/@babel/traverse/node_modules/@babel/types/lib/validators/react/isCompatTag.js",
+      "./validators/react/isReactComponent": "node_modules/@babel/traverse/node_modules/@babel/types/lib/validators/react/isReactComponent.js",
+      "./validators/validate": "node_modules/@babel/traverse/node_modules/@babel/types/lib/validators/validate.js"
+    }
+  ],
+  "node_modules/@babel/traverse/node_modules/@babel/types/lib/modifications/appendToMemberExpression.js": [
+    "9YJghcL+XfnsKEnsUKJZrkWHRHyMzhu5HbUt1r0ripE=",
+    {
+      "../builders/generated": "node_modules/@babel/traverse/node_modules/@babel/types/lib/builders/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/traverse/node_modules/@babel/types/lib/modifications/flow/removeTypeDuplicates.js": [
+    "v2Dy/wi2PzgeJop9tmNIXtTJCyjoSN8YIKqDafHp3Pw=",
+    {
+      "../../validators/generated": "node_modules/@babel/traverse/node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/traverse/node_modules/@babel/types/lib/modifications/inherits.js": [
+    "Gmvs3LHuzPbkUi9SOlCxbdpK60rYW1LAAiMNJwoVNFw=",
+    {
+      "../comments/inheritsComments": "node_modules/@babel/traverse/node_modules/@babel/types/lib/comments/inheritsComments.js",
+      "../constants": "node_modules/@babel/traverse/node_modules/@babel/types/lib/constants/index.js"
+    }
+  ],
+  "node_modules/@babel/traverse/node_modules/@babel/types/lib/modifications/prependToMemberExpression.js": [
+    "cC3hL9uBECPWOihRmDu5tkxDccgP5AfS+h8V7FzswQY=",
+    {
+      "../builders/generated": "node_modules/@babel/traverse/node_modules/@babel/types/lib/builders/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/traverse/node_modules/@babel/types/lib/modifications/removeProperties.js": [
+    "DMAINP9hA7U0oea+40mBAZ8DtmEPPB/NiJzu4N1YK8g=",
+    {
+      "../constants": "node_modules/@babel/traverse/node_modules/@babel/types/lib/constants/index.js"
+    }
+  ],
+  "node_modules/@babel/traverse/node_modules/@babel/types/lib/modifications/removePropertiesDeep.js": [
+    "z2m7qkonb5Dxwc1zpfLDE7VGMskA2bIUYwptU0sECek=",
+    {
+      "../traverse/traverseFast": "node_modules/@babel/traverse/node_modules/@babel/types/lib/traverse/traverseFast.js",
+      "./removeProperties": "node_modules/@babel/traverse/node_modules/@babel/types/lib/modifications/removeProperties.js"
+    }
+  ],
+  "node_modules/@babel/traverse/node_modules/@babel/types/lib/retrievers/getBindingIdentifiers.js": [
+    "3m0VnwzhDDik9rIlRE5imy1eodL9S2OgDZgnjy3qbsI=",
+    {
+      "../validators/generated": "node_modules/@babel/traverse/node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/traverse/node_modules/@babel/types/lib/retrievers/getOuterBindingIdentifiers.js": [
+    "drQnKeviuPPyQ9ogwSYvc3R5DNlBU4t/53R1VMLPUC4=",
+    {
+      "./getBindingIdentifiers": "node_modules/@babel/traverse/node_modules/@babel/types/lib/retrievers/getBindingIdentifiers.js"
+    }
+  ],
+  "node_modules/@babel/traverse/node_modules/@babel/types/lib/traverse/traverse.js": [
+    "rGuYoGfKVtra6kYUeRhWQFcb+IROwnUw3UbJOhVNgWU=",
+    {
+      "../definitions": "node_modules/@babel/traverse/node_modules/@babel/types/lib/definitions/index.js"
+    }
+  ],
+  "node_modules/@babel/traverse/node_modules/@babel/types/lib/traverse/traverseFast.js": [
+    "eidxShD/Jf+J+ThG+92KQ2+MbYh2VrniD+kdhjecig8=",
+    {
+      "../definitions": "node_modules/@babel/traverse/node_modules/@babel/types/lib/definitions/index.js"
+    }
+  ],
+  "node_modules/@babel/traverse/node_modules/@babel/types/lib/utils/inherit.js": [
+    "joje/k+q+uTdxcyudLgFgxL437ZZYeusjOJTPrksrRM=",
+    {
+      "lodash/uniq": "node_modules/lodash/uniq.js"
+    }
+  ],
+  "node_modules/@babel/traverse/node_modules/@babel/types/lib/utils/react/cleanJSXElementLiteralChild.js": [
+    "kyZBdxXA2AMkslATAhCWAdOGNzrjLr3iVdXFKcGLVyg=",
+    {
+      "../../builders/generated": "node_modules/@babel/traverse/node_modules/@babel/types/lib/builders/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/traverse/node_modules/@babel/types/lib/utils/shallowEqual.js": [
+    "uZJZfTqourN/95kmfKTQ01Tsv0uAqRZVXNeSx+5cxFU=",
+    {}
+  ],
+  "node_modules/@babel/traverse/node_modules/@babel/types/lib/validators/buildMatchMemberExpression.js": [
+    "oClvAeXRLqWQoGseUlDrUuBXj9gafzCvb8ZQ9BKezyQ=",
+    {
+      "./matchesPattern": "node_modules/@babel/traverse/node_modules/@babel/types/lib/validators/matchesPattern.js"
+    }
+  ],
+  "node_modules/@babel/traverse/node_modules/@babel/types/lib/validators/generated/index.js": [
+    "nGdnaU4lXlb4Pf309c4BdsWsGYw3uMLm4aFC/ETAoyg=",
+    {
+      "../../utils/shallowEqual": "node_modules/@babel/traverse/node_modules/@babel/types/lib/utils/shallowEqual.js"
+    }
+  ],
+  "node_modules/@babel/traverse/node_modules/@babel/types/lib/validators/is.js": [
+    "4FblfXtU8oqAFF1ZtK0BEFoIIObMX0LqXdVuv8x3Ezk=",
+    {
+      "../definitions": "node_modules/@babel/traverse/node_modules/@babel/types/lib/definitions/index.js",
+      "../utils/shallowEqual": "node_modules/@babel/traverse/node_modules/@babel/types/lib/utils/shallowEqual.js",
+      "./isPlaceholderType": "node_modules/@babel/traverse/node_modules/@babel/types/lib/validators/isPlaceholderType.js",
+      "./isType": "node_modules/@babel/traverse/node_modules/@babel/types/lib/validators/isType.js"
+    }
+  ],
+  "node_modules/@babel/traverse/node_modules/@babel/types/lib/validators/isBinding.js": [
+    "a8ovNrjZsl+SAo20roAvl0g4uUgyBsoslOOo/idhoj0=",
+    {
+      "../retrievers/getBindingIdentifiers": "node_modules/@babel/traverse/node_modules/@babel/types/lib/retrievers/getBindingIdentifiers.js"
+    }
+  ],
+  "node_modules/@babel/traverse/node_modules/@babel/types/lib/validators/isBlockScoped.js": [
+    "R7slk8EKZmpa0fKX15Hw59YqLEYd8MnaSGDOqsa7I7E=",
+    {
+      "./generated": "node_modules/@babel/traverse/node_modules/@babel/types/lib/validators/generated/index.js",
+      "./isLet": "node_modules/@babel/traverse/node_modules/@babel/types/lib/validators/isLet.js"
+    }
+  ],
+  "node_modules/@babel/traverse/node_modules/@babel/types/lib/validators/isImmutable.js": [
+    "jJtj4kabzipmtQ2adStZ0Jirvz+B7f//874XTja+wxM=",
+    {
+      "./generated": "node_modules/@babel/traverse/node_modules/@babel/types/lib/validators/generated/index.js",
+      "./isType": "node_modules/@babel/traverse/node_modules/@babel/types/lib/validators/isType.js"
+    }
+  ],
+  "node_modules/@babel/traverse/node_modules/@babel/types/lib/validators/isLet.js": [
+    "OO98PKLCLkvAyfkh0TdnB13bbSpyllx3zWc3Z/BHop8=",
+    {
+      "../constants": "node_modules/@babel/traverse/node_modules/@babel/types/lib/constants/index.js",
+      "./generated": "node_modules/@babel/traverse/node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/traverse/node_modules/@babel/types/lib/validators/isNode.js": [
+    "0QTRdIIJRTCmrM5dPPICvHsbUUABKdZLaQOq18uDZbI=",
+    {
+      "../definitions": "node_modules/@babel/traverse/node_modules/@babel/types/lib/definitions/index.js"
+    }
+  ],
+  "node_modules/@babel/traverse/node_modules/@babel/types/lib/validators/isNodesEquivalent.js": [
+    "n6fKXOWx1Z3pN9rOkGTIC2HwOGBRnJQVsrXrecfdqXk=",
+    {
+      "../definitions": "node_modules/@babel/traverse/node_modules/@babel/types/lib/definitions/index.js"
+    }
+  ],
+  "node_modules/@babel/traverse/node_modules/@babel/types/lib/validators/isPlaceholderType.js": [
+    "yghj8z9wiTZ0ztktRaqC4iGPcEmx1CP2rDfn2wEP1Qk=",
+    {
+      "../definitions": "node_modules/@babel/traverse/node_modules/@babel/types/lib/definitions/index.js"
+    }
+  ],
+  "node_modules/@babel/traverse/node_modules/@babel/types/lib/validators/isReferenced.js": [
+    "iLJgM1TYZVfQWJijfaI5zElxZrxLmiR0G5NqyY7jCII=",
+    {}
+  ],
+  "node_modules/@babel/traverse/node_modules/@babel/types/lib/validators/isScope.js": [
+    "o89/Kjz4LL28uAO9rY4eiVUfJMxwb/9OKDctsdRWUxk=",
+    {
+      "./generated": "node_modules/@babel/traverse/node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/traverse/node_modules/@babel/types/lib/validators/isSpecifierDefault.js": [
+    "8yuEfHdHtXTJkF1PQYY8U423zVh4Ee7xS8RY7u0UgM8=",
+    {
+      "./generated": "node_modules/@babel/traverse/node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/traverse/node_modules/@babel/types/lib/validators/isType.js": [
+    "FIMgkJHkBlbepdNH1OFyNoQVvUOZWbpj1IiQDvdyDBk=",
+    {
+      "../definitions": "node_modules/@babel/traverse/node_modules/@babel/types/lib/definitions/index.js"
+    }
+  ],
+  "node_modules/@babel/traverse/node_modules/@babel/types/lib/validators/isValidES3Identifier.js": [
+    "KvewbGVXPKvZxtjVULE+xNTAgaE1USkjir7DdBs5Y74=",
+    {
+      "./isValidIdentifier": "node_modules/@babel/traverse/node_modules/@babel/types/lib/validators/isValidIdentifier.js"
+    }
+  ],
+  "node_modules/@babel/traverse/node_modules/@babel/types/lib/validators/isValidIdentifier.js": [
+    "wldxEUQ7yA70n4bdNrqvbMfXRSXlXgkVIpwdh9vZeJs=",
+    {
+      "esutils": "node_modules/esutils/lib/utils.js"
+    }
+  ],
+  "node_modules/@babel/traverse/node_modules/@babel/types/lib/validators/isVar.js": [
+    "qeOihIPgGUuZL5tk48OGgYN3gAvgFcpWd633RCL5a+M=",
+    {
+      "../constants": "node_modules/@babel/traverse/node_modules/@babel/types/lib/constants/index.js",
+      "./generated": "node_modules/@babel/traverse/node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/traverse/node_modules/@babel/types/lib/validators/matchesPattern.js": [
+    "DYD/Rmf5GvP3XBa5/E/2D74dxUiZD/vYrGP0uu0bU04=",
+    {
+      "./generated": "node_modules/@babel/traverse/node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/traverse/node_modules/@babel/types/lib/validators/react/isCompatTag.js": [
+    "afmc5kFRMVCo4ynIM8E+caOGJO4uAypKSmVINxfajBE=",
+    {}
+  ],
+  "node_modules/@babel/traverse/node_modules/@babel/types/lib/validators/react/isReactComponent.js": [
+    "sm/ghRu9uws4VgkVNq+sxSIZDA3Hp9qtHF/wzaQ20n8=",
+    {
+      "../buildMatchMemberExpression": "node_modules/@babel/traverse/node_modules/@babel/types/lib/validators/buildMatchMemberExpression.js"
+    }
+  ],
+  "node_modules/@babel/traverse/node_modules/@babel/types/lib/validators/validate.js": [
+    "3rAW6rGOd/eCmzk4oFN8QI5EPhY2vK3/xdC9Q6SLA10=",
+    {
+      "../definitions": "node_modules/@babel/traverse/node_modules/@babel/types/lib/definitions/index.js"
     }
   ],
   "node_modules/@babel/types/lib/asserts/assertNode.js": [
@@ -67736,7 +82441,7 @@ module.exports = cacheHas;
     }
   ],
   "node_modules/@babel/types/lib/asserts/generated/index.js": [
-    "mT6/nEVmdwoaaoIJM4vcwvk7KRFXgO8QSrZ9aU8qMfg=",
+    "5NoLRCzVmN7qw4MAnXd7PI/1bjME599PRweAKntU9Qg=",
     {
       "../../validators/is": "node_modules/@babel/types/lib/validators/is.js"
     }
@@ -67749,21 +82454,21 @@ module.exports = cacheHas;
       "lodash/clone": "node_modules/lodash/clone.js"
     }
   ],
+  "node_modules/@babel/types/lib/builders/flow/createFlowUnionType.js": [
+    "Mgj06LGpsa1j6il907Y1lNdo3pC3BnFzOxhrNPzpQ+A=",
+    {
+      "../../modifications/flow/removeTypeDuplicates": "node_modules/@babel/types/lib/modifications/flow/removeTypeDuplicates.js",
+      "../generated": "node_modules/@babel/types/lib/builders/generated/index.js"
+    }
+  ],
   "node_modules/@babel/types/lib/builders/flow/createTypeAnnotationBasedOnTypeof.js": [
     "U7eCycl/8DiBcGlEgIxhGfjChvNw2NZUN6CbflgH4X8=",
     {
       "../generated": "node_modules/@babel/types/lib/builders/generated/index.js"
     }
   ],
-  "node_modules/@babel/types/lib/builders/flow/createUnionTypeAnnotation.js": [
-    "tcblNNM9C/1eHiqi3NYG/hHcMloDz7Q7/aVoguTfSxg=",
-    {
-      "../../modifications/flow/removeTypeDuplicates": "node_modules/@babel/types/lib/modifications/flow/removeTypeDuplicates.js",
-      "../generated": "node_modules/@babel/types/lib/builders/generated/index.js"
-    }
-  ],
   "node_modules/@babel/types/lib/builders/generated/index.js": [
-    "557DwixyQv6EPRCB6HJunqEqKIcoBXlcB7AhZ7eQHg0=",
+    "PDYERz/q0ulsiXUFB9U/KsEF45+jy6n5J+giBsHlLQo=",
     {
       "../builder": "node_modules/@babel/types/lib/builders/builder.js"
     }
@@ -67773,6 +82478,13 @@ module.exports = cacheHas;
     {
       "../../utils/react/cleanJSXElementLiteralChild": "node_modules/@babel/types/lib/utils/react/cleanJSXElementLiteralChild.js",
       "../../validators/generated": "node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
+  "node_modules/@babel/types/lib/builders/typescript/createTSUnionType.js": [
+    "a91N2WisTGSLhiBGayHI69+zUWOuL6rhqSey7JB7HM4=",
+    {
+      "../../modifications/typescript/removeTypeDuplicates": "node_modules/@babel/types/lib/modifications/typescript/removeTypeDuplicates.js",
+      "../generated": "node_modules/@babel/types/lib/builders/generated/index.js"
     }
   ],
   "node_modules/@babel/types/lib/clone/clone.js": [
@@ -67787,16 +82499,22 @@ module.exports = cacheHas;
       "./cloneNode": "node_modules/@babel/types/lib/clone/cloneNode.js"
     }
   ],
+  "node_modules/@babel/types/lib/clone/cloneDeepWithoutLoc.js": [
+    "ay8CT9yyB3GR2JQRITJuabXStu2L2WOmkSWM2d7ZpGk=",
+    {
+      "./cloneNode": "node_modules/@babel/types/lib/clone/cloneNode.js"
+    }
+  ],
   "node_modules/@babel/types/lib/clone/cloneNode.js": [
-    "5xw78htLt4zrMZGWP3gschKGsBpiB3Iu5Vgvr9D2eBQ=",
+    "D02WeI+k3FgrBCOoFIdTQp7greL5JzM8T8nU1M4Mqls=",
     {
       "../definitions": "node_modules/@babel/types/lib/definitions/index.js"
     }
   ],
   "node_modules/@babel/types/lib/clone/cloneWithoutLoc.js": [
-    "usonzIhNZhBCwU1/WAW9GcW71AzOyaEQXGBhN1WVu/0=",
+    "DSt1w20h76qSzjiHxYQ1sGvXROc9GWkIKBe5KIntSDE=",
     {
-      "./clone": "node_modules/@babel/types/lib/clone/clone.js"
+      "./cloneNode": "node_modules/@babel/types/lib/clone/cloneNode.js"
     }
   ],
   "node_modules/@babel/types/lib/comments/addComment.js": [
@@ -67842,13 +82560,13 @@ module.exports = cacheHas;
     }
   ],
   "node_modules/@babel/types/lib/constants/generated/index.js": [
-    "XM2x9B42aoxgxBqzlJvVmP45ZBFuNCcesjeeiEgOfNU=",
+    "VD/HTyLi2ECL7A/xB1zL9ysQj0TEkX6KHL622DUEy6k=",
     {
       "../../definitions": "node_modules/@babel/types/lib/definitions/index.js"
     }
   ],
   "node_modules/@babel/types/lib/constants/index.js": [
-    "9cztyx6J568P994lqUPI6yCAD+D7kt75qdBajn2+5hw=",
+    "LiTXsFGPQdSVO9w9HrT4T3AJxEF9tgJSopmXY/VPqdI=",
     {}
   ],
   "node_modules/@babel/types/lib/converters/ensureBlock.js": [
@@ -67929,16 +82647,17 @@ module.exports = cacheHas;
     }
   ],
   "node_modules/@babel/types/lib/definitions/core.js": [
-    "i1Ff+iAlsEPJRjhnDTiDpZwwe9/2ehVR1XTzIbgCJ5U=",
+    "RBMNavgVql0NAuZTujTgLBs+v8NIFgVXvZf+E5DxfQI=",
     {
       "../constants": "node_modules/@babel/types/lib/constants/index.js",
       "../validators/is": "node_modules/@babel/types/lib/validators/is.js",
+      "../validators/isValidIdentifier": "node_modules/@babel/types/lib/validators/isValidIdentifier.js",
       "./utils": "node_modules/@babel/types/lib/definitions/utils.js",
-      "esutils": "node_modules/esutils/lib/utils.js"
+      "@babel/helper-validator-identifier": "node_modules/@babel/helper-validator-identifier/lib/index.js"
     }
   ],
   "node_modules/@babel/types/lib/definitions/es2015.js": [
-    "yqnK85vtGWHSu1vFiIjdLZSYJfP9RU/vN9GRCUs0Na8=",
+    "nUhiwcCfXQAAo6OGdjUwQ/2JayjunAevzEBhE1eLbEc=",
     {
       "../validators/is": "node_modules/@babel/types/lib/validators/is.js",
       "./core": "node_modules/@babel/types/lib/definitions/core.js",
@@ -67946,14 +82665,14 @@ module.exports = cacheHas;
     }
   ],
   "node_modules/@babel/types/lib/definitions/experimental.js": [
-    "3EH/NFjBrMP2hxsi2xxOA9rRKGF9eFFhsglLhNbUKPU=",
+    "OfjdE0zX8nOJFlvH5mJS+x6JBk2JBq1H6IWlmTC+LI0=",
     {
       "./es2015": "node_modules/@babel/types/lib/definitions/es2015.js",
       "./utils": "node_modules/@babel/types/lib/definitions/utils.js"
     }
   ],
   "node_modules/@babel/types/lib/definitions/flow.js": [
-    "lcxONTSuk2FvVuhL9uHZP/cdIr3d3neLzpoLIpaeGf4=",
+    "mm5ArrCrLkNAFr9ICrQJZxWWt2chhhGMIdhm/grysz8=",
     {
       "./utils": "node_modules/@babel/types/lib/definitions/utils.js"
     }
@@ -67993,7 +82712,7 @@ module.exports = cacheHas;
     }
   ],
   "node_modules/@babel/types/lib/definitions/typescript.js": [
-    "Bja9aehyStk1z4x8vhmnK2fsJMGmWKFrW+6y8RJRixo=",
+    "4FfDKohpYXfDzqVmOtDo3hFC5shl1vcB6Z2Kl0NoDFI=",
     {
       "./core": "node_modules/@babel/types/lib/definitions/core.js",
       "./es2015": "node_modules/@babel/types/lib/definitions/es2015.js",
@@ -68001,23 +82720,25 @@ module.exports = cacheHas;
     }
   ],
   "node_modules/@babel/types/lib/definitions/utils.js": [
-    "Y7rKYdYrIV01L5WuRaQMPACZ0nJdlaktPG1qUSv4iUA=",
+    "/jy6XSNJu36slf3cKdkc9wkmcOKwOMDTW8le0kkpM0c=",
     {
       "../validators/is": "node_modules/@babel/types/lib/validators/is.js",
       "../validators/validate": "node_modules/@babel/types/lib/validators/validate.js"
     }
   ],
   "node_modules/@babel/types/lib/index.js": [
-    "iisIewwRDHXnW8mih8nhaUJ16qXRfse0fI/34iAlGbg=",
+    "VR+kSF7lae5hq/UKaKxV6dpA7h9Bv/p+zXERI2C/9Wg=",
     {
       "./asserts/assertNode": "node_modules/@babel/types/lib/asserts/assertNode.js",
       "./asserts/generated": "node_modules/@babel/types/lib/asserts/generated/index.js",
+      "./builders/flow/createFlowUnionType": "node_modules/@babel/types/lib/builders/flow/createFlowUnionType.js",
       "./builders/flow/createTypeAnnotationBasedOnTypeof": "node_modules/@babel/types/lib/builders/flow/createTypeAnnotationBasedOnTypeof.js",
-      "./builders/flow/createUnionTypeAnnotation": "node_modules/@babel/types/lib/builders/flow/createUnionTypeAnnotation.js",
       "./builders/generated": "node_modules/@babel/types/lib/builders/generated/index.js",
       "./builders/react/buildChildren": "node_modules/@babel/types/lib/builders/react/buildChildren.js",
+      "./builders/typescript/createTSUnionType": "node_modules/@babel/types/lib/builders/typescript/createTSUnionType.js",
       "./clone/clone": "node_modules/@babel/types/lib/clone/clone.js",
       "./clone/cloneDeep": "node_modules/@babel/types/lib/clone/cloneDeep.js",
+      "./clone/cloneDeepWithoutLoc": "node_modules/@babel/types/lib/clone/cloneDeepWithoutLoc.js",
       "./clone/cloneNode": "node_modules/@babel/types/lib/clone/cloneNode.js",
       "./clone/cloneWithoutLoc": "node_modules/@babel/types/lib/clone/cloneWithoutLoc.js",
       "./comments/addComment": "node_modules/@babel/types/lib/comments/addComment.js",
@@ -68112,6 +82833,12 @@ module.exports = cacheHas;
       "./removeProperties": "node_modules/@babel/types/lib/modifications/removeProperties.js"
     }
   ],
+  "node_modules/@babel/types/lib/modifications/typescript/removeTypeDuplicates.js": [
+    "eRRPrFaHl0XMED6v+D/zK7n3HY4lDL40PKZAfRAAPFI=",
+    {
+      "../../validators/generated": "node_modules/@babel/types/lib/validators/generated/index.js"
+    }
+  ],
   "node_modules/@babel/types/lib/retrievers/getBindingIdentifiers.js": [
     "3m0VnwzhDDik9rIlRE5imy1eodL9S2OgDZgnjy3qbsI=",
     {
@@ -68159,7 +82886,7 @@ module.exports = cacheHas;
     }
   ],
   "node_modules/@babel/types/lib/validators/generated/index.js": [
-    "nGdnaU4lXlb4Pf309c4BdsWsGYw3uMLm4aFC/ETAoyg=",
+    "rfeIFbynOWmUSxCK1/ZmKlJTpigBku6B1qQvGq4VZrs=",
     {
       "../../utils/shallowEqual": "node_modules/@babel/types/lib/utils/shallowEqual.js"
     }
@@ -68247,9 +82974,9 @@ module.exports = cacheHas;
     }
   ],
   "node_modules/@babel/types/lib/validators/isValidIdentifier.js": [
-    "wldxEUQ7yA70n4bdNrqvbMfXRSXlXgkVIpwdh9vZeJs=",
+    "KvpfSDJaKEtLU+wHoO/RGr2eKyRpdHQRWzj9Exav+mM=",
     {
-      "esutils": "node_modules/esutils/lib/utils.js"
+      "@babel/helper-validator-identifier": "node_modules/@babel/helper-validator-identifier/lib/index.js"
     }
   ],
   "node_modules/@babel/types/lib/validators/isVar.js": [
@@ -70275,9 +85002,10 @@ module.exports = cacheHas;
     }
   ],
   "queries.js": [
-    "I/9XGk9mhRqw+ywX6Ou+7jarWW+psPGMz6lLZ+KV1I4=",
+    "w7ZkZwGKcypB+59SPuV1H77LJCLC/dOCVEIsdYUYqOo=",
     {
-      "@babel/traverse": "node_modules/@babel/traverse/lib/index.js"
+      "@babel/traverse": "node_modules/@babel/traverse/lib/index.js",
+      "@babel/types": "node_modules/@babel/types/lib/index.js"
     }
   ]
 },

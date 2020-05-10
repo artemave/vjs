@@ -41,7 +41,7 @@ describe('determineExtractedFunctionType', function() {
     })
   })
 
-  context('class method with "this" in the selected text (wrapped in inner function)', function() {
+  context('class method with "this" in the selected text (inside an inner function)', function() {
     before(function() {
       code = `
         import {foo} from 'bar'
@@ -70,6 +70,38 @@ describe('determineExtractedFunctionType', function() {
 
     it('returns "unboundFunction"', function() {
       assert.deepEqual(determineExtractedFunctionType({ast, start_line: 9, end_line: 10}), 'unboundFunction')
+    })
+  })
+
+  context('class method with "this" in the selected text (inside an arrow function)', function() {
+    before(function() {
+      code = `
+        import {foo} from 'bar'
+
+        class Aaa {
+          stuff(aa) {
+            const b = a
+            const n = 2
+
+            return {
+              a: () => {
+                let c = this.aaa
+                foo(work(c))
+              }
+            }
+          }
+        }
+
+        function asdf() {
+          const x = 5
+        }
+
+        const d = 3
+      `
+    })
+
+    it('returns "classMethod"', function() {
+      assert.deepEqual(determineExtractedFunctionType({ast, start_line: 11, end_line: 11}), 'classMethod')
     })
   })
 
@@ -198,6 +230,84 @@ describe('determineExtractedFunctionType', function() {
 
     it('returns "function"', function() {
       assert.deepEqual(determineExtractedFunctionType({ast, start_line: 10, end_line: 11}), 'function')
+    })
+  })
+
+  context('all together now', function() {
+    before(function() {
+      code = `
+        class Arse {
+          constructor() {
+            this.aaa = 111
+          }
+
+          stuff() {
+            const m = () => {
+              console.log('arrow', this.aaa);
+            }
+            m()
+
+            function inner() {
+              return {
+                aa: () => {
+                  // BIND
+                  console.log('inner arrow', this.aaa)
+                },
+                af: function() {
+                  console.log('inner method', this.aaa)
+                },
+                aaa: 222,
+                deeper: {
+                  aaa: 333,
+                  b() {
+                    console.log('deeper method', this.aaa)
+                  },
+                  bb: () => {
+                    // BIND
+                    console.log('deeper arrow', this.aaa)
+
+                    const n = () => {
+                      // BIND
+                      console.log('deeper deeper arrow', this.aaa);
+                    }
+                    n()
+                  },
+                  bbb: function() {
+                    console.log('deeper method', this.aaa)
+                  }
+                }
+              }
+            }
+
+            return inner.call(this)
+          }
+        }
+
+        const a = new Arse().stuff()
+        a.aa()
+        a.af()
+        a.deeper.b()
+        a.deeper.bb()
+        a.deeper.bbb()
+
+        // arrow 111
+        // inner arrow 111
+        // inner method 222
+        // deeper method 333
+        // deeper arrow 111
+        // deeper deeper arrow 111
+        // deeper method 333
+      `
+    })
+
+    it('returns type', function() {
+      assert.deepEqual(determineExtractedFunctionType({ast, start_line: 9, end_line: 9}), 'classMethod')
+      assert.deepEqual(determineExtractedFunctionType({ast, start_line: 17, end_line: 17}), 'unboundFunction')
+      assert.deepEqual(determineExtractedFunctionType({ast, start_line: 20, end_line: 20}), 'objectMethod')
+      assert.deepEqual(determineExtractedFunctionType({ast, start_line: 26, end_line: 26}), 'objectMethod')
+      assert.deepEqual(determineExtractedFunctionType({ast, start_line: 30, end_line: 30}), 'unboundFunction')
+      assert.deepEqual(determineExtractedFunctionType({ast, start_line: 34, end_line: 34}), 'unboundFunction')
+      assert.deepEqual(determineExtractedFunctionType({ast, start_line: 39, end_line: 39}), 'objectMethod')
     })
   })
 })

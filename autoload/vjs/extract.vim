@@ -55,6 +55,10 @@ endf
 fun! vjs#extract#RefactoringResponseHandler(channel, response, ...) abort
   let message = json_decode(a:response)
 
+  if has_key(message, 'error')
+    throw message.error
+  endif
+
   if message.context.action == 'extract_variable'
     let new_lines = s:HandleExtractVariableResponse(message)
   elseif message.context.action == 'extract_local_function' || message.context.action == 'extract_function_or_method'
@@ -104,17 +108,23 @@ fun! s:HandleExtractFunctionResponse(message) abort
 
   let is_async = match(@s, '\<await ')
 
-  let declaration = a:message.type == 'function' ? 'function ' : ''
+  let declaration = a:message.type == 'function' || a:message.type == 'unboundFunction' ? 'function ' : ''
 
   let first_new_line = declaration. @v .'('. join(a:message.function_arguments, ', ') .') {'
   if is_async > -1
     let first_new_line = 'async '. first_new_line
   endif
 
-  let @v = @v ."(". join(a:message.function_arguments, ', ') .")\n"
-  if a:message.type != 'function'
+  if a:message.type == 'unboundFunction'
+    let @v = @v .'.call('. join(insert(a:message.function_arguments, 'this'), ', ') .")\n"
+  else
+    let @v = @v ."(". join(a:message.function_arguments, ', ') .")\n"
+  endif
+
+  if a:message.type == 'objectMethod' || a:message.type == 'classMethod'
     let @v = 'this.'. @v
   endif
+
   if is_async > -1
     let @v = 'await '. @v
   endif
