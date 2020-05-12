@@ -74,13 +74,16 @@ fun! s:HandleExtractVariableResponse(message) abort
   let indent = repeat(' ', a:message.column)
   let current_indent_base = indent(line('.'))
   let [selection_end_line, selection_end_column] = getpos("'>")[1:2]
-  let last_selected_line_includes_line_break = selection_end_column > 999999 || len(getline(selection_end_line)) == selection_end_column
+  let last_selected_line_includes_line_break = selection_end_column > 999999 || len(getline(selection_end_line)) <= selection_end_column
 
   let property_name = a:message.context.property_name
 
   let selection_start_line = getpos("'<")[1]
 
   normal gv
+  if last_selected_line_includes_line_break
+    normal $h
+  endif
   normal "sx
 
   if @v == property_name

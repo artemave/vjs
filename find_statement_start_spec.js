@@ -75,6 +75,25 @@ describe('findStatementStart', function() {
       ]`
     })
     it('returns the line within the inner function', function() {
+      assert.equal(findStatementStart({ast, current_line: 4}).line, 2)
+      assert.equal(findStatementStart({ast, current_line: 6}).line, 5)
+    })
+  })
+
+  context('current line is inside a function that is inside an object literal', function() {
+    before(function() {
+      code = `let a = 2
+      a = {
+        b: 2,
+        c: () => {
+          fn({
+            b: 3
+          })
+        }
+      }`
+    })
+    it('returns the line within the inner function', function() {
+      assert.equal(findStatementStart({ast, current_line: 4}).line, 2)
       assert.equal(findStatementStart({ast, current_line: 6}).line, 5)
     })
   })

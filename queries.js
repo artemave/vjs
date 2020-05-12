@@ -7,9 +7,12 @@ function findStatementStart({ast, current_line}) {
   }
 
   traverse(ast, {
-    Statement({node}) {
-      const {loc} = node
+    Statement(path) {
+      const {loc} = path.node
       if (loc.start.line <= current_line && loc.end.line >= current_line) {
+        if (t.isFunctionExpression(path.parent) || t.isArrowFunctionExpression(path.parent)) {
+          return
+        }
         if (result.line < loc.start.line) {
           result = loc.start
         }
