@@ -106,15 +106,12 @@ fun! s:HandleExtractVariableResponse(message) abort
 endf
 
 fun! s:HandleExtractFunctionResponse(message) abort
-  let indent = repeat(' ', a:message.column)
-
   normal gv
   normal "sx
 
   let is_async = match(@s, '\<await ')
 
-  let first_new_line = s:FirstNewLine(a:message, is_async)
-
+  let extracted_lines = s:ExtractedFunctionLines(a:message, is_async)
   let @v = s:InvokationLine(a:message, is_async)
 
   if match(@s, '\n$') > -1
@@ -124,8 +121,15 @@ fun! s:HandleExtractFunctionResponse(message) abort
   endif
   undojoin | normal ==
 
+  return extracted_lines
+endf
+
+fun s:ExtractedFunctionLines(message, is_async)
+  let indent = repeat(' ', a:message.column)
   let new_lines = split(@s, "\n")
   let copy_indent = len(new_lines[0]) - len(substitute(new_lines[0], "^ *", '', ''))
+
+  let first_new_line = s:FirstNewLine(a:message, a:is_async)
 
   " remove indent from copied text
   call map(new_lines, {_, line -> substitute(line, '^'.repeat(' ', copy_indent), '', '') })
@@ -162,7 +166,7 @@ fun s:ReturnValueLine(message, indent)
   if len(a:message.return_values) == 1
     return a:indent . repeat(' ', &shiftwidth) .'return '.a:message.return_values[0].name
   elseif len(a:message.return_values) > 1
-    return a:indent . repeat(' ', &shiftwidth) .'return {'. names .'}'
+    return a:indent . repeat(' ', &shiftwidth) .'return {'. s:VariableNames(a:message) .'}'
   end
   return ''
 endf
@@ -195,10 +199,12 @@ fun s:InvokationLine(message, is_async)
       let kind = 'let'
     endif
 
-    let names = join(map(copy(a:message.return_values), {_, v -> v.name}), ', ')
-
-    let invokation_line = kind .' {'. names .'} = '. invokation_line
+    let invokation_line = kind .' {'. s:VariableNames(a:message) .'} = '. invokation_line
   endif
 
   return invokation_line
+endf
+
+fun s:VariableNames(message)
+  return join(map(copy(a:message.return_values), {_, v -> v.name}), ', ')
 endf
