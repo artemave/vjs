@@ -113,47 +113,9 @@ fun! s:HandleExtractFunctionResponse(message) abort
 
   let is_async = match(@s, '\<await ')
 
-  let declaration = a:message.type == 'function' || a:message.type == 'unboundFunction' ? 'function ' : ''
+  let first_new_line = s:FirstNewLine(a:message, is_async)
 
-  let first_new_line = declaration. @v .'('. join(a:message.function_arguments, ', ') .') {'
-  if is_async > -1
-    let first_new_line = 'async '. first_new_line
-  endif
-
-  if a:message.type == 'unboundFunction'
-    let @v = @v .'.call('. join(insert(a:message.function_arguments, 'this'), ', ') .")\n"
-  else
-    let @v = @v ."(". join(a:message.function_arguments, ', ') .")\n"
-  endif
-
-  if a:message.type == 'objectMethod' || a:message.type == 'classMethod'
-    let @v = 'this.'. @v
-  endif
-
-  if is_async > -1
-    let @v = 'await '. @v
-  endif
-
-  let return_value_line = ''
-  if len(a:message.return_values) == 1
-    let @v = a:message.return_values[0].kind .' '. a:message.return_values[0].name .' = '. @v
-    let return_value_line = indent . repeat(' ', &shiftwidth) .'return '.a:message.return_values[0].name
-  elseif len(a:message.return_values) > 1
-    let kinds = map(copy(a:message.return_values), {_, v -> v.kind})
-    let non_const_kinds = filter(kinds, 'v:val == "const"')
-
-    let kind = ''
-    if len(non_const_kinds) == 0
-      let kind = 'const'
-    else
-      let kind = 'let'
-    endif
-
-    let names = join(map(copy(a:message.return_values), {_, v -> v.name}), ', ')
-
-    let @v = kind .' {'. names .'} = '. @v
-    let return_value_line = indent . repeat(' ', &shiftwidth) .'return {'. names .'}'
-  endif
+  let @v = s:InvokationLine(a:message, is_async)
 
   if match(@s, '\n$') > -1
     undojoin | normal "vP
@@ -171,6 +133,7 @@ fun! s:HandleExtractFunctionResponse(message) abort
   call map(new_lines, {_, line -> len(line) > 0 ? indent . repeat(' ', &shiftwidth) . line : line})
   call insert(new_lines, indent . first_new_line)
 
+  let return_value_line = s:ReturnValueLine(a:message, indent)
   if len(return_value_line)
     call add(new_lines, return_value_line)
   endif
@@ -182,4 +145,60 @@ fun! s:HandleExtractFunctionResponse(message) abort
   call extend(new_lines, [indent . closing_bracket, ''])
 
   return new_lines
+endf
+
+fun s:FirstNewLine(message, is_async)
+  let declaration = a:message.type == 'function' || a:message.type == 'unboundFunction' ? 'function ' : ''
+
+  let first_new_line = declaration. @v .'('. join(a:message.function_arguments, ', ') .') {'
+  if a:is_async > -1
+    let first_new_line = 'async '. first_new_line
+  endif
+
+  return first_new_line
+endf
+
+fun s:ReturnValueLine(message, indent)
+  if len(a:message.return_values) == 1
+    return a:indent . repeat(' ', &shiftwidth) .'return '.a:message.return_values[0].name
+  elseif len(a:message.return_values) > 1
+    return a:indent . repeat(' ', &shiftwidth) .'return {'. names .'}'
+  end
+  return ''
+endf
+
+fun s:InvokationLine(message, is_async)
+  if a:message.type == 'unboundFunction'
+    let invokation_line = @v .'.call('. join(insert(a:message.function_arguments, 'this'), ', ') .")\n"
+  else
+    let invokation_line = @v ."(". join(a:message.function_arguments, ', ') .")\n"
+  endif
+
+  if a:message.type == 'objectMethod' || a:message.type == 'classMethod'
+    let invokation_line = 'this.'. invokation_line
+  endif
+
+  if a:is_async > -1
+    let invokation_line = 'await '. invokation_line
+  endif
+
+  if len(a:message.return_values) == 1
+    let invokation_line = a:message.return_values[0].kind .' '. a:message.return_values[0].name .' = '. invokation_line
+  elseif len(a:message.return_values) > 1
+    let kinds = map(copy(a:message.return_values), {_, v -> v.kind})
+    let non_const_kinds = filter(kinds, 'v:val == "const"')
+
+    let kind = ''
+    if len(non_const_kinds) == 0
+      let kind = 'const'
+    else
+      let kind = 'let'
+    endif
+
+    let names = join(map(copy(a:message.return_values), {_, v -> v.name}), ', ')
+
+    let invokation_line = kind .' {'. names .'} = '. invokation_line
+  endif
+
+  return invokation_line
 endf
