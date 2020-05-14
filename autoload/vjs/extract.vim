@@ -1,4 +1,10 @@
-fun! vjs#extract#ExtractFunctionOrMethod()
+fun! vjs#extract#ExtractFunctionOrMethod(...)
+  if a:0 > 0
+    let action = 'extract_local_function'
+  else
+    let action = 'extract_function_or_method'
+  endif
+
   " TODO: restore @v
   let @v = input('Function name: ')
   if empty(@v)
@@ -9,23 +15,7 @@ fun! vjs#extract#ExtractFunctionOrMethod()
   let selection_end_line = getpos("'>")[1]
 
   let code = join(getline(1,'$'), "\n")
-  let message = {'code': code, 'start_line': selection_start_line, 'end_line': selection_end_line, 'action': 'extract_function_or_method'}
-
-  call vjs#ipc#SendMessage(message)
-endf
-
-fun! vjs#extract#ExtractLocalFunction()
-  " TODO: restore @v
-  let @v = input('Function name: ')
-  if empty(@v)
-    return
-  endif
-
-  let selection_start_line = getpos("'<")[1]
-  let selection_end_line = getpos("'>")[1]
-
-  let code = join(getline(1,'$'), "\n")
-  let message = {'code': code, 'start_line': selection_start_line, 'end_line': selection_end_line, 'action': 'extract_local_function'}
+  let message = {'code': code, 'start_line': selection_start_line, 'end_line': selection_end_line, 'action': action}
 
   call vjs#ipc#SendMessage(message)
 endf
@@ -181,4 +171,3 @@ fun! s:HandleExtractFunctionResponse(message) abort
 
   return new_lines
 endf
-
