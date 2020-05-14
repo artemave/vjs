@@ -1,3 +1,6 @@
+let s:v_reg = ''
+let s:s_reg = ''
+
 fun! vjs#extract#ExtractFunctionOrMethod(...)
   if a:0 > 0
     let action = 'extract_local_function'
@@ -5,7 +8,9 @@ fun! vjs#extract#ExtractFunctionOrMethod(...)
     let action = 'extract_function_or_method'
   endif
 
-  " TODO: restore @v
+  let s:v_reg = @v
+  let s:s_reg = @s
+
   let @v = input('Function name: ')
   if empty(@v)
     return
@@ -29,12 +34,14 @@ fun! vjs#extract#ExtractVariable()
     let property_name = property_name_match[1]
   endif
 
+  let s:v_reg = @v
+  let s:s_reg = @s
+
   let @v = input('Variable name: ', property_name)
   if empty(@v)
     return
   endif
 
-  " send buffer content and line('.') to js
   let code = join(getline(1,'$'), "\n")
   let context = {'property_name': property_name}
   let message = {'code': code, 'start_line': selection_start_line, 'action': 'extract_variable', 'context': context}
@@ -45,19 +52,24 @@ endf
 fun! vjs#extract#RefactoringResponseHandler(channel, response, ...) abort
   let message = json_decode(a:response)
 
-  if has_key(message, 'error')
-    throw message.error
-  endif
+  try
+    if has_key(message, 'error')
+      throw message.error
+    endif
 
-  if message.context.action == 'extract_variable'
-    let new_lines = s:HandleExtractVariableResponse(message)
-  elseif message.context.action == 'extract_local_function' || message.context.action == 'extract_function_or_method'
-    let new_lines = s:HandleExtractFunctionResponse(message)
-  else
-    throw 'Unknown action '. message.context.action
-  endif
+    if message.context.action == 'extract_variable'
+      let new_lines = s:HandleExtractVariableResponse(message)
+    elseif message.context.action == 'extract_local_function' || message.context.action == 'extract_function_or_method'
+      let new_lines = s:HandleExtractFunctionResponse(message)
+    else
+      throw 'Unknown action '. message.context.action
+    endif
 
-  undojoin | call append(message.line - 1, new_lines)
+    undojoin | call append(message.line - 1, new_lines)
+  finally
+    let @v = s:v_reg
+    let @s = s:s_reg
+  endtry
 endf
 
 fun! s:HandleExtractVariableResponse(message) abort
