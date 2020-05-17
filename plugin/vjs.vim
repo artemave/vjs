@@ -19,12 +19,11 @@ fun! s:ListDependents()
   let current_file_full_path = expand('%:p:r')
 
   for require in raw_results
-    let match = matchlist(require.text, "['\"]".'\(\.\.\?\/.*\|\~.*\)'."['\"]")
+    let match = matchlist(require.text, "['\"]".'\(\.\.\?\/.*\|\~.*\|\.\.\?\)'."['\"]")
     if len(match) > 0
       let module_path = match[1]
       let module_path_with_explicit_index = ''
 
-      " TODO: missing case? require('.')
       if match(module_path, '\.$') != -1
         let module_path = module_path . '/index'
       elseif match(module_path, '\/$') != -1

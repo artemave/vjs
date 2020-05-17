@@ -11,3 +11,18 @@ Execute:
     \ {'lnum': 3, 'fname': 'test/fixtures/package/index.js', 'text': 'const stuff = require("../deeper/stuff")'},
     \ {'lnum': 4, 'fname': 'test/fixtures/banana.js', 'text': 'import "~/test/fixtures/deeper/stuff"'},
   \]
+
+Given javascript:
+
+Execute (require index):
+  file test/fixtures/deeper/index.js
+
+Execute:
+  VjsListDependents
+  AssertEqual GetQFListFiles(), [
+    \ {'lnum': 1, 'fname': 'test/fixtures/deeper/stuff.js', 'text': "require('.')"},
+    \ {'lnum': 1, 'fname': 'test/fixtures/deeper/inner/v.js', 'text': "import '..'"},
+  \]
+
+" Execute:
+"   call LogAllMessages()

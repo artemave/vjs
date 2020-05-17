@@ -1,1 +1,1 @@
-require('bl')
+require('.')
