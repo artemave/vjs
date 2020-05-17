@@ -1,6 +1,6 @@
 const assert = require('assert').strict
 const {parse} = require('@babel/parser')
-const {findStatementStart} = require('./queries')
+const {findStatementStart} = require('../lib/queries')
 
 describe('findStatementStart', function() {
   let code, ast

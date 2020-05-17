@@ -1,6 +1,6 @@
 const assert = require('assert').strict
 const {parse} = require('@babel/parser')
-const {findGlobalFunctionArguments} = require('./queries')
+const {findGlobalFunctionArguments} = require('../lib/queries')
 
 describe('findGlobalFunctionArguments', function() {
   let ast, code

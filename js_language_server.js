@@ -14,7 +14,7 @@ const {
   findGlobalFunctionArguments,
   determineExtractedFunctionType,
   findMethodScopeStart,
-} = require('./queries')
+} = require('./lib/queries')
 const argv = require('yargs')
   .command('refactoring', 'start refactoring server', {
     'single-run': {

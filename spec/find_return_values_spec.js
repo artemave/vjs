@@ -1,6 +1,6 @@
 const assert = require('assert')
 const {parse} = require('@babel/parser')
-const {findVariablesDefinedWithinSelectionButUsedOutside} = require('./queries')
+const {findVariablesDefinedWithinSelectionButUsedOutside} = require('../lib/queries')
 
 describe('findVariablesDefinedWithinSelectionButUsedOutside', function() {
   let code, ast

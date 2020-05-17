@@ -1,15 +1,15 @@
 const assert = require('assert').strict
 const {parse} = require('@babel/parser')
-const {findMethodScopeStart} = require('./queries')
+const {findGlobalScopeStart} = require('../lib/queries')
 
-describe('findMethodScopeStart', function() {
+describe('findGlobalScopeStart', function() {
   let code, ast
 
   beforeEach(function() {
     ast = parse(code, {sourceType: 'module'})
   })
 
-  context('inside class method', function() {
+  context('inside a method', function() {
     before(function() {
       code = `
         import nnn from 'nnn'
@@ -32,47 +32,19 @@ describe('findMethodScopeStart', function() {
     })
 
     it('returns line before outer function start', function() {
-      assert.equal(findMethodScopeStart({ast, current_line: 8}).line, 7)
-      assert.equal(findMethodScopeStart({ast, current_line: 12}).line, 7)
+      assert.equal(findGlobalScopeStart({ast, current_line: 8}).line, 6)
+      assert.equal(findGlobalScopeStart({ast, current_line: 12}).line, 6)
     })
   })
 
-  context('inside object method', function() {
+  context('inside an object property', function() {
     before(function() {
       code = `
         import nnn from 'nnn'
 
         const a = 2
 
-        const aaa = {
-          stuff(a) {
-            const b = a
-
-            function foo() {
-              let c = b
-              return c + 3
-            }
-          }
-        }
-
-        const d = 3
-      `
-    })
-
-    it('returns line before outer function start', function() {
-      assert.equal(findMethodScopeStart({ast, current_line: 8}).line, 7)
-      assert.equal(findMethodScopeStart({ast, current_line: 12}).line, 7)
-    })
-  })
-
-  context('inside object function expression', function() {
-    before(function() {
-      code = `
-        import nnn from 'nnn'
-
-        const a = 2
-
-        const aaa = {
+        module.exports = {
           stuff: function(a) {
             const b = a
 
@@ -88,8 +60,33 @@ describe('findMethodScopeStart', function() {
     })
 
     it('returns line before outer function start', function() {
-      assert.deepEqual(findMethodScopeStart({ast, current_line: 8}), {line: 7, column: 10})
-      assert.deepEqual(findMethodScopeStart({ast, current_line: 12}), {line: 7, column: 10})
+      assert.equal(findGlobalScopeStart({ast, current_line: 8}).line, 6)
+      assert.equal(findGlobalScopeStart({ast, current_line: 12}).line, 6)
+    })
+  })
+
+  context('inside an inner function', function() {
+    before(function() {
+      code = `
+      const a = 2
+
+      function stuff(a) {
+        const b = a
+
+        function foo() {
+          let c = b
+          return c + 3
+        }
+      }
+
+      const d = 3
+      `
+    })
+
+    it('returns line before outer function start', function() {
+      assert.equal(findGlobalScopeStart({ast, current_line: 6}).line, 4)
+      assert.equal(findGlobalScopeStart({ast, current_line: 8}).line, 4)
+      assert.equal(findGlobalScopeStart({ast, current_line: 13}).line, 13)
     })
   })
 })

@@ -1,6 +1,6 @@
 const assert = require('assert').strict
 const {parse} = require('@babel/parser')
-const {determineExtractedFunctionType} = require('./queries')
+const {determineExtractedFunctionType} = require('../lib/queries')
 
 describe('determineExtractedFunctionType', function() {
   let ast, code
