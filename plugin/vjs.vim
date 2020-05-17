@@ -10,6 +10,11 @@ fun! s:Debug(message)
 endf
 
 fun! s:ListDependents()
+  call s:PrepareDependantsList()
+  copen
+endf
+
+fun! s:PrepareDependantsList()
   let grep_term = '(require\(.*\)\|^import )'
   execute 'silent grep!' "'".grep_term."'"
   redraw!
@@ -49,7 +54,6 @@ fun! s:ListDependents()
     endif
   endfor
   call setqflist([], ' ', {'items': result_entries, 'title': 'Modules that import '.expand('%')})
-  copen
 endf
 
 fun! s:LintFix()
@@ -177,12 +181,40 @@ fun! s:ListExpressRoutes()
   call setpos('.', starting_pos)
 
   let entries = map(line_numbers, function('ToQuickFixEntry'))
-  call setqflist([], 'r', {'title': 'Express routes', 'items': entries})
+  call setqflist([], ' ', {'title': 'Express routes', 'items': entries})
   copen
 
   " hide filename and linenumber
   set conceallevel=2 concealcursor=nc
   syntax match llFileName /^[^|]*|[^|]*| / transparent conceal
+endf
+
+fun! s:RenameFile()
+  let old_name = expand('%:t:r')
+  let current_line = line('.')
+  let new_name = input('New name: ', '', 'file')
+  let new_file_path = fnamemodify(expand('%:h') . '/'. new_name, ':p')
+  if rename(expand('%:p'), new_file_path) != 0
+    return
+  end
+
+  call s:PrepareDependantsList()
+
+  let dependants = getqflist()
+
+  let new_name = fnamemodify(new_name, ':r')
+
+  for require in dependants
+    let new_text = substitute(require.text, old_name .'\(["'."'".']\)', new_name .'\1', '')
+    let require.text = new_text
+    let cmd = 'sed -r -i "'. require.lnum .'s/'. old_name ."(['".'\"'."])/". new_name .'\1/" '. bufname(require.bufnr)
+    silent call system(cmd)
+  endfor
+
+  execute 'edit +'. current_line .' '. new_file_path
+
+  call setqflist([], 'r', {'title': 'Imports updated', 'items': dependants})
+  copen
 endf
 
 if !exists('g:vjs_tags_enabled')
@@ -203,6 +235,7 @@ autocmd FileType {javascript,javascript.jsx} call vjs#ipc#StartJsTagsServer()
 autocmd FileType {javascript,javascript.jsx,typescript} setlocal omnifunc=VjsRequireComplete
 
 com VjsLintFix call s:LintFix()
+com VjsRenameFile call s:RenameFile()
 com VjsListRoutes call s:ListExpressRoutes()
 com VjsListDependents call s:ListDependents()
 com -range VjsExtractVariable call vjs#extract#ExtractVariable()
