@@ -10,9 +10,9 @@ Do:
 Execute:
   AssertEqual GetQFListFiles(), [
     \ {'lnum': 1, 'fname': 'test/fixtures/blops.js', 'text': "const stuff = require('./deeper/thing')"},
-    \ {'lnum': 2, 'fname': 'test/fixtures/deeper/blah.jsx', 'text': 'import stuff from "./thing"'},
     \ {'lnum': 3, 'fname': 'test/fixtures/package/index.js', 'text': 'const stuff = require("../deeper/thing")'},
     \ {'lnum': 4, 'fname': 'test/fixtures/banana.js', 'text': 'import "./deeper/thing"'},
+    \ {'lnum': 4, 'fname': 'test/fixtures/deeper/blah.jsx', 'text': '} from "./thing"'},
   \]
 
 Given javascript (path from the project root 1):
@@ -27,9 +27,9 @@ Do:
 Execute:
   AssertEqual GetQFListFiles(), [
     \ {'lnum': 1, 'fname': 'test/fixtures/blops.js', 'text': "const stuff = require('./thing')"},
-    \ {'lnum': 2, 'fname': 'test/fixtures/deeper/blah.jsx', 'text': 'import stuff from "../thing"'},
     \ {'lnum': 3, 'fname': 'test/fixtures/package/index.js', 'text': 'const stuff = require("../thing")'},
     \ {'lnum': 4, 'fname': 'test/fixtures/banana.js', 'text': 'import "./thing"'},
+    \ {'lnum': 4, 'fname': 'test/fixtures/deeper/blah.jsx', 'text': '} from "../thing"'},
   \]
 
 Given javascript (moving to a sibling folder):
@@ -44,9 +44,9 @@ Do:
 Execute:
   AssertEqual GetQFListFiles(), [
     \ {'lnum': 1, 'fname': 'test/fixtures/blops.js', 'text': "const stuff = require('./package/thing')"},
-    \ {'lnum': 2, 'fname': 'test/fixtures/deeper/blah.jsx', 'text': 'import stuff from "../package/thing"'},
     \ {'lnum': 3, 'fname': 'test/fixtures/package/index.js', 'text': 'const stuff = require("./thing")'},
     \ {'lnum': 4, 'fname': 'test/fixtures/banana.js', 'text': 'import "./package/thing"'},
+    \ {'lnum': 4, 'fname': 'test/fixtures/deeper/blah.jsx', 'text': '} from "../package/thing"'},
   \]
 
 " Execute:

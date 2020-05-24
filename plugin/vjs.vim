@@ -15,8 +15,8 @@ fun! s:ListDependents()
 endf
 
 fun! s:PrepareDependantsList()
-  " TODO change import to from to support multiline imports
-  let grep_term = '(require\(.*\)\|^import )'
+  " \x27 is ascii for single quote
+  let grep_term = '(require\(.*\)\|^import "\|^import \x27\| from )'
   execute 'silent grep!' "'".grep_term."'"
   redraw!
 

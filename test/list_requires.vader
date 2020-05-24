@@ -5,12 +5,12 @@ Execute:
 
 Execute:
   VjsListDependents
-  AssertEqual GetQFListFiles(), [
+  AssertEqual [
     \ {'lnum': 1, 'fname': 'test/fixtures/blops.js', 'text': "const stuff = require('./deeper/stuff')"},
-    \ {'lnum': 2, 'fname': 'test/fixtures/deeper/blah.jsx', 'text': 'import stuff from "./stuff"'},
     \ {'lnum': 3, 'fname': 'test/fixtures/package/index.js', 'text': 'const stuff = require("../deeper/stuff")'},
     \ {'lnum': 4, 'fname': 'test/fixtures/banana.js', 'text': 'import "~/test/fixtures/deeper/stuff"'},
-  \]
+    \ {'lnum': 4, 'fname': 'test/fixtures/deeper/blah.jsx', 'text': '} from "./stuff"'},
+  \], GetQFListFiles()
 
 Given javascript:
 
@@ -19,10 +19,10 @@ Execute (require index):
 
 Execute:
   VjsListDependents
-  AssertEqual GetQFListFiles(), [
+  AssertEqual [
     \ {'lnum': 1, 'fname': 'test/fixtures/deeper/stuff.js', 'text': "require('.')"},
     \ {'lnum': 1, 'fname': 'test/fixtures/deeper/inner/v.js', 'text': "import '..'"},
-  \]
+  \], GetQFListFiles()
 
 " Execute:
 "   call LogAllMessages()
