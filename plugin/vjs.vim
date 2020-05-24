@@ -15,6 +15,7 @@ fun! s:ListDependents()
 endf
 
 fun! s:PrepareDependantsList()
+  " TODO change import to from to support multiline imports
   let grep_term = '(require\(.*\)\|^import )'
   execute 'silent grep!' "'".grep_term."'"
   redraw!
@@ -193,25 +194,83 @@ fun! s:RenameFile()
   let old_name = expand('%:t:r')
   let current_line = line('.')
   let new_name = input('New name: ', '', 'file')
-  let new_file_path = fnamemodify(expand('%:h') . '/'. new_name, ':p')
-  if rename(expand('%:p'), new_file_path) != 0
-    return
-  end
+
+  if match(new_name, '\/') == -1
+    let full_new_name_path = fnamemodify(expand('%:h') . '/'. new_name, ':p')
+  else
+    let full_new_name_path = fnamemodify(getcwd() . '/'. new_name, ':p')
+  endif
+
+  if !exists('g:vjs_test_env')
+    if rename(expand('%:p'), full_new_name_path) != 0
+      return
+    end
+  endif
 
   call s:PrepareDependantsList()
 
   let dependants = getqflist()
 
-  let new_name = fnamemodify(new_name, ':r')
+  let full_new_name_path_parts = split(full_new_name_path, '/')
 
   for require in dependants
-    let new_text = substitute(require.text, old_name .'\(["'."'".']\)', new_name .'\1', '')
+    let import_path_parts = []
+    let fname = bufname(require.bufnr)
+    let dependant_full_path_parts = split(fnamemodify(fname, ':p'), '/')
+
+    let max_len = max([len(dependant_full_path_parts), len(full_new_name_path_parts)])
+
+    let idx = 0
+    let paths_diverged = v:false
+    let import_path_parts = []
+
+    while idx < max_len
+      if idx >= len(full_new_name_path_parts)
+        call insert(import_path_parts, '..', 0)
+        let idx = idx + 1
+        continue
+      endif
+
+      if idx >= len(dependant_full_path_parts)
+        call add(import_path_parts, full_new_name_path_parts[idx])
+        let idx = idx + 1
+        continue
+      endif
+
+      if dependant_full_path_parts[idx] != full_new_name_path_parts[idx] || paths_diverged
+        if paths_diverged
+          call insert(import_path_parts, '..', 0)
+        end
+        let paths_diverged = v:true
+
+        call add(import_path_parts, full_new_name_path_parts[idx])
+      endif
+
+      let idx = idx + 1
+    endwhile
+
+    if import_path_parts[0] != '..'
+      call insert(import_path_parts, '.', 0)
+    endif
+
+    let new_import_path = fnamemodify(join(import_path_parts, '/'), ':r')
+
+    let new_text_pattern = '\(["'."'".']\).\+["'."'".']'
+    let new_text_replacement = '\1'. new_import_path .'\1'
+
+    let new_text = substitute(require.text, new_text_pattern, new_text_replacement, '')
     let require.text = new_text
-    let cmd = 'sed -r -i "'. require.lnum .'s/'. old_name ."(['".'\"'."])/". new_name .'\1/" '. bufname(require.bufnr)
-    silent call system(cmd)
+
+    let cmd = 'sed -r -i "'. require.lnum .'s/'. escape(new_text_pattern, '/\"') .'/'. escape(new_text_replacement, '/\"') .'/" '. fname
+    if !exists('g:vjs_test_env')
+      silent call system(cmd)
+    endif
   endfor
 
-  execute 'edit +'. current_line .' '. new_file_path
+  if !exists('g:vjs_test_env')
+    silent bwipeout!
+    execute 'edit +'. current_line .' '. full_new_name_path
+  endif
 
   call setqflist([], 'r', {'title': 'Imports updated', 'items': dependants})
   copen

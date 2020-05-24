@@ -12,7 +12,7 @@ endf
 
 fun! vjs#ipc#StartJsRefactoringServer()
   if !exists('g:vjs_test_env') && !exists('s:refactoring_server_job')
-    let s:refactoring_server_job = s:JobStart(s:GetServerExecPath().' refactoring', {'err_cb': function('s:ErrorCb'), 'out_cb': function('vjs#extract#RefactoringResponseHandler')})
+    let s:refactoring_server_job = s:JobStart(s:GetServerExecPath().' refactoring', {'err_cb': function('VjsErrorCb'), 'out_cb': function('vjs#extract#RefactoringResponseHandler')})
   endif
 endf
 
@@ -26,7 +26,7 @@ fun! vjs#ipc#StartJsTagsServer()
       let tags_job_cmd = tags_job_cmd.' --ignore '.path
     endfor
 
-    let s:tags_server_job = s:JobStart(tags_job_cmd, {'cwd': getcwd(), 'err_cb': 's:ErrorCb', 'out_cb': 's:ErrorCb', 'pty': 1})
+    let s:tags_server_job = s:JobStart(tags_job_cmd, {'cwd': getcwd(), 'err_cb': 'VjsErrorCb', 'out_cb': 'VjsErrorCb', 'pty': 1})
   end
 endf
 
@@ -46,7 +46,7 @@ fun! s:JobGetChannel(channel)
   endif
 endf
 
-fun! s:ErrorCb(channel, message, ...)
+fun! VjsErrorCb(channel, message, ...)
   echom 'Vjs language server error: '.string(a:message)
 endf
 
