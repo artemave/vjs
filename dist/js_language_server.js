@@ -2363,152 +2363,6 @@ function baseAssignIn(object, source) {
 module.exports = baseAssignIn;
 
 },
-"0cE9Z7zUZbY6GNLgS6F6ZyCWZHn0FvHGXYG0q/ZTg4c=":
-function (require, module, exports, __dirname, __filename) {
-
-
-
-// AST explorer:
-//  - https://lihautan.com/babel-ast-explorer/#?eyJiYWJlbFNldHRpbmdzIjp7InZlcnNpb24iOiI3LjYuMCJ9LCJ0cmVlU2V0dGluZ3MiOnsiaGlkZUVtcHR5Ijp0cnVlLCJoaWRlTG9jYXRpb24iOnRydWUsImhpZGVUeXBlIjp0cnVlLCJoaWRlQ29tbWVudHMiOnRydWV9LCJjb2RlIjoiICAgICAgY29uc3QgYSA9IDJcblxuICAgICAgZnVuY3Rpb24gc3R1ZmYoYWEpIHtcbiAgICAgICAgY29uc3QgYiA9IGFcbiAgICAgICAgY29uc3QgbiA9IDJcblxuICAgICAgICBsZXQgYyA9IGIgKyBuICsgYWFcbiAgICAgICAgd29yayhjKVxuXG4gICAgICAgIHJldHVybiBjICsgM1xuICAgICAgfVxuXG4gICAgICBjb25zdCBkID0gM+KAqFxuXG4ifQ==
-//  - https://astexplorer.net/
-
-const {parse} = require('@babel/parser')
-const readline = require('readline')
-const jsEditorTags = require('js-editor-tags')
-const {
-  findStatementStart,
-  findVariablesDefinedWithinSelectionButUsedOutside,
-  findGlobalScopeStart,
-  findGlobalFunctionArguments,
-  determineExtractedFunctionType,
-  findMethodScopeStart,
-} = require('./queries')
-const argv = require('yargs')
-  .command('refactoring', 'start refactoring server', {
-    'single-run': {
-      type: 'boolean'
-    }
-  })
-  .command('tags', 'start generate/update tags file server', {
-    update: {
-      type: 'boolean'
-    },
-    ignore: {
-      type: 'array',
-      default: []
-    }
-  })
-  .demandCommand()
-  .argv
-
-function refactoring() {
-  const rl = readline.createInterface({
-    input: process.stdin
-  })
-
-  rl.on('line', message => {
-    try {
-      const {code, action, filetype, start_line, end_line, context = {}} = JSON.parse(message)
-
-      const plugins = [
-        'jsx',
-        'classProperties',
-        'asyncGenerators',
-        'bigInt',
-        'classPrivateProperties',
-        'classPrivateMethods',
-        'doExpressions',
-        'dynamicImport',
-        'exportDefaultFrom',
-        'exportNamespaceFrom',
-        'functionBind',
-        'functionSent',
-        'importMeta',
-        'logicalAssignment',
-        'nullishCoalescingOperator',
-        'numericSeparator',
-        'objectRestSpread',
-        'optionalCatchBinding',
-        'optionalChaining',
-        'partialApplication',
-        'throwExpressions',
-        'topLevelAwait',
-        ['decorators', { decoratorsBeforeExport: true }]
-      ]
-
-      if (filetype === 'typescript') {
-        plugins.push('typescript')
-      } else {
-        plugins.push('flow', 'flowComments')
-      }
-
-      const ast = parse(code, {
-        allowImportExportEverywhere: true,
-        allowAwaitOutsideFunction: true,
-        errorRecovery: true,
-        allowSuperOutsideMethod: true,
-        allowUndeclaredExports: true,
-        sourceType: 'unambiguous',
-        plugins
-      })
-      context.action = action
-
-      if (action === 'extract_variable') {
-        const loc = findStatementStart({ast, current_line: start_line})
-        console.info(JSON.stringify(Object.assign({context}, loc)))
-        return
-
-      } else if (action === 'extract_local_function') {
-        const loc = findStatementStart({ast, current_line: start_line})
-        const return_values = findVariablesDefinedWithinSelectionButUsedOutside({ast, start_line, end_line})
-
-        console.info(
-          JSON.stringify(
-            Object.assign({context, function_arguments: [], return_values, type: 'function'}, loc)
-          )
-        )
-        return
-
-      } else if (action === 'extract_function_or_method') {
-        const return_values = findVariablesDefinedWithinSelectionButUsedOutside({ast, start_line, end_line})
-        const type = determineExtractedFunctionType({ast, start_line, end_line})
-
-        const response = {context, type, return_values}
-        response.function_arguments = findGlobalFunctionArguments({ast, start_line, end_line})
-
-        if (type === 'function' || type === 'unboundFunction') {
-          Object.assign(response, findGlobalScopeStart({ast, current_line: start_line}))
-        } else {
-          Object.assign(response, findMethodScopeStart({ast, current_line: start_line}))
-        }
-
-        console.info(JSON.stringify(response))
-        return
-      }
-
-      console.error(JSON.stringify({error: `unknown action "${action}"`}))
-    } catch (e) {
-      console.error(JSON.stringify({error: e}))
-    }
-
-    if (argv.single_run) {
-      rl.close()
-    }
-  })
-}
-
-switch (argv._[0]) {
-case 'refactoring':
-  refactoring()
-  break
-case 'tags':
-  jsEditorTags({watch: true, ignore: argv.ignore})
-  break
-default:
-  throw new Error(`Unknown command ${argv._[0]}`)
-}
-
-},
 "0d9Ck3r80LzaXiEF0lmmB0kOs2fiuXD1LAq6qXnhM2s=":
 function (require, module, exports, __dirname, __filename) {
 "use strict";
@@ -11154,6 +11008,152 @@ const parse = (input, options = {}) => {
 };
 
 module.exports = parse;
+
+},
+"9IcKR0ivQXgexNPakuBJ8tTd+bwu+5VSCLWFbv2J4vs=":
+function (require, module, exports, __dirname, __filename) {
+
+
+
+// AST explorer:
+//  - https://lihautan.com/babel-ast-explorer/#?eyJiYWJlbFNldHRpbmdzIjp7InZlcnNpb24iOiI3LjYuMCJ9LCJ0cmVlU2V0dGluZ3MiOnsiaGlkZUVtcHR5Ijp0cnVlLCJoaWRlTG9jYXRpb24iOnRydWUsImhpZGVUeXBlIjp0cnVlLCJoaWRlQ29tbWVudHMiOnRydWV9LCJjb2RlIjoiICAgICAgY29uc3QgYSA9IDJcblxuICAgICAgZnVuY3Rpb24gc3R1ZmYoYWEpIHtcbiAgICAgICAgY29uc3QgYiA9IGFcbiAgICAgICAgY29uc3QgbiA9IDJcblxuICAgICAgICBsZXQgYyA9IGIgKyBuICsgYWFcbiAgICAgICAgd29yayhjKVxuXG4gICAgICAgIHJldHVybiBjICsgM1xuICAgICAgfVxuXG4gICAgICBjb25zdCBkID0gM+KAqFxuXG4ifQ==
+//  - https://astexplorer.net/
+
+const {parse} = require('@babel/parser')
+const readline = require('readline')
+const jsEditorTags = require('js-editor-tags')
+const {
+  findStatementStart,
+  findVariablesDefinedWithinSelectionButUsedOutside,
+  findGlobalScopeStart,
+  findGlobalFunctionArguments,
+  determineExtractedFunctionType,
+  findMethodScopeStart,
+} = require('./lib/queries')
+const argv = require('yargs')
+  .command('refactoring', 'start refactoring server', {
+    'single-run': {
+      type: 'boolean'
+    }
+  })
+  .command('tags', 'start generate/update tags file server', {
+    update: {
+      type: 'boolean'
+    },
+    ignore: {
+      type: 'array',
+      default: []
+    }
+  })
+  .demandCommand()
+  .argv
+
+function refactoring() {
+  const rl = readline.createInterface({
+    input: process.stdin
+  })
+
+  rl.on('line', message => {
+    try {
+      const {code, action, filetype, start_line, end_line, context = {}} = JSON.parse(message)
+
+      const plugins = [
+        'jsx',
+        'classProperties',
+        'asyncGenerators',
+        'bigInt',
+        'classPrivateProperties',
+        'classPrivateMethods',
+        'doExpressions',
+        'dynamicImport',
+        'exportDefaultFrom',
+        'exportNamespaceFrom',
+        'functionBind',
+        'functionSent',
+        'importMeta',
+        'logicalAssignment',
+        'nullishCoalescingOperator',
+        'numericSeparator',
+        'objectRestSpread',
+        'optionalCatchBinding',
+        'optionalChaining',
+        'partialApplication',
+        'throwExpressions',
+        'topLevelAwait',
+        ['decorators', { decoratorsBeforeExport: true }]
+      ]
+
+      if (filetype === 'typescript') {
+        plugins.push('typescript')
+      } else {
+        plugins.push('flow', 'flowComments')
+      }
+
+      const ast = parse(code, {
+        allowImportExportEverywhere: true,
+        allowAwaitOutsideFunction: true,
+        errorRecovery: true,
+        allowSuperOutsideMethod: true,
+        allowUndeclaredExports: true,
+        sourceType: 'unambiguous',
+        plugins
+      })
+      context.action = action
+
+      if (action === 'extract_variable') {
+        const loc = findStatementStart({ast, current_line: start_line})
+        console.info(JSON.stringify(Object.assign({context}, loc)))
+        return
+
+      } else if (action === 'extract_local_function') {
+        const loc = findStatementStart({ast, current_line: start_line})
+        const return_values = findVariablesDefinedWithinSelectionButUsedOutside({ast, start_line, end_line})
+
+        console.info(
+          JSON.stringify(
+            Object.assign({context, function_arguments: [], return_values, type: 'function'}, loc)
+          )
+        )
+        return
+
+      } else if (action === 'extract_function_or_method') {
+        const return_values = findVariablesDefinedWithinSelectionButUsedOutside({ast, start_line, end_line})
+        const type = determineExtractedFunctionType({ast, start_line, end_line})
+
+        const response = {context, type, return_values}
+        response.function_arguments = findGlobalFunctionArguments({ast, start_line, end_line})
+
+        if (type === 'function' || type === 'unboundFunction') {
+          Object.assign(response, findGlobalScopeStart({ast, current_line: start_line}))
+        } else {
+          Object.assign(response, findMethodScopeStart({ast, current_line: start_line}))
+        }
+
+        console.info(JSON.stringify(response))
+        return
+      }
+
+      console.error(JSON.stringify({error: `unknown action "${action}"`}))
+    } catch (e) {
+      console.error(JSON.stringify({error: e}))
+    }
+
+    if (argv.single_run) {
+      rl.close()
+    }
+  })
+}
+
+switch (argv._[0]) {
+case 'refactoring':
+  refactoring()
+  break
+case 'tags':
+  jsEditorTags({watch: true, ignore: argv.ignore})
+  break
+default:
+  throw new Error(`Unknown command ${argv._[0]}`)
+}
 
 },
 "9KOnbh2xShRyCjY+K6oVQxtosWyT01f3bRACynJ5ZFo=":
@@ -78693,12 +78693,19 @@ module.exports = cacheHas;
 ,
 {
   "js_language_server.js": [
-    "0cE9Z7zUZbY6GNLgS6F6ZyCWZHn0FvHGXYG0q/ZTg4c=",
+    "9IcKR0ivQXgexNPakuBJ8tTd+bwu+5VSCLWFbv2J4vs=",
     {
-      "./queries": "queries.js",
+      "./lib/queries": "lib/queries.js",
       "@babel/parser": "node_modules/@babel/parser/lib/index.js",
       "js-editor-tags": "node_modules/js-editor-tags/index.js",
       "yargs": "node_modules/yargs/index.js"
+    }
+  ],
+  "lib/queries.js": [
+    "X75WwvjdBtuvXwDQLB3Skpj6RmOGwb25oUoSStNsx3s=",
+    {
+      "@babel/traverse": "node_modules/@babel/traverse/lib/index.js",
+      "@babel/types": "node_modules/@babel/types/lib/index.js"
     }
   ],
   "node_modules/@babel/code-frame/lib/index.js": [
@@ -85002,13 +85009,6 @@ module.exports = cacheHas;
       "set-blocking": "node_modules/set-blocking/index.js",
       "y18n": "node_modules/y18n/index.js",
       "yargs-parser": "node_modules/yargs/node_modules/yargs-parser/index.js"
-    }
-  ],
-  "queries.js": [
-    "X75WwvjdBtuvXwDQLB3Skpj6RmOGwb25oUoSStNsx3s=",
-    {
-      "@babel/traverse": "node_modules/@babel/traverse/lib/index.js",
-      "@babel/types": "node_modules/@babel/types/lib/index.js"
     }
   ]
 },
