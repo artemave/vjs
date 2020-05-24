@@ -167,7 +167,7 @@ fun! s:ListExpressRoutes()
   endf
 
   let g:collected_match_results = []
-  let rx = '\w\+\.\(get\|post\|put\|delete\|patch\|head\|options\|use\)(\_s*['."'".'"`][^'."'".'"`]\+['."'".'"`]'
+  let rx = '\w\+\.\(get\|post\|put\|delete\|patch\|head\|options\|use\)(\_s*[''"`][^''"`]\+[''"`]'
   let starting_pos = getpos('.')
 
   call cursor(1, 1)
@@ -255,7 +255,7 @@ fun! s:RenameFile()
 
     let new_import_path = fnamemodify(join(import_path_parts, '/'), ':r')
 
-    let new_text_pattern = '\(["'."'".']\).\+["'."'".']'
+    let new_text_pattern = '\(["'']\).\+["'']'
     let new_text_replacement = '\1'. new_import_path .'\1'
 
     let new_text = substitute(require.text, new_text_pattern, new_text_replacement, '')
