@@ -255,13 +255,21 @@ fun! s:RenameFile()
 
     let new_import_path = fnamemodify(join(import_path_parts, '/'), ':r')
 
-    let new_text_pattern = '\(["'']\).\+["'']'
+    let new_text_pattern = '\(["'']\).*["'']'
     let new_text_replacement = '\1'. new_import_path .'\1'
 
     let new_text = substitute(require.text, new_text_pattern, new_text_replacement, '')
     let require.text = new_text
 
-    let cmd = 'sed -r -i "'. require.lnum .'s/'. escape(new_text_pattern, '/\"') .'/'. escape(new_text_replacement, '/\"') .'/" '. fname
+    let platform = substitute(system('uname'), '\n', '', '')
+    if platform == 'Darwin'
+      let cmd = "sed -i '' -e "
+    else
+      let cmd = 'sed -i -e '
+    endif
+
+    let cmd = cmd .'"'. require.lnum .'s/'. escape(new_text_pattern, '/\"') .'/'. escape(new_text_replacement, '/\"') .'/" '. fname
+    echom cmd
     if !exists('g:vjs_test_env')
       silent call system(cmd)
     endif
