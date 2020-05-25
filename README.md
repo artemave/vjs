@@ -11,7 +11,7 @@ Namely:
 - autocomplete `require`/`import` paths
 - update imports on file rename/move
 - list imports for current file
-- auto generating and keeping up to date `tags` file
+- auto generate and keep up to date `tags` file
 - list Express routes
 
 I have another plugin - [vigun](https://github.com/artemave/vigun) - for running tests from vim.
