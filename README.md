@@ -6,22 +6,25 @@ Vim plugin that brings about a bunch of powertricks for writing Javascript:
 
 Namely:
 
-- autocomplete `require`/`import` paths
-- list files that require/import current file
 - extract variable
-- extract function
+- extract function/method
+- autocomplete `require`/`import` paths
+- update imports on file rename/move
+- list imports for current file
 - auto generating and keeping up to date `tags` file
 - list Express routes
 
-There is another plugin - [vigun](https://github.com/artemave/vigun) - for running tests from vim.
+I have another plugin - [vigun](https://github.com/artemave/vigun) - for running tests from vim.
 
 ## Installation
 
 Use [a plugin manager](https://github.com/junegunn/vim-plug):
 
 ```vim script
-Plug 'artemave/vjs'
-``` 
+Plug 'artemave/vjs', { 'do': 'npm install' }
+```
+
+If you don't use a plugin manager, don't forget to run `npm install` in the plugin directory.
 
 ## Usage
 

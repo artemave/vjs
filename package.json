@@ -2,10 +2,7 @@
   "name": "vjs",
   "version": "0.0.1",
   "scripts": {
-    "test": "mocha spec && ./run_tests",
-    "build": "yarn build:osx && yarn build:linux",
-    "build:osx": "pkg --target macos --out-path dist js_language_server.js",
-    "build:linux": "noderify --filter fsevents --filter spawn-sync js_language_server.js > dist/js_language_server.js"
+    "test": "mocha spec && ./run_tests"
   },
   "dependencies": {
     "@babel/parser": "^7.8.7",
@@ -16,8 +13,6 @@
   },
   "devDependencies": {
     "eslint": "^6.8.0",
-    "mocha": "^7.1.0",
-    "noderify": "^5.0.0",
-    "pkg": "^4.4.4"
+    "mocha": "^7.1.0"
   }
 }
