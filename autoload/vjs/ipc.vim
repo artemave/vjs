@@ -66,18 +66,5 @@ endf
 let s:s_path = resolve(expand('<sfile>:p:h:h'). '/..')
 
 fun s:GetServerExecPath()
-  let platform = substitute(system('uname'), '\n', '', '')
-
-  if exists('g:vjs_test_env')
-    return s:s_path .'/js_language_server.js'
-  endif
-
-  let server_bin = ''
-  if platform == 'Darwin'
-    let server_bin = s:s_path.'/dist/js_language_server'
-  else
-    let server_bin = 'node '.s:s_path.'/dist/js_language_server.js'
-  endif
-
-  return server_bin
+  return s:s_path .'/js_language_server.js'
 endf
