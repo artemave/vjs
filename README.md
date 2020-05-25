@@ -26,6 +26,15 @@ Plug 'artemave/vjs', { 'do': 'npm install' }
 
 If you don't use a plugin manager, don't forget to run `npm install` in the plugin directory.
 
+### Example bindings
+
+```vim script
+au FileType {javascript,javascript.jsx,typescript} nmap <leader>vl :VjsListRequirers<cr>
+au FileType {javascript,javascript.jsx,typescript} nmap <leader>vr :VjsRenameFile<cr>
+au FileType {javascript,javascript.jsx,typescript} vmap <leader>vv :VjsExtractVariable<cr>
+au FileType {javascript,javascript.jsx,typescript} vmap <leader>vf :VjsExtractFunctionOrMethod<cr>
+```
+
 ## Usage
 
 #### Complete require paths
@@ -42,12 +51,6 @@ Shows list of modules that require/import current file in quickfix window.
 
 ![vjs_list_dependents](https://user-images.githubusercontent.com/23721/80421625-0f0ece80-88dd-11ea-8057-93ff00adbf3e.gif)
 
-#### `:VjsListRoutes`
-
-Shows list of express routes of current file in quickfix window.
-
-![vjs_list_routes](https://user-images.githubusercontent.com/23721/80421959-9d835000-88dd-11ea-87ae-3f65638c7de4.gif)
-
 #### `:'<,'>VjsExtractVariable`
 
 Extracts selected code into a variable.
@@ -60,6 +63,12 @@ Extracts selected code into a global function (TODO: or a method if applicable).
 
 ![vjs_extract_function](https://user-images.githubusercontent.com/23721/80576556-b38c3000-8a05-11ea-8be8-5b1b18e5ac87.gif)
 
+#### `:VjsListRoutes`
+
+Shows list of express routes of current file in quickfix window.
+
+![vjs_list_routes](https://user-images.githubusercontent.com/23721/80421959-9d835000-88dd-11ea-87ae-3f65638c7de4.gif)
+
 ### Configuration
 
 `g:vjs_tags_enabled` - enable tags file auto generation. Defaults to `1`.
@@ -67,15 +76,6 @@ Extracts selected code into a global function (TODO: or a method if applicable).
 `g:vjs_tags_ignore` - additional paths to ignore when generating tags file. By default vjs tags all non git ignored js/jsx/mjs files. Array.
 
 `g:vjs_tags_regenerate_at_start` - when vim starts and this is set to `0`, it will update existing tags file rather than regenerating it. Defaults to `1`.
-
-### Example bindings
-
-```vim script
-au FileType {javascript,javascript.jsx,typescript} nmap <leader>vl :VjsListRequirers<cr>
-au FileType {javascript,javascript.jsx,typescript} nmap <leader>vr :VjsRenameFile<cr>
-au FileType {javascript,javascript.jsx,typescript} vmap <leader>vv :VjsExtractVariable<cr>
-au FileType {javascript,javascript.jsx,typescript} vmap <leader>vf :VjsExtractFunctionOrMethod<cr>
-```
 
 ## Development
 
