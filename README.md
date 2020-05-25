@@ -71,8 +71,10 @@ Extracts selected code into a global function (TODO: or a method if applicable).
 ### Example bindings
 
 ```vim script
-au FileType {javascript,javascript.jsx} nnoremap <Leader>p :call VjsLintFix<cr>
-au FileType {javascript,javascript.jsx} nnoremap <leader>R :call VjsListDependents<cr>
+au FileType {javascript,javascript.jsx,typescript} nmap <leader>vl :VjsListRequirers<cr>
+au FileType {javascript,javascript.jsx,typescript} nmap <leader>vr :VjsRenameFile<cr>
+au FileType {javascript,javascript.jsx,typescript} vmap <leader>vv :VjsExtractVariable<cr>
+au FileType {javascript,javascript.jsx,typescript} vmap <leader>vf :VjsExtractFunctionOrMethod<cr>
 ```
 
 ## Development
@@ -89,10 +91,6 @@ yarn
 ```
 yarn test
 ```
-
-### Update js dist
-
-Extract variable feature talks to a js backend. That js is bundled, so that users don't need to `npm install`. Hence whenever plugin js is updated, the bundle needs to be rebuilt and checked in. 
 
 ```
 yarn build
