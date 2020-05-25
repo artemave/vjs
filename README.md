@@ -14,7 +14,7 @@ Namely:
 - auto generate and keep up to date `tags` file
 - list Express routes
 
-I have another plugin - [vigun](https://github.com/artemave/vigun) - for running tests from vim.
+For test related stuff I have a dedicated [plugin](https://github.com/artemave/vigun).
 
 ## Installation
 
