@@ -35,6 +35,16 @@ au FileType {javascript,javascript.jsx,typescript} vmap <leader>vv :VjsExtractVa
 au FileType {javascript,javascript.jsx,typescript} vmap <leader>vf :VjsExtractFunctionOrMethod<cr>
 ```
 
+There are no default bindings.
+
+### Configuration
+
+`g:vjs_tags_enabled` - enable tags file auto generation. Defaults to `1`.
+
+`g:vjs_tags_ignore` - additional paths to ignore when generating tags file. By default vjs tags all non git ignored js/jsx/mjs files. Array.
+
+`g:vjs_tags_regenerate_at_start` - when vim starts and this is set to `0`, it will update existing tags file rather than regenerating it. Defaults to `1`.
+
 ## Usage
 
 #### Complete require paths
@@ -42,8 +52,6 @@ au FileType {javascript,javascript.jsx,typescript} vmap <leader>vf :VjsExtractFu
 Vjs registers `omnifunc` for `require`/`import` path completion - `CTRL-X CTRL-O` - which gives you this:
 
 <img src="https://user-images.githubusercontent.com/23721/80413735-38752d80-88d0-11ea-8030-de1b17ee4796.gif" loading="lazy">
-
-Vjs comes with no bindings, but does add the following commands:
 
 #### `:VjsListDependents`
 
@@ -68,14 +76,6 @@ Extracts selected code into a global function (TODO: or a method if applicable).
 Shows list of express routes of current file in quickfix window.
 
 ![vjs_list_routes](https://user-images.githubusercontent.com/23721/80421959-9d835000-88dd-11ea-87ae-3f65638c7de4.gif)
-
-### Configuration
-
-`g:vjs_tags_enabled` - enable tags file auto generation. Defaults to `1`.
-
-`g:vjs_tags_ignore` - additional paths to ignore when generating tags file. By default vjs tags all non git ignored js/jsx/mjs files. Array.
-
-`g:vjs_tags_regenerate_at_start` - when vim starts and this is set to `0`, it will update existing tags file rather than regenerating it. Defaults to `1`.
 
 ## Development
 
