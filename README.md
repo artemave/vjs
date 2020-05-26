@@ -83,11 +83,11 @@ Requires node.
 
 ```
 git clone https://github.com/junegunn/vader.vim.git
-yarn
+npm install
 ```
 
 ### Running Tests
 
 ```
-yarn test
+npm run test
 ```
