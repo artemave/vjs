@@ -91,7 +91,3 @@ yarn
 ```
 yarn test
 ```
-
-```
-yarn build
-```
