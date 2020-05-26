@@ -53,11 +53,11 @@ Vjs registers `omnifunc` for `require`/`import` path completion - `CTRL-X CTRL-O
 
 <img src="https://user-images.githubusercontent.com/23721/80413735-38752d80-88d0-11ea-8030-de1b17ee4796.gif" loading="lazy">
 
-#### `:VjsListDependents`
+#### `:VjsRenameFile`
 
-Shows list of modules that require/import current file in quickfix window.
+Rename/move file and update imports.
 
-![vjs_list_dependents](https://user-images.githubusercontent.com/23721/80421625-0f0ece80-88dd-11ea-8057-93ff00adbf3e.gif)
+![vjs_rename_file](https://user-images.githubusercontent.com/23721/82894765-62fbea00-9f53-11ea-8a64-d3bd123fe553.gif)
 
 #### `:'<,'>VjsExtractVariable`
 
@@ -70,6 +70,12 @@ Extracts selected code into a variable.
 Extracts selected code into a global function (TODO: or a method if applicable).
 
 ![vjs_extract_function](https://user-images.githubusercontent.com/23721/80576556-b38c3000-8a05-11ea-8be8-5b1b18e5ac87.gif)
+
+#### `:VjsListDependents`
+
+Shows list of modules that require/import current file in quickfix window.
+
+![vjs_list_dependents](https://user-images.githubusercontent.com/23721/80421625-0f0ece80-88dd-11ea-8057-93ff00adbf3e.gif)
 
 #### `:VjsListRoutes`
 
