@@ -203,6 +203,7 @@ fun! s:RenameFile()
 
   if !exists('g:vjs_test_env')
     if rename(expand('%:p'), full_new_name_path) != 0
+      echom ' ... rename failed!'
       return
     end
   endif
@@ -269,9 +270,11 @@ fun! s:RenameFile()
     endif
 
     let cmd = cmd .'"'. require.lnum .'s/'. escape(new_text_pattern, '/\"') .'/'. escape(new_text_replacement, '/\"') .'/" '. fname
-    echom cmd
     if !exists('g:vjs_test_env')
-      silent call system(cmd)
+      let output = system(cmd)
+      if v:shell_error
+        throw output
+      endif
     endif
   endfor
 
