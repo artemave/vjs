@@ -55,7 +55,7 @@ Vjs registers `omnifunc` for `require`/`import` path completion - `CTRL-X CTRL-O
 
 #### `:VjsRenameFile`
 
-Rename/move file and update imports.
+Rename/move file and update imports. It updates both imports in current file and all files that import current file.
 
 ![vjs_rename_file](https://user-images.githubusercontent.com/23721/82894765-62fbea00-9f53-11ea-8a64-d3bd123fe553.gif)
 
