@@ -2,9 +2,7 @@
 
 ## What is this?
 
-Vim plugin that adds a bunch of powertricks for writing Javascript:
-
-Namely:
+A Vim plugin that adds a bunch of power tricks for writing Javascript. Namely:
 
 - extract variable
 - extract function/method
