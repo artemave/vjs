@@ -101,6 +101,7 @@ fun! s:HandleExtractVariableResponse(message) abort
 
   let new_lines = split(indent ."const ". @v ." = ". @s, "\n")
   call map(new_lines, {idx, line -> idx > 0 ? substitute(line, "^".repeat(' ', current_indent_base - a:message.column), '', '') : line})
+  call add(new_lines, '')
 
   return new_lines
 endf
