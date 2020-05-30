@@ -83,15 +83,8 @@ Shows list of express routes of current file in quickfix window.
 
 ## Development
 
-Requires node.
-
 ```
 git clone https://github.com/junegunn/vader.vim.git
 npm install
-```
-
-### Running Tests
-
-```
 npm run test
 ```
