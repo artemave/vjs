@@ -76,47 +76,14 @@ fun! vjs#imports#RenameFile()
 
   let dependants = getqflist()
 
-  let full_new_name_path_parts = split(full_new_name_path, '/')
+  let imported_module_full_path_parts = split(full_new_name_path, '/')
 
   for require in dependants
     let import_path_parts = []
     let fname = bufname(require.bufnr)
-    let dependant_full_path_parts = split(fnamemodify(fname, ':p'), '/')
+    let importing_module_full_path_parts = split(fnamemodify(fname, ':p'), '/')
 
-    let max_len = max([len(dependant_full_path_parts), len(full_new_name_path_parts)])
-
-    let idx = 0
-    let paths_diverged = v:false
-    let import_path_parts = []
-
-    while idx < max_len
-      if idx >= len(full_new_name_path_parts)
-        call insert(import_path_parts, '..', 0)
-        let idx = idx + 1
-        continue
-      endif
-
-      if idx >= len(dependant_full_path_parts)
-        call add(import_path_parts, full_new_name_path_parts[idx])
-        let idx = idx + 1
-        continue
-      endif
-
-      if dependant_full_path_parts[idx] != full_new_name_path_parts[idx] || paths_diverged
-        if paths_diverged
-          call insert(import_path_parts, '..', 0)
-        end
-        let paths_diverged = v:true
-
-        call add(import_path_parts, full_new_name_path_parts[idx])
-      endif
-
-      let idx = idx + 1
-    endwhile
-
-    if import_path_parts[0] != '..'
-      call insert(import_path_parts, '.', 0)
-    endif
+    let import_path_parts = s:calculateImportPathParts(importing_module_full_path_parts, imported_module_full_path_parts)
 
     let new_import_path = fnamemodify(join(import_path_parts, '/'), ':r')
 
@@ -157,7 +124,7 @@ fun! vjs#imports#UpdateCurrentFileImports(current_file_name, new_file_name)
   let current_cursor_pos = getcurpos()
 
   let imported_module_base_path = fnamemodify(a:current_file_name, ':p:h')
-  let new_file_base_path_parts = split(fnamemodify(a:new_file_name, ':p'), '/')
+  let importing_module_full_path_parts = split(fnamemodify(a:new_file_name, ':p'), '/')
 
   call cursor(1,1)
 
@@ -173,40 +140,7 @@ fun! vjs#imports#UpdateCurrentFileImports(current_file_name, new_file_name)
       let imported_module_full_path = fnamemodify(imported_module_base_path .'/'. m, ':p')
       let imported_module_full_path_parts = split(imported_module_full_path, '/')
 
-      let max_len = max([len(new_file_base_path_parts), len(imported_module_full_path_parts)])
-
-      let idx = 0
-      let paths_diverged = v:false
-      let import_path_parts = []
-
-      while idx < max_len
-        if idx >= len(imported_module_full_path_parts)
-          call insert(import_path_parts, '..', 0)
-          let idx = idx + 1
-          continue
-        endif
-
-        if idx >= len(new_file_base_path_parts)
-          call add(import_path_parts, imported_module_full_path_parts[idx])
-          let idx = idx + 1
-          continue
-        endif
-
-        if new_file_base_path_parts[idx] != imported_module_full_path_parts[idx] || paths_diverged
-          if paths_diverged
-            call insert(import_path_parts, '..', 0)
-          end
-          let paths_diverged = v:true
-
-          call add(import_path_parts, imported_module_full_path_parts[idx])
-        endif
-
-        let idx = idx + 1
-      endwhile
-
-      if import_path_parts[0] != '..'
-        call insert(import_path_parts, '.', 0)
-      endif
+      let import_path_parts = s:calculateImportPathParts(importing_module_full_path_parts, imported_module_full_path_parts)
 
       if m == 'index'
         let import_path_parts = import_path_parts[:-2]
@@ -218,4 +152,43 @@ fun! vjs#imports#UpdateCurrentFileImports(current_file_name, new_file_name)
   endwhile
 
   call setpos('.', current_cursor_pos)
+endf
+
+fun! s:calculateImportPathParts(importing_module_full_path_parts, imported_module_full_path_parts)
+  let max_len = max([len(a:importing_module_full_path_parts), len(a:imported_module_full_path_parts)])
+
+  let idx = 0
+  let paths_diverged = v:false
+  let import_path_parts = []
+
+  while idx < max_len
+    if idx >= len(a:imported_module_full_path_parts)
+      call insert(import_path_parts, '..', 0)
+      let idx = idx + 1
+      continue
+    endif
+
+    if idx >= len(a:importing_module_full_path_parts)
+      call add(import_path_parts, a:imported_module_full_path_parts[idx])
+      let idx = idx + 1
+      continue
+    endif
+
+    if a:importing_module_full_path_parts[idx] != a:imported_module_full_path_parts[idx] || paths_diverged
+      if paths_diverged
+        call insert(import_path_parts, '..', 0)
+      end
+      let paths_diverged = v:true
+
+      call add(import_path_parts, a:imported_module_full_path_parts[idx])
+    endif
+
+    let idx = idx + 1
+  endwhile
+
+  if import_path_parts[0] != '..'
+    call insert(import_path_parts, '.', 0)
+  endif
+
+  return import_path_parts
 endf
