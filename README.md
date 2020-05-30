@@ -2,7 +2,7 @@
 
 ## What is this?
 
-Vim plugin that brings about a bunch of powertricks for writing Javascript:
+Vim plugin that adds a bunch of powertricks for writing Javascript:
 
 Namely:
 
