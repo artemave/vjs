@@ -84,6 +84,8 @@ Shows list of express routes of current file in quickfix window.
 ## Development
 
 ```
+git clone https://github.com/artemave/vjs.git
+cd vjs
 git clone https://github.com/junegunn/vader.vim.git
 npm install
 npm run test
