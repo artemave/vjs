@@ -209,7 +209,7 @@ Given javascript (object arrow function expression):
         const b = a
         const n = 2
 
-        const c = this.aaa
+        var c = this.aaa
         foo(work(c, b, n))
         return c + 3
       }
@@ -222,11 +222,11 @@ Do:
   :'<,'>VjsExtractFunctionOrMethod\<CR>
   thing\<CR>
 
-Expect (dunno why the indentation is wrong - it works for real):
+Expect javascript (dunno why the indentation is wrong - it works for real):
   import {foo} from 'bar'
 
   function thing(b, n) {
-    const c = this.aaa
+    var c = this.aaa
     foo(work(c, b, n))
     return c
   }
@@ -237,10 +237,74 @@ Expect (dunno why the indentation is wrong - it works for real):
         const b = a
         const n = 2
 
-      const c = thing.call(this, b, n)
+      var c = thing.call(this, b, n)
         return c + 3
       }
     }
+  }
+
+Given javascript:
+  function notSillyBlankIEObject (element) {
+    return Object.keys(element).length > 0
+  }
+  module.exports = {
+    focus: function (element, options) {
+      var focus = typeof options === 'object' && options.hasOwnProperty('focus') ? options.focus : true
+
+      if (focus) {
+        var $ = this.get('$')
+        var document = this.get('document')
+        if (element && element.length > 0) {
+          element = element[0]
+        }
+
+        var activeElement = document.activeElement
+        if (activeElement && !$(activeElement).is(':focus') && notSillyBlankIEObject(activeElement)) {
+          $(activeElement).trigger('blur')
+        }
+        if (['[object Document]', '[object HTMLDocument]'].indexOf(document.toString()) === -1) {
+          document.activeElement = element
+        }
+        $(element).focus()
+      }
+    },
+  }
+
+Do:
+  14j
+  V3j
+  :'<,'>VjsExtractFunctionOrMethod\<CR>
+  thing\<CR>
+
+Expect javascript:
+  function notSillyBlankIEObject (element) {
+    return Object.keys(element).length > 0
+  }
+  function thing($, document) {
+    var activeElement = document.activeElement
+    if (activeElement && !$(activeElement).is(':focus') && notSillyBlankIEObject(activeElement)) {
+      $(activeElement).trigger('blur')
+    }
+  }
+
+  module.exports = {
+    focus: function (element, options) {
+      var focus = typeof options === 'object' && options.hasOwnProperty('focus') ? options.focus : true
+
+      if (focus) {
+        var $ = this.get('$')
+        var document = this.get('document')
+        if (element && element.length > 0) {
+          element = element[0]
+        }
+
+        thing($, document)
+        if (['[object Document]', '[object HTMLDocument]'].indexOf(document.toString()) === -1) {
+          document.activeElement = element
+        }
+        $(element).focus()
+      }
+    },
   }
 
 " Execute:

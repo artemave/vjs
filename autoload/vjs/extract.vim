@@ -54,7 +54,7 @@ fun! vjs#extract#RefactoringResponseHandler(channel, response, ...) abort
 
   try
     if has_key(message, 'error')
-      throw message.error
+      throw a:response
     endif
 
     if message.context.action == 'extract_variable'

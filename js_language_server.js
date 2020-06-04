@@ -7,6 +7,7 @@
 const {parse} = require('@babel/parser')
 const readline = require('readline')
 const jsEditorTags = require('js-editor-tags')
+const parseOptions = require('./parse_options')
 const {
   findStatementStart,
   findVariablesDefinedWithinSelectionButUsedOutside,
@@ -42,47 +43,7 @@ function refactoring() {
     try {
       const {code, action, filetype, start_line, end_line, context = {}} = JSON.parse(message)
 
-      const plugins = [
-        'jsx',
-        'classProperties',
-        'asyncGenerators',
-        'bigInt',
-        'classPrivateProperties',
-        'classPrivateMethods',
-        'doExpressions',
-        'dynamicImport',
-        'exportDefaultFrom',
-        'exportNamespaceFrom',
-        'functionBind',
-        'functionSent',
-        'importMeta',
-        'logicalAssignment',
-        'nullishCoalescingOperator',
-        'numericSeparator',
-        'objectRestSpread',
-        'optionalCatchBinding',
-        'optionalChaining',
-        'partialApplication',
-        'throwExpressions',
-        'topLevelAwait',
-        ['decorators', { decoratorsBeforeExport: true }]
-      ]
-
-      if (filetype === 'typescript') {
-        plugins.push('typescript')
-      } else {
-        plugins.push('flow', 'flowComments')
-      }
-
-      const ast = parse(code, {
-        allowImportExportEverywhere: true,
-        allowAwaitOutsideFunction: true,
-        errorRecovery: true,
-        allowSuperOutsideMethod: true,
-        allowUndeclaredExports: true,
-        sourceType: 'unambiguous',
-        plugins
-      })
+      const ast = parse(code, parseOptions(filetype))
       context.action = action
 
       if (action === 'extract_variable') {
@@ -120,7 +81,7 @@ function refactoring() {
 
       console.error(JSON.stringify({error: `unknown action "${action}"`}))
     } catch (e) {
-      console.error(JSON.stringify({error: e}))
+      console.error(JSON.stringify({error: e.stack}))
     }
 
     if (argv.single_run) {
