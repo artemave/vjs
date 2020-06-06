@@ -95,7 +95,7 @@ fun! vjs#imports#RenameFile()
 
     let platform = substitute(system('uname'), '\n', '', '')
     if platform == 'Darwin'
-      let cmd = "sed -i '' -e "
+      let cmd = "/usr/bin/sed -i '' -e "
     else
       let cmd = 'sed -i -e '
     endif
