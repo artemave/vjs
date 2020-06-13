@@ -2,10 +2,11 @@
 
 ## What is this?
 
-A Vim plugin that adds a bunch of power tricks for writing Javascript. Namely:
+A Vim plugin that adds a bunch of power tricks for writing Javascript/TypeScript. Namely:
 
 - extract variable
 - extract function/method
+- extract class/function/variable declaration into a separate file
 - autocomplete `require`/`import` paths
 - update imports on file rename/move
 - list imports for current file
@@ -27,10 +28,11 @@ If you don't use a plugin manager, don't forget to run `npm install` in the plug
 ### Example bindings
 
 ```vim script
-au FileType {javascript,javascript.jsx,typescript} nmap <leader>vl :VjsListRequirers<cr>
-au FileType {javascript,javascript.jsx,typescript} nmap <leader>vr :VjsRenameFile<cr>
 au FileType {javascript,javascript.jsx,typescript} vmap <leader>vv :VjsExtractVariable<cr>
 au FileType {javascript,javascript.jsx,typescript} vmap <leader>vf :VjsExtractFunctionOrMethod<cr>
+au FileType {javascript,javascript.jsx,typescript} nmap <leader>vd :VjsExtractDeclarationIntoFile<cr>
+au FileType {javascript,javascript.jsx,typescript} nmap <leader>vr :VjsRenameFile<cr>
+au FileType {javascript,javascript.jsx,typescript} nmap <leader>vl :VjsListDependents<cr>
 ```
 
 There are no default bindings.

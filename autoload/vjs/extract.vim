@@ -61,14 +61,25 @@ fun! vjs#extract#RefactoringResponseHandler(channel, response, ...) abort
       let new_lines = s:HandleExtractVariableResponse(message)
     elseif message.context.action == 'extract_local_function' || message.context.action == 'extract_function_or_method'
       let new_lines = s:HandleExtractFunctionResponse(message)
+    elseif message.context.action == 'extract_declaration'
+      let new_lines = s:HandleExtractDeclarationResponse(message)
     else
       throw 'Unknown action '. message.context.action
     endif
 
-    undojoin | call append(message.line - 1, new_lines)
+    if len(new_lines) > 0
+      undojoin | call append(message.line - 1, new_lines)
+    end
   finally
-    let @v = s:v_reg
-    let @s = s:s_reg
+    if s:v_reg != ''
+      let @v = s:v_reg
+      let s:v_reg = ''
+    endif
+
+    if s:s_reg != ''
+      let @s = s:s_reg
+      let s:s_reg = ''
+    endif
   endtry
 endf
 
@@ -208,4 +219,86 @@ endf
 
 fun s:VariableNames(message)
   return join(map(copy(a:message.return_values), {_, v -> v.name}), ', ')
+endf
+
+fun vjs#extract#ExtractDeclarationIntoFile()
+  let code = join(getline(1,'$'), "\n")
+  let message = {'code': code, 'start_line': line('.'), 'action': 'extract_declaration'}
+
+  call vjs#ipc#SendMessage(message)
+endf
+
+fun s:HandleExtractDeclarationResponse(message)
+  if has_key(a:message, 'declaration')
+    let name = a:message.declaration.name
+    let new_file_path = input('Extract '. name .' into ', s:expand('%:h') .'/'. name .'.'. s:expand('%:e'), 'file')
+    let start_line = a:message.declaration.start_line
+    let end_line = a:message.declaration.end_line
+
+    " if declaration is surrounded by empty lines, remove one of them
+    if start_line > 1 && getline(start_line - 1) == '' && end_line < line('$') && getline(end_line + 1) == ''
+      let end_line = end_line + 1
+    endif
+
+    execute start_line .','. end_line .'d' 'v'
+
+    let indent_to_remove = indent(start_line)
+    let new_file_lines = split(@v, "\n", 1)
+    call map(new_file_lines, {_, line -> substitute(line, '^'.repeat(' ', indent_to_remove), '', '') })
+
+    " drop empty lines at the end
+    while new_file_lines[-1] == ''
+      let new_file_lines = new_file_lines[0:-2]
+    endwhile
+
+    let new_file_lines[0] = s:ExportStatement(new_file_lines[0])
+    call s:writefile(new_file_lines, new_file_path)
+
+    let importing_module_full_path_parts = split(s:expand('%:p'), '/')
+    let imported_module_full_path_parts = split(fnamemodify(new_file_path, ':p:r'), '/')
+    let import_path_parts = vjs#imports#calculateImportPathParts(importing_module_full_path_parts, imported_module_full_path_parts)
+
+    undojoin | call append(0, s:ImportStatement(name, join(import_path_parts, '/')))
+
+    if !exists('g:vjs_test_env')
+      execute 'split' new_file_path
+    endif
+  else
+    echom 'No declaration found under cursor'
+  endif
+
+  return []
+endf
+
+fun s:ExportStatement(declaration_line)
+  if search('^\s*import ') > 0
+    return 'export default '. a:declaration_line
+  else
+    return 'module.exports = '. substitute(a:declaration_line, ' *\(var\|let\|const\) [^=]*= *', '', '')
+  endif
+endf
+
+fun s:ImportStatement(name, path)
+  if search('^\s*import ') > 0
+    return 'import '. a:name ." from '". a:path ."'"
+  else
+    return 'const '. a:name ." = require('". a:path ."')"
+  endif
+endf
+
+fun s:writefile(lines, path)
+  if exists('g:vjs_test_env')
+    let g:test_extracted_file_name = a:path
+    let g:test_extracted_file_lines = a:lines
+  else
+    return writefile(a:lines, a:path)
+  endif
+endf
+
+fun s:expand(expr)
+  if exists('g:vjs_test_env')
+    return fnamemodify(g:test_initial_file_name, a:expr[1:-1])
+  else
+    return expand(a:expr)
+  endif
 endf

@@ -1,0 +1,130 @@
+Given javascript (common js):
+  const fs = require('fs')
+
+  function notSillyBlankIEObject (element) {
+    return Object.keys(element).length > 0
+  }
+  module.exports = {
+    focus: function (element, options) {
+      var focus = typeof options === 'object' && options.hasOwnProperty('focus') ? options.focus : true
+
+      if (focus) {
+        var $ = this.get('$')
+        var document = this.get('document')
+        if (element && element.length > 0) {
+          element = element[0]
+        }
+
+        var activeElement = document.activeElement
+        if (activeElement && !$(activeElement).is(':focus') && notSillyBlankIEObject(activeElement)) {
+          $(activeElement).trigger('blur')
+        }
+      }
+    },
+  }
+
+Execute:
+  let g:test_initial_file_name = 'lib/stuff.js'
+
+Do:
+  2j
+  :VjsExtractDeclarationIntoFile\<CR>
+  \<CR>
+
+Expect javascript:
+  const notSillyBlankIEObject = require('./notSillyBlankIEObject')
+  const fs = require('fs')
+
+  module.exports = {
+    focus: function (element, options) {
+      var focus = typeof options === 'object' && options.hasOwnProperty('focus') ? options.focus : true
+
+      if (focus) {
+        var $ = this.get('$')
+        var document = this.get('document')
+        if (element && element.length > 0) {
+          element = element[0]
+        }
+
+        var activeElement = document.activeElement
+        if (activeElement && !$(activeElement).is(':focus') && notSillyBlankIEObject(activeElement)) {
+          $(activeElement).trigger('blur')
+        }
+      }
+    },
+  }
+
+Execute:
+  AssertEqual 'lib/notSillyBlankIEObject.js', g:test_extracted_file_name
+  AssertEqual [
+    \ 'module.exports = function notSillyBlankIEObject (element) {',
+    \ '  return Object.keys(element).length > 0',
+    \ '}',
+  \], g:test_extracted_file_lines
+
+Given javascript (es modules):
+  import fs from 'fs'
+
+  function notSillyBlankIEObject (element) {
+    return Object.keys(element).length > 0
+  }
+  module.exports = {
+    focus: function (element, options) {
+      var focus = typeof options === 'object' && options.hasOwnProperty('focus') ? options.focus : true
+
+      if (focus) {
+        var $ = this.get('$')
+        var document = this.get('document')
+        if (element && element.length > 0) {
+          element = element[0]
+        }
+
+        var activeElement = document.activeElement
+        if (activeElement && !$(activeElement).is(':focus') && notSillyBlankIEObject(activeElement)) {
+          $(activeElement).trigger('blur')
+        }
+      }
+    },
+  }
+
+Execute:
+  let g:test_initial_file_name = 'lib/stuff.js'
+
+Do:
+  2j
+  :VjsExtractDeclarationIntoFile\<CR>
+  \<CR>
+
+Expect javascript:
+  import notSillyBlankIEObject from './notSillyBlankIEObject'
+  import fs from 'fs'
+
+  module.exports = {
+    focus: function (element, options) {
+      var focus = typeof options === 'object' && options.hasOwnProperty('focus') ? options.focus : true
+
+      if (focus) {
+        var $ = this.get('$')
+        var document = this.get('document')
+        if (element && element.length > 0) {
+          element = element[0]
+        }
+
+        var activeElement = document.activeElement
+        if (activeElement && !$(activeElement).is(':focus') && notSillyBlankIEObject(activeElement)) {
+          $(activeElement).trigger('blur')
+        }
+      }
+    },
+  }
+
+Execute:
+  AssertEqual 'lib/notSillyBlankIEObject.js', g:test_extracted_file_name
+  AssertEqual [
+    \ 'export default function notSillyBlankIEObject (element) {',
+    \ '  return Object.keys(element).length > 0',
+    \ '}',
+  \], g:test_extracted_file_lines
+
+" Execute:
+"   call LogAllMessages()

@@ -83,7 +83,7 @@ fun! vjs#imports#RenameFile()
     let fname = bufname(require.bufnr)
     let importing_module_full_path_parts = split(fnamemodify(fname, ':p'), '/')
 
-    let import_path_parts = s:calculateImportPathParts(importing_module_full_path_parts, imported_module_full_path_parts)
+    let import_path_parts = vjs#imports#calculateImportPathParts(importing_module_full_path_parts, imported_module_full_path_parts)
 
     let new_import_path = fnamemodify(join(import_path_parts, '/'), ':r')
 
@@ -111,7 +111,7 @@ fun! vjs#imports#RenameFile()
 
   if !exists('g:vjs_test_env')
     silent bwipeout!
-    execute 'edit +'. current_line .' '. full_new_name_path
+    execute 'edit +'. current_line full_new_name_path
   endif
 
   call vjs#imports#UpdateCurrentFileImports(old_file_path, full_new_name_path)
@@ -140,7 +140,7 @@ fun! vjs#imports#UpdateCurrentFileImports(current_file_name, new_file_name)
       let imported_module_full_path = fnamemodify(imported_module_base_path .'/'. m, ':p')
       let imported_module_full_path_parts = split(imported_module_full_path, '/')
 
-      let import_path_parts = s:calculateImportPathParts(importing_module_full_path_parts, imported_module_full_path_parts)
+      let import_path_parts = vjs#imports#calculateImportPathParts(importing_module_full_path_parts, imported_module_full_path_parts)
 
       if m == 'index'
         let import_path_parts = import_path_parts[:-2]
@@ -154,7 +154,7 @@ fun! vjs#imports#UpdateCurrentFileImports(current_file_name, new_file_name)
   call setpos('.', current_cursor_pos)
 endf
 
-fun! s:calculateImportPathParts(importing_module_full_path_parts, imported_module_full_path_parts)
+fun! vjs#imports#calculateImportPathParts(importing_module_full_path_parts, imported_module_full_path_parts)
   let max_len = max([len(a:importing_module_full_path_parts), len(a:imported_module_full_path_parts)])
 
   let idx = 0

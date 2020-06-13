@@ -15,6 +15,7 @@ const {
   findGlobalFunctionArguments,
   determineExtractedFunctionType,
   findMethodScopeStart,
+  findEnclosingDeclaration,
 } = require('./lib/queries')
 const argv = require('yargs')
   .command('refactoring', 'start refactoring server', {
@@ -49,9 +50,9 @@ function refactoring() {
       if (action === 'extract_variable') {
         const loc = findStatementStart({ast, current_line: start_line})
         console.info(JSON.stringify(Object.assign({context}, loc)))
-        return
 
       } else if (action === 'extract_local_function') {
+
         const loc = findStatementStart({ast, current_line: start_line})
         const return_values = findVariablesDefinedWithinSelectionButUsedOutside({ast, start_line, end_line})
 
@@ -60,9 +61,8 @@ function refactoring() {
             Object.assign({context, function_arguments: [], return_values, type: 'function'}, loc)
           )
         )
-        return
-
       } else if (action === 'extract_function_or_method') {
+
         const return_values = findVariablesDefinedWithinSelectionButUsedOutside({ast, start_line, end_line})
         const type = determineExtractedFunctionType({ast, start_line, end_line})
 
@@ -74,12 +74,20 @@ function refactoring() {
         } else {
           Object.assign(response, findMethodScopeStart({ast, current_line: start_line}))
         }
-
         console.info(JSON.stringify(response))
-        return
-      }
 
-      console.error(JSON.stringify({error: `unknown action "${action}"`}))
+      } else if (action === 'extract_declaration') {
+
+        const response = {context, line: 1}
+        const declaration = findEnclosingDeclaration({ast, current_line: start_line})
+        if (declaration) {
+          response.declaration = declaration
+        }
+        console.info(JSON.stringify(response))
+
+      } else {
+        console.error(JSON.stringify({error: `unknown action "${action}"`}))
+      }
     } catch (e) {
       console.error(JSON.stringify({error: e.stack}))
     }
