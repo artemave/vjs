@@ -240,16 +240,29 @@ fun s:HandleExtractDeclarationResponse(message)
       let end_line = end_line + 1
     endif
 
-    execute start_line .','. end_line .'d' 'v'
+    execute start_line .','. end_line .'d v'
 
     let indent_to_remove = indent(start_line)
     let new_file_lines = split(@v, "\n", 1)
-    call map(new_file_lines, {_, line -> substitute(line, '^'.repeat(' ', indent_to_remove), '', '') })
 
     " drop empty lines at the end
     while new_file_lines[-1] == ''
       let new_file_lines = new_file_lines[0:-2]
     endwhile
+
+    for import in a:message.declaration.referenced_imports
+      let exclusive = len(filter(import.referenced_on_lines, {idx, line -> line < start_line || line > end_line})) == 0
+
+      if exclusive
+        undojoin | execute import.line .'d v'
+        call insert(new_file_lines, split(@v, "\n", 1))
+      else
+        call insert(new_file_lines, split(getline(import.line), "\n", 1))
+      endif
+    endfor
+
+    " remove indent
+    call map(new_file_lines, {_, line -> substitute(line, '^'.repeat(' ', indent_to_remove), '', '') })
 
     let new_file_lines[0] = s:ExportStatement(new_file_lines[0])
     call s:writefile(new_file_lines, new_file_path)

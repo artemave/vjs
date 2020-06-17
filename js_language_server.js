@@ -16,6 +16,7 @@ const {
   determineExtractedFunctionType,
   findMethodScopeStart,
   findEnclosingDeclaration,
+  findReferencedImports,
 } = require('./lib/queries')
 const argv = require('yargs')
   .command('refactoring', 'start refactoring server', {
@@ -81,6 +82,7 @@ function refactoring() {
         const response = {context, line: 1}
         const declaration = findEnclosingDeclaration({ast, current_line: start_line})
         if (declaration) {
+          declaration.referenced_imports = findReferencedImports(declaration)
           response.declaration = declaration
         }
         console.info(JSON.stringify(response))

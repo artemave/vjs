@@ -2,6 +2,7 @@ Given javascript (common js):
   const fs = require('fs')
 
   function notSillyBlankIEObject (element) {
+    fs.writeFileSync('stuff')
     return Object.keys(element).length > 0
   }
   module.exports = {
@@ -9,12 +10,6 @@ Given javascript (common js):
       var focus = typeof options === 'object' && options.hasOwnProperty('focus') ? options.focus : true
 
       if (focus) {
-        var $ = this.get('$')
-        var document = this.get('document')
-        if (element && element.length > 0) {
-          element = element[0]
-        }
-
         var activeElement = document.activeElement
         if (activeElement && !$(activeElement).is(':focus') && notSillyBlankIEObject(activeElement)) {
           $(activeElement).trigger('blur')
@@ -33,19 +28,12 @@ Do:
 
 Expect javascript:
   const notSillyBlankIEObject = require('./notSillyBlankIEObject')
-  const fs = require('fs')
 
   module.exports = {
     focus: function (element, options) {
       var focus = typeof options === 'object' && options.hasOwnProperty('focus') ? options.focus : true
 
       if (focus) {
-        var $ = this.get('$')
-        var document = this.get('document')
-        if (element && element.length > 0) {
-          element = element[0]
-        }
-
         var activeElement = document.activeElement
         if (activeElement && !$(activeElement).is(':focus') && notSillyBlankIEObject(activeElement)) {
           $(activeElement).trigger('blur')
@@ -57,74 +45,74 @@ Expect javascript:
 Execute:
   AssertEqual 'lib/notSillyBlankIEObject.js', g:test_extracted_file_name
   AssertEqual [
+    \ "const fs = require('fs')",
+    \ '',
     \ 'module.exports = function notSillyBlankIEObject (element) {',
+    \ "  fs.writeFileSync('stuff')",
     \ '  return Object.keys(element).length > 0',
     \ '}',
   \], g:test_extracted_file_lines
 
-Given javascript (es modules):
-  import fs from 'fs'
+" Given javascript (es modules):
+"   import fs from 'fs'
+"   import 'bar' from './baz'
 
-  function notSillyBlankIEObject (element) {
-    return Object.keys(element).length > 0
-  }
-  module.exports = {
-    focus: function (element, options) {
-      var focus = typeof options === 'object' && options.hasOwnProperty('focus') ? options.focus : true
+"   function notSillyBlankIEObject (element) {
+"     bar.this()
+"     fs.writeFileSync('stuff')
+"     return Object.keys(element).length > 0
+"   }
+"   module.exports = {
+"     focus: function (element, options) {
+"       var focus = typeof options === 'object' && options.hasOwnProperty('focus') ? options.focus : true
 
-      if (focus) {
-        var $ = this.get('$')
-        var document = this.get('document')
-        if (element && element.length > 0) {
-          element = element[0]
-        }
-
-        var activeElement = document.activeElement
-        if (activeElement && !$(activeElement).is(':focus') && notSillyBlankIEObject(activeElement)) {
-          $(activeElement).trigger('blur')
-        }
-      }
-    },
-  }
-
-Execute:
-  let g:test_initial_file_name = 'lib/stuff.js'
-
-Do:
-  2j
-  :VjsExtractDeclarationIntoFile\<CR>
-  \<CR>
-
-Expect javascript:
-  import notSillyBlankIEObject from './notSillyBlankIEObject'
-  import fs from 'fs'
-
-  module.exports = {
-    focus: function (element, options) {
-      var focus = typeof options === 'object' && options.hasOwnProperty('focus') ? options.focus : true
-
-      if (focus) {
-        var $ = this.get('$')
-        var document = this.get('document')
-        if (element && element.length > 0) {
-          element = element[0]
-        }
-
-        var activeElement = document.activeElement
-        if (activeElement && !$(activeElement).is(':focus') && notSillyBlankIEObject(activeElement)) {
-          $(activeElement).trigger('blur')
-        }
-      }
-    },
-  }
-
-Execute:
-  AssertEqual 'lib/notSillyBlankIEObject.js', g:test_extracted_file_name
-  AssertEqual [
-    \ 'export default function notSillyBlankIEObject (element) {',
-    \ '  return Object.keys(element).length > 0',
-    \ '}',
-  \], g:test_extracted_file_lines
+"       if (focus) {
+"         fs.writeFileSync('stuff')
+"         var activeElement = document.activeElement
+"         if (activeElement && !$(activeElement).is(':focus') && notSillyBlankIEObject(activeElement)) {
+"           $(activeElement).trigger('blur')
+"         }
+"       }
+"     },
+"   }
 
 " Execute:
-"   call LogAllMessages()
+"   let g:test_initial_file_name = 'lib/stuff.js'
+
+" Do:
+"   2j
+"   :VjsExtractDeclarationIntoFile\<CR>
+"   lib/foo/notSillyBlankIEObject.js\<CR>
+
+" Expect javascript:
+"   import notSillyBlankIEObject from './notSillyBlankIEObject'
+"   import fs from 'fs'
+
+"   module.exports = {
+"     focus: function (element, options) {
+"       var focus = typeof options === 'object' && options.hasOwnProperty('focus') ? options.focus : true
+
+"       if (focus) {
+"         var activeElement = document.activeElement
+"         if (activeElement && !$(activeElement).is(':focus') && notSillyBlankIEObject(activeElement)) {
+"           $(activeElement).trigger('blur')
+"         }
+"       }
+"     },
+"   }
+
+" Execute:
+"   AssertEqual 'lib/notSillyBlankIEObject.js', g:test_extracted_file_name
+"   AssertEqual [
+"     \ "import fs from 'fs'",
+"     \ "import 'bar' from '../baz'",
+"     \ '',
+"     \ 'export default function notSillyBlankIEObject (element) {',
+"     \ '  bar.this()',
+"     \ "  fs.writeFileSync('stuff')",
+"     \ '  return Object.keys(element).length > 0',
+"     \ '}',
+"   \], g:test_extracted_file_lines
+
+Execute:
+  call LogAllMessages()

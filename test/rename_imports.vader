@@ -50,6 +50,7 @@ Execute:
 
 Given javascript (going up one directory):
   require(".")
+  import fs from 'fs'
   import fuga from '../fuga'
 
 Execute:
@@ -57,6 +58,7 @@ Execute:
 
 Expect javascript:
   require("./foo")
+  import fs from 'fs'
   import fuga from './fuga'
 
 
