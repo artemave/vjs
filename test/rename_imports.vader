@@ -20,6 +20,7 @@ Execute:
 
 Do:
   :VjsRenameFile\<CR>
+  \<C-U>
   test/fixtures/thing.js\<CR>
 
 Execute:
@@ -37,6 +38,7 @@ Execute:
 
 Do:
   :VjsRenameFile\<CR>
+  \<C-U>
   test/fixtures/package/thing.js\<CR>
 
 Execute:

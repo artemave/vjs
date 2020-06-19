@@ -57,13 +57,9 @@ fun! vjs#imports#RenameFile()
   let old_file_path = expand('%')
   let old_name = expand('%:t:r')
   let current_line = line('.')
-  let new_name = input('New name: ', '', 'file')
+  let new_name = input('New name: ', expand('%:h') .'/', 'file')
 
-  if match(new_name, '\/') == -1
-    let full_new_name_path = fnamemodify(expand('%:h') . '/'. new_name, ':p')
-  else
-    let full_new_name_path = fnamemodify(getcwd() . '/'. new_name, ':p')
-  endif
+  let full_new_name_path = fnamemodify(getcwd() . '/'. new_name, ':p')
 
   if !exists('g:vjs_test_env')
     if rename(expand('%:p'), full_new_name_path) != 0
