@@ -6,12 +6,12 @@ Do:
   thing.js\<CR>
 
 Execute:
-  AssertEqual GetQFListFiles(), [
+  AssertEqual [
     \ {'lnum': 1, 'fname': 'test/fixtures/blops.js', 'text': "const stuff = require('./deeper/thing')"},
     \ {'lnum': 3, 'fname': 'test/fixtures/package/index.js', 'text': 'const stuff = require("../deeper/thing")'},
     \ {'lnum': 4, 'fname': 'test/fixtures/banana.js', 'text': 'import "./deeper/thing"'},
     \ {'lnum': 5, 'fname': 'test/fixtures/deeper/blah.jsx', 'text': '} from "./thing"'},
-  \]
+  \], GetQFListFiles()
 
 Given javascript (path from the project root 1):
 
@@ -23,12 +23,12 @@ Do:
   test/fixtures/thing.js\<CR>
 
 Execute:
-  AssertEqual GetQFListFiles(), [
+  AssertEqual [
     \ {'lnum': 1, 'fname': 'test/fixtures/blops.js', 'text': "const stuff = require('./thing')"},
     \ {'lnum': 3, 'fname': 'test/fixtures/package/index.js', 'text': 'const stuff = require("../thing")'},
     \ {'lnum': 4, 'fname': 'test/fixtures/banana.js', 'text': 'import "./thing"'},
     \ {'lnum': 5, 'fname': 'test/fixtures/deeper/blah.jsx', 'text': '} from "../thing"'},
-  \]
+  \], GetQFListFiles()
 
 Given javascript (moving to a sibling folder):
 
@@ -40,12 +40,12 @@ Do:
   test/fixtures/package/thing.js\<CR>
 
 Execute:
-  AssertEqual GetQFListFiles(), [
+  AssertEqual [
     \ {'lnum': 1, 'fname': 'test/fixtures/blops.js', 'text': "const stuff = require('./package/thing')"},
     \ {'lnum': 3, 'fname': 'test/fixtures/package/index.js', 'text': 'const stuff = require("./thing")'},
     \ {'lnum': 4, 'fname': 'test/fixtures/banana.js', 'text': 'import "./package/thing"'},
     \ {'lnum': 5, 'fname': 'test/fixtures/deeper/blah.jsx', 'text': '} from "../package/thing"'},
-  \]
+  \], GetQFListFiles()
 
 
 Given javascript (going up one directory):

@@ -33,9 +33,9 @@ Given javascript:
 
 Execute:
   VjsListRoutes
-  AssertEqual GetQFList(), [
+  AssertEqual [
     \ {'lnum': 5,  'text': "app.use('/status'"},
     \ {'lnum': 10, 'text': "app.use('/commit'"},
     \ {'lnum': 12, 'text': "app.get('/delay/:seconds'"},
     \ {'lnum': 24, 'text': 'app.post("/tours"'},
-  \]
+  \], GetQFList()
