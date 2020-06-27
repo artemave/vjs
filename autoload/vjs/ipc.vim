@@ -1,18 +1,44 @@
-fun! vjs#ipc#SendMessage(message)
+let s:callbacks = {}
+
+fun! s:messageId(message)
+  return a:message.action .'__'. localtime()
+endf
+
+fun! vjs#ipc#SendMessage(message, callback)
   let a:message.filetype = &filetype
+
+  if !has_key(a:message, 'context')
+    let a:message.context = {}
+  endif
+
+  let message_id = s:messageId(a:message)
+  let a:message.context.message_id = message_id
+  let s:callbacks[message_id] = a:callback
 
   if exists('g:vjs_test_env')
     let response = system(s:GetServerExecPath().' refactoring --single-run', json_encode(a:message))
-    call vjs#extract#RefactoringResponseHandler(0, response)
+    call vjs#ipc#RefactoringResponseHandler(0, response)
   else
     let channel = s:JobGetChannel(s:refactoring_server_job)
     call s:ChSend(channel, json_encode(a:message) . nr2char(10))
   endif
 endf
 
+fun! vjs#ipc#RefactoringResponseHandler(channel, response, ...) abort
+  let message = json_decode(a:response)
+
+  if has_key(message, 'error')
+    " TODO: cleanup callback
+    throw a:response
+  endif
+
+  let Callback = remove(s:callbacks, message.context.message_id)
+  call Callback(message)
+endf
+
 fun! vjs#ipc#StartJsRefactoringServer()
   if !exists('g:vjs_test_env') && !exists('s:refactoring_server_job')
-    let s:refactoring_server_job = s:JobStart(s:GetServerExecPath().' refactoring', {'err_cb': function('vjs#ipc#VjsErrorCb'), 'out_cb': function('vjs#extract#RefactoringResponseHandler')})
+    let s:refactoring_server_job = s:JobStart(s:GetServerExecPath().' refactoring', {'err_cb': function('vjs#ipc#VjsErrorCb'), 'out_cb': function('vjs#ipc#RefactoringResponseHandler')})
   endif
 endf
 
