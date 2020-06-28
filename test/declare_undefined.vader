@@ -1,0 +1,33 @@
+Given javascript (defined variable):
+  function blah () {
+    const aaa = 1
+    foo(aaa)
+  }
+
+Do:
+  2j
+  fa
+  :VjsCreateDeclaration\<CR>
+
+Expect (nothing happens):
+  function blah () {
+    const aaa = 1
+    foo(aaa)
+  }
+
+Given javascript (undefined variable):
+  function blah () {
+    foo(aaa)
+  }
+
+Do:
+  j
+  fa
+  :VjsCreateDeclaration\<CR>
+
+Expect (inserts variable declaration):
+  function blah () {
+    const aaa = 
+
+    foo(aaa)
+  }

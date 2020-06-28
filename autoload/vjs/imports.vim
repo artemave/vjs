@@ -63,7 +63,7 @@ fun! vjs#imports#RenameFile()
 
   if !exists('g:vjs_test_env')
     if rename(expand('%:p'), full_new_name_path) != 0
-      echom ' ... rename failed!'
+      echoerr '... rename failed!'
       return
     end
   endif

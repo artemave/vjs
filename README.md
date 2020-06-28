@@ -7,6 +7,7 @@ A Vim plugin that adds a bunch of power tricks for writing Javascript/TypeScript
 - extract variable
 - extract function/method
 - extract class/function/variable declaration into a separate file
+- declare undefined variable/method/function/class
 - autocomplete `require`/`import` paths
 - update imports on file rename/move
 - list imports for current file
@@ -14,6 +15,8 @@ A Vim plugin that adds a bunch of power tricks for writing Javascript/TypeScript
 - list Express routes
 
 For test related stuff I have a dedicated [plugin](https://github.com/artemave/vigun).
+
+Note: most of the above will likely fail if you use experimental babel features.
 
 ## Installation
 
@@ -30,7 +33,8 @@ If you don't use a plugin manager, don't forget to run `npm install` in the plug
 ```vim script
 au FileType {javascript,javascript.jsx,typescript} vmap <leader>vv :VjsExtractVariable<cr>
 au FileType {javascript,javascript.jsx,typescript} vmap <leader>vf :VjsExtractFunctionOrMethod<cr>
-au FileType {javascript,javascript.jsx,typescript} nmap <leader>vd :VjsExtractDeclarationIntoFile<cr>
+au FileType {javascript,javascript.jsx,typescript} nmap <leader>ve :VjsExtractDeclarationIntoFile<cr>
+au FileType {javascript,javascript.jsx,typescript} nmap <leader>vd :VjsCreateDeclaration<cr>
 au FileType {javascript,javascript.jsx,typescript} nmap <leader>vr :VjsRenameFile<cr>
 au FileType {javascript,javascript.jsx,typescript} nmap <leader>vl :VjsListDependents<cr>
 ```
@@ -47,7 +51,7 @@ There are no default bindings.
 
 ## Usage
 
-#### Complete require paths
+#### Complete import/require paths
 
 Vjs registers `omnifunc` for `require`/`import` path completion - `CTRL-X CTRL-O` - which gives you this:
 
@@ -70,6 +74,12 @@ Extracts selected code into a variable.
 Extracts selected code into a global function.
 
 ![vjs_extract_function](https://user-images.githubusercontent.com/23721/80576556-b38c3000-8a05-11ea-8be8-5b1b18e5ac87.gif)
+
+#### `:VjsCreateDeclaration`
+
+If a reference under cursor happens to be undefined, this will insert a declaration for it. The appropriate declaration - variable, class or function - is automatically picked.
+
+In a similar manner, if a method is not defined for `this` in the current scope, this will insert its declaration.
 
 #### `:VjsListDependents`
 

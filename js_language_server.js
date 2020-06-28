@@ -16,6 +16,7 @@ const {
   determineExtractedFunctionType,
   findMethodScopeStart,
   findEnclosingDeclaration,
+  referencesForScope,
 } = require('./lib/queries')
 const argv = require('yargs')
   .command('refactoring', 'start refactoring server', {
@@ -48,6 +49,7 @@ function refactoring() {
       context.action = action
 
       if (action === 'extract_variable') {
+
         const loc = findStatementStart({ast, current_line: start_line})
         console.info(JSON.stringify(Object.assign({context}, loc)))
 
@@ -83,6 +85,17 @@ function refactoring() {
         if (declaration) {
           response.declaration = declaration
         }
+        console.info(JSON.stringify(response))
+
+      } else if (action === 'create_declaration') {
+
+        const response = {context}
+
+        if (!referencesForScope({ast, current_line: start_line}).includes(context.reference)) {
+          const loc = findStatementStart({ast, current_line: start_line})
+          response.declaration = loc
+        }
+
         console.info(JSON.stringify(response))
 
       } else {
