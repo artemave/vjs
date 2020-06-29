@@ -2,7 +2,7 @@
 
 ## What is this?
 
-A Vim plugin that adds a bunch of power tricks for writing Javascript/TypeScript. Namely:
+A Vim plugin that adds a bunch of refactoring tools for Javascript/TypeScript. Namely:
 
 - extract variable
 - extract function/method
@@ -30,6 +30,8 @@ If you don't use a plugin manager, don't forget to run `npm install` in the plug
 
 ### Example bindings
 
+There are no default bindings. But you can use these:
+
 ```vim script
 au FileType {javascript,javascript.jsx,typescript} vmap <leader>vv :VjsExtractVariable<cr>
 au FileType {javascript,javascript.jsx,typescript} vmap <leader>vf :VjsExtractFunctionOrMethod<cr>
@@ -39,7 +41,7 @@ au FileType {javascript,javascript.jsx,typescript} nmap <leader>vr :VjsRenameFil
 au FileType {javascript,javascript.jsx,typescript} nmap <leader>vl :VjsListDependents<cr>
 ```
 
-There are no default bindings.
+If you don't like binding explosion, you might want to consider [popup-menu.nvim](https://github.com/kamykn/popup-menu.nvim) to group commands in context menus.
 
 ### Configuration
 
