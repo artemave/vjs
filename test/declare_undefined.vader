@@ -31,3 +31,21 @@ Expect (inserts variable declaration):
 
     foo(aaa)
   }
+
+Given javascript (undefined function):
+  function blah () {
+    foo(aaa)
+  }
+
+Do:
+  j
+  ff
+  :VjsCreateDeclaration\<CR>
+
+Expect (inserts variable declaration):
+  function foo() {
+  }
+
+  function blah () {
+    foo(aaa)
+  }
