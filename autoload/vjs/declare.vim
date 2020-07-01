@@ -4,10 +4,18 @@ fun! vjs#declare#CreateDeclaration() abort
 
   let current_line = getline('.')
   let cursor_column = getcurpos()[2]
-  let [match, match_start, match_end] = matchstrpos(current_line, context.reference .' *(')
+  let function_name = substitute(context.reference, '^.', '\l&', '')
+  " this is to make sure matchstrpos is case sensitive
+  let original_ignorecase = &ignorecase
+  let &ignorecase = 0
+  let [function_match, f_match_start, f_match_end] = matchstrpos(current_line, function_name .' *(')
+  let &ignorecase = original_ignorecase
 
-  if match != '' && match_start <= cursor_column && match_end >= cursor_column
+  if function_match != '' && f_match_start <= cursor_column && f_match_end >= cursor_column
     let context.reference_type = 'function'
+  elseif context.reference =~ '^[A-Z]'
+    " let [class_match, c_match_start, c_match_end] = matchstrpos(current_line, context.reference .' *(')
+    let context.reference_type = 'class'
   else
     let context.reference_type = 'variable'
   endif
@@ -32,8 +40,11 @@ fun! s:HandleCreateDeclarationResponse(message) abort
 
   if reference_type == 'variable'
     call add(new_lines, indent .'const '. reference . ' = ')
-  else
+  elseif reference_type == 'function'
     call add(new_lines, indent .'function '. reference . '() {')
+    call add(new_lines, indent .'}')
+  else
+    call add(new_lines, indent .'class '. reference . ' {')
     call add(new_lines, indent .'}')
   endif
 
@@ -46,7 +57,7 @@ fun! s:HandleCreateDeclarationResponse(message) abort
 
   if reference_type == 'variable'
     startinsert!
-  else
+  elseif reference_type == 'function'
     normal f(l
     startinsert
   endif

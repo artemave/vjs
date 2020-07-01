@@ -4,7 +4,7 @@ fun! s:messageId(message)
   return a:message.action .'__'. localtime()
 endf
 
-fun! vjs#ipc#SendMessage(message, callback)
+fun! vjs#ipc#SendMessage(message, callback) abort
   let a:message.filetype = &filetype
 
   if !has_key(a:message, 'context')
@@ -25,6 +25,10 @@ fun! vjs#ipc#SendMessage(message, callback)
 endf
 
 fun! vjs#ipc#RefactoringResponseHandler(channel, response, ...) abort
+  if (type(a:response) == 1 && a:response == '') || (type(a:response) == 3 && a:response == [''])
+    return
+  endif
+
   let message = json_decode(a:response)
 
   if has_key(message, 'error')

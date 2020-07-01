@@ -49,3 +49,21 @@ Expect (inserts variable declaration):
   function blah () {
     foo(aaa)
   }
+
+Given javascript (undefined class):
+  function blah () {
+    new Stuff()
+  }
+
+Do:
+  j
+  fu
+  :VjsCreateDeclaration\<CR>
+
+Expect (inserts variable declaration):
+  class Stuff {
+  }
+
+  function blah () {
+    new Stuff()
+  }
