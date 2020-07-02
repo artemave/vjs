@@ -14,8 +14,13 @@ fun! vjs#declare#CreateDeclaration() abort
   if function_match != '' && f_match_start <= cursor_column && f_match_end >= cursor_column
     let context.reference_type = 'function'
   elseif context.reference =~ '^[A-Z]'
-    " let [class_match, c_match_start, c_match_end] = matchstrpos(current_line, context.reference .' *(')
-    let context.reference_type = 'class'
+    let [class_match, c_match_start, c_match_end] = matchstrpos(current_line, context.reference .' *([^)]')
+
+    if class_match != '' && c_match_start <= cursor_column && c_match_end >= cursor_column
+      let context.reference_type = 'class_with_constructor_arguments'
+    else
+      let context.reference_type = 'class'
+    endif
   else
     let context.reference_type = 'variable'
   endif
@@ -43,8 +48,13 @@ fun! s:HandleCreateDeclarationResponse(message) abort
   elseif reference_type == 'function'
     call add(new_lines, indent .'function '. reference . '() {')
     call add(new_lines, indent .'}')
+  elseif reference_type == 'class'
+    call add(new_lines, indent .'class '. reference . ' {')
+    call add(new_lines, indent .'}')
   else
     call add(new_lines, indent .'class '. reference . ' {')
+    call add(new_lines, indent . '  constructor() {')
+    call add(new_lines, indent . '  }')
     call add(new_lines, indent .'}')
   endif
 
@@ -53,11 +63,16 @@ fun! s:HandleCreateDeclarationResponse(message) abort
   endif
 
   call append(declaration_line, new_lines)
-  execute ':'.(declaration_line + 1)
 
   if reference_type == 'variable'
+    execute ':'.(declaration_line + 1)
     startinsert!
   elseif reference_type == 'function'
+    execute ':'.(declaration_line + 1)
+    normal f(l
+    startinsert
+  elseif reference_type == 'class_with_constructor_arguments'
+    execute ':'.(declaration_line + 2)
     normal f(l
     startinsert
   endif

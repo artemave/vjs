@@ -60,10 +60,30 @@ Do:
   fu
   :VjsCreateDeclaration\<CR>
 
-Expect (inserts variable declaration):
+Expect (inserts class declaration):
   class Stuff {
   }
 
   function blah () {
     new Stuff()
+  }
+
+Given javascript (undefined class with constructor arguments):
+  function blah () {
+    const b = new Stuff({a: 2})
+  }
+
+Do:
+  j
+  fu
+  :VjsCreateDeclaration\<CR>
+
+Expect (inserts class declaration with constructor):
+  class Stuff {
+    constructor() {
+    }
+  }
+
+  function blah () {
+    const b = new Stuff({a: 2})
   }
