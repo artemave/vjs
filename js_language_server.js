@@ -14,9 +14,10 @@ const {
   findGlobalScopeStart,
   findGlobalFunctionArguments,
   determineExtractedFunctionType,
-  findMethodScopeStart,
+  findMethodScopeLoc,
   findEnclosingDeclaration,
   referencesForScope,
+  getThisContainer,
 } = require('./lib/queries')
 const argv = require('yargs')
   .command('refactoring', 'start refactoring server', {
@@ -74,7 +75,7 @@ function refactoring() {
         if (type === 'function' || type === 'unboundFunction') {
           Object.assign(response, findGlobalScopeStart({ast, current_line: start_line}))
         } else {
-          Object.assign(response, findMethodScopeStart({ast, current_line: start_line}))
+          Object.assign(response, findMethodScopeLoc({ast, current_line: start_line}).start)
         }
         console.info(JSON.stringify(response))
 
@@ -91,12 +92,24 @@ function refactoring() {
 
         const response = {context}
 
-        if (!referencesForScope({ast, current_line: start_line}).includes(context.reference)) {
-          const loc = context.reference_type == 'variable'
-            ? findStatementStart({ast, current_line: start_line})
-            : findGlobalScopeStart({ast, current_line: start_line})
+        if (context.reference_type === 'method') {
+          const {type, properties} = getThisContainer({ast, current_line: start_line})
 
-          response.declaration = loc
+          if (!properties.includes(context.reference)) {
+            context.reference_type = type
+
+            const methodScopeLoc = findMethodScopeLoc({ast, current_line: start_line})
+            response.declaration = type === 'objectMethod' ? methodScopeLoc.start : methodScopeLoc.end
+            response.declaration.column = methodScopeLoc.start.column
+          }
+        } else {
+          if (!referencesForScope({ast, current_line: start_line}).includes(context.reference)) {
+            const loc = context.reference_type === 'variable'
+              ? findStatementStart({ast, current_line: start_line})
+              : findGlobalScopeStart({ast, current_line: start_line})
+
+            response.declaration = loc
+          }
         }
 
         console.info(JSON.stringify(response))

@@ -56,6 +56,7 @@ fun! vjs#ipc#StartJsTagsServer()
       let tags_job_cmd = tags_job_cmd.' --ignore '.path
     endfor
 
+    " TODO: don't show js error to user
     let s:tags_server_job = s:JobStart(tags_job_cmd, {'cwd': getcwd(), 'err_cb': 'vjs#ipc#VjsErrorCb', 'out_cb': 'vjs#ipc#VjsErrorCb', 'pty': 1})
   end
 endf

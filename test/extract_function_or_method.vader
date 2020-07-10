@@ -174,7 +174,7 @@ Do:
   :'<,'>VjsExtractFunctionOrMethod\<CR>
   thing\<CR>
 
-Expect:
+Expect javascript:
   import {foo} from 'bar'
 
   const aaa = {

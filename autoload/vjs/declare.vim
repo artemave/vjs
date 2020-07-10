@@ -1,30 +1,31 @@
 fun! vjs#declare#CreateDeclaration() abort
-  let code = join(getline(1, '$'), "\n")
-  let context = {'reference': expand('<cword>')}
-
+  let context = {}
+  let cword = expand('<cword>')
   let current_line = getline('.')
-  let cursor_column = getcurpos()[2]
-  let function_name = substitute(context.reference, '^.', '\l&', '')
-  " this is to make sure matchstrpos is case sensitive
-  let original_ignorecase = &ignorecase
-  let &ignorecase = 0
-  let [function_match, f_match_start, f_match_end] = matchstrpos(current_line, function_name .' *(')
-  let &ignorecase = original_ignorecase
 
-  if function_match != '' && f_match_start <= cursor_column && f_match_end >= cursor_column
-    let context.reference_type = 'function'
-  elseif context.reference =~ '^[A-Z]'
-    let [class_match, c_match_start, c_match_end] = matchstrpos(current_line, context.reference .' *([^)]')
+  if cword == 'this'
+    return
+  endif
 
-    if class_match != '' && c_match_start <= cursor_column && c_match_end >= cursor_column
+  if cword =~ '\C^[A-Z]'
+    let constructor_arguments_match = match(current_line, '\C'. cword .' *([^)]')
+
+    if constructor_arguments_match > -1
       let context.reference_type = 'class_with_constructor_arguments'
     else
       let context.reference_type = 'class'
     endif
+  elseif match(current_line, '\Cthis.'. cword .' *(') > -1
+    " TODO: async
+    let context.reference_type = 'method'
+  elseif match(current_line, '\C'. cword .' *(') > -1
+    let context.reference_type = 'function'
   else
     let context.reference_type = 'variable'
   endif
 
+  let context.reference = cword
+  let code = join(getline(1, '$'), "\n")
   let message = {'code': code, 'start_line': line('.'), 'action': 'create_declaration', 'context': context}
 
   call vjs#ipc#SendMessage(message, funcref('s:HandleCreateDeclarationResponse'))
@@ -48,6 +49,10 @@ fun! s:HandleCreateDeclarationResponse(message) abort
   elseif reference_type == 'function'
     call add(new_lines, indent .'function '. reference . '() {')
     call add(new_lines, indent .'}')
+  elseif reference_type == 'classMethod'
+    call add(new_lines, '')
+    call add(new_lines, indent . reference . '() {')
+    call add(new_lines, indent .'}')
   elseif reference_type == 'class'
     call add(new_lines, indent .'class '. reference . ' {')
     call add(new_lines, indent .'}')
@@ -58,21 +63,27 @@ fun! s:HandleCreateDeclarationResponse(message) abort
     call add(new_lines, indent .'}')
   endif
 
-  if getline(declaration_line + 1) != ''
+  if reference_type != 'classMethod' && getline(declaration_line + 1) != ''
     call add(new_lines, '')
   endif
 
-  call append(declaration_line, new_lines)
+  if reference_type == 'classMethod'
+    call append(declaration_line + 1, new_lines)
+  else
+    call append(declaration_line, new_lines)
+  endif
 
   if reference_type == 'variable'
     execute ':'.(declaration_line + 1)
     startinsert!
-  elseif reference_type == 'function'
-    execute ':'.(declaration_line + 1)
-    normal f(l
-    startinsert
-  elseif reference_type == 'class_with_constructor_arguments'
-    execute ':'.(declaration_line + 2)
+  else
+    let jump = 1
+    if reference_type == 'class_with_constructor_arguments'
+      let jump = 2
+    elseif reference_type == 'classMethod'
+      let jump = 3
+    endif
+    execute ':'.(declaration_line + jump)
     normal f(l
     startinsert
   endif

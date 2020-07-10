@@ -9,7 +9,7 @@ Do:
   fa
   :VjsCreateDeclaration\<CR>
 
-Expect (nothing happens):
+Expect javascript (nothing happens):
   function blah () {
     const aaa = 1
     foo(aaa)
@@ -25,7 +25,7 @@ Do:
   fa
   :VjsCreateDeclaration\<CR>
 
-Expect (inserts variable declaration):
+Expect javascript (inserts variable declaration):
   function blah () {
     const aaa = 
 
@@ -42,7 +42,7 @@ Do:
   ff
   :VjsCreateDeclaration\<CR>
 
-Expect (inserts variable declaration):
+Expect javascript (inserts variable declaration):
   function foo() {
   }
 
@@ -60,7 +60,7 @@ Do:
   fu
   :VjsCreateDeclaration\<CR>
 
-Expect (inserts class declaration):
+Expect javascript (inserts class declaration):
   class Stuff {
   }
 
@@ -78,7 +78,7 @@ Do:
   fu
   :VjsCreateDeclaration\<CR>
 
-Expect (inserts class declaration with constructor):
+Expect javascript (inserts class declaration with constructor):
   class Stuff {
     constructor() {
     }
@@ -87,3 +87,47 @@ Expect (inserts class declaration with constructor):
   function blah () {
     const b = new Stuff({a: 2})
   }
+
+Given javascript (undefined method):
+  class Stuff {
+    foo() {
+      const bbb = this.getBbb()
+    }
+  }
+
+Do:
+  jj
+  fB
+  :VjsCreateDeclaration\<CR>
+
+Expect javascript (inserts method declaration):
+  class Stuff {
+    foo() {
+      const bbb = this.getBbb()
+    }
+
+    getBbb() {
+    }
+  }
+
+Given javascript (undefined method - cursor is on `this`):
+  class Stuff {
+    foo() {
+      const bbb = this.getBbb()
+    }
+  }
+
+Do:
+  jj
+  fh
+  :VjsCreateDeclaration\<CR>
+
+Expect javascript (nothing happens):
+  class Stuff {
+    foo() {
+      const bbb = this.getBbb()
+    }
+  }
+
+" Execute:
+"   call LogAllMessages()

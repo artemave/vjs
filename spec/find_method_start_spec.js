@@ -1,8 +1,8 @@
 const assert = require('assert').strict
 const {parse} = require('@babel/parser')
-const {findMethodScopeStart} = require('../lib/queries')
+const {findMethodScopeLoc} = require('../lib/queries')
 
-describe('findMethodScopeStart', function() {
+describe('findMethodScopeLoc', function() {
   let code, ast
 
   beforeEach(function() {
@@ -31,9 +31,9 @@ describe('findMethodScopeStart', function() {
       `
     })
 
-    it('returns line before outer function start', function() {
-      assert.equal(findMethodScopeStart({ast, current_line: 8}).line, 7)
-      assert.equal(findMethodScopeStart({ast, current_line: 12}).line, 7)
+    it('returns class method start and end', function() {
+      assert.deepEqual(findMethodScopeLoc({ast, current_line: 8}), {start: {line: 7, column: 10}, end: {line: 14, column: 11}})
+      assert.deepEqual(findMethodScopeLoc({ast, current_line: 12}), {start: {line: 7, column: 10}, end: {line: 14, column: 11}})
     })
   })
 
@@ -59,9 +59,9 @@ describe('findMethodScopeStart', function() {
       `
     })
 
-    it('returns line before outer function start', function() {
-      assert.equal(findMethodScopeStart({ast, current_line: 8}).line, 7)
-      assert.equal(findMethodScopeStart({ast, current_line: 12}).line, 7)
+    it('returns object method start/end', function() {
+      assert.deepEqual(findMethodScopeLoc({ast, current_line: 8}), {start: {line: 7, column: 10}, end: {line: 14, column: 11}})
+      assert.deepEqual(findMethodScopeLoc({ast, current_line: 12}), {start: {line: 7, column: 10}, end: {line: 14, column: 11}})
     })
   })
 
@@ -88,8 +88,8 @@ describe('findMethodScopeStart', function() {
     })
 
     it('returns line before outer function start', function() {
-      assert.deepEqual(findMethodScopeStart({ast, current_line: 8}), {line: 7, column: 10})
-      assert.deepEqual(findMethodScopeStart({ast, current_line: 12}), {line: 7, column: 10})
+      assert.deepEqual(findMethodScopeLoc({ast, current_line: 8}), {start: {line: 7, column: 10}, end: {line: 14, column: 11}})
+      assert.deepEqual(findMethodScopeLoc({ast, current_line: 12}), {start: {line: 7, column: 10}, end: {line: 14, column: 11}})
     })
   })
 })
