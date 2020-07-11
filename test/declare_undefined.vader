@@ -42,12 +42,30 @@ Do:
   ff
   :VjsCreateDeclaration\<CR>
 
-Expect javascript (inserts variable declaration):
+Expect javascript (inserts function declaration):
   function foo() {
   }
 
   function blah () {
     foo(aaa)
+  }
+
+Given javascript (undefined async function):
+  async function blah () {
+    await foo(aaa)
+  }
+
+Do:
+  j
+  ff
+  :VjsCreateDeclaration\<CR>
+
+Expect javascript (inserts async function declaration):
+  async function foo() {
+  }
+
+  async function blah () {
+    await foo(aaa)
   }
 
 Given javascript (undefined class):
@@ -110,6 +128,28 @@ Expect javascript (inserts class method declaration):
     }
   }
 
+Given javascript (undefined async class method):
+  class Stuff {
+    async foo() {
+      const bbb = await this.getBbb()
+    }
+  }
+
+Do:
+  jj
+  fB
+  :VjsCreateDeclaration\<CR>
+
+Expect javascript (inserts async class method declaration):
+  class Stuff {
+    async foo() {
+      const bbb = await this.getBbb()
+    }
+
+    async getBbb() {
+    }
+  }
+
 Given javascript (undefined method - cursor is on `this`):
   class Stuff {
     foo() {
@@ -151,5 +191,27 @@ Expect javascript (inserts object method declaration):
     }
   }
 
-" Execute:
-"   call LogAllMessages()
+Given javascript (undefined object method await):
+  const stuff = {
+    async foo() {
+      const bbb = await  this. getBbb  ()
+    }
+  }
+
+Do:
+  jj
+  fB
+  :VjsCreateDeclaration\<CR>
+
+Expect javascript (inserts object method declaration):
+  const stuff = {
+    async getBbb() {
+    },
+
+    async foo() {
+      const bbb = await  this. getBbb  ()
+    }
+  }
+
+Execute:
+  call LogAllMessages()

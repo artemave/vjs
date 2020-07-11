@@ -15,8 +15,7 @@ fun! vjs#declare#CreateDeclaration() abort
     else
       let context.reference_type = 'class'
     endif
-  elseif match(current_line, '\Cthis.'. cword .' *(') > -1
-    " TODO: async
+  elseif match(current_line, '\Cthis. *'. cword .' *(') > -1
     let context.reference_type = 'method'
   elseif match(current_line, '\C'. cword .' *(') > -1
     let context.reference_type = 'function'
@@ -44,17 +43,22 @@ fun! s:HandleCreateDeclarationResponse(message) abort
   let indent = repeat(' ', a:message.declaration.column)
   let new_lines = []
 
+  let async = ''
+  if match(getline('.'), 'await \+\(this\.\)\? *'. reference) > -1
+    let async = 'async '
+  endif
+
   if reference_type == 'variable'
     call add(new_lines, indent .'const '. reference . ' = ')
   elseif reference_type == 'function'
-    call add(new_lines, indent .'function '. reference . '() {')
+    call add(new_lines, indent . async .'function '. reference . '() {')
     call add(new_lines, indent .'}')
   elseif reference_type == 'classMethod'
     call add(new_lines, '')
-    call add(new_lines, indent . reference . '() {')
+    call add(new_lines, indent . async . reference . '() {')
     call add(new_lines, indent .'}')
   elseif reference_type == 'objectMethod'
-    call add(new_lines, indent . reference . '() {')
+    call add(new_lines, indent . async . reference . '() {')
     call add(new_lines, indent .'},')
   elseif reference_type == 'class'
     call add(new_lines, indent .'class '. reference . ' {')
