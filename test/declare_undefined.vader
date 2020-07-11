@@ -88,7 +88,7 @@ Expect javascript (inserts class declaration with constructor):
     const b = new Stuff({a: 2})
   }
 
-Given javascript (undefined method):
+Given javascript (undefined class method):
   class Stuff {
     foo() {
       const bbb = this.getBbb()
@@ -100,7 +100,7 @@ Do:
   fB
   :VjsCreateDeclaration\<CR>
 
-Expect javascript (inserts method declaration):
+Expect javascript (inserts class method declaration):
   class Stuff {
     foo() {
       const bbb = this.getBbb()
@@ -124,6 +124,28 @@ Do:
 
 Expect javascript (nothing happens):
   class Stuff {
+    foo() {
+      const bbb = this.getBbb()
+    }
+  }
+
+Given javascript (undefined object method):
+  const stuff = {
+    foo() {
+      const bbb = this.getBbb()
+    }
+  }
+
+Do:
+  jj
+  fB
+  :VjsCreateDeclaration\<CR>
+
+Expect javascript (inserts object method declaration):
+  const stuff = {
+    getBbb() {
+    },
+
     foo() {
       const bbb = this.getBbb()
     }

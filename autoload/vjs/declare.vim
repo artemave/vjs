@@ -53,6 +53,9 @@ fun! s:HandleCreateDeclarationResponse(message) abort
     call add(new_lines, '')
     call add(new_lines, indent . reference . '() {')
     call add(new_lines, indent .'}')
+  elseif reference_type == 'objectMethod'
+    call add(new_lines, indent . reference . '() {')
+    call add(new_lines, indent .'},')
   elseif reference_type == 'class'
     call add(new_lines, indent .'class '. reference . ' {')
     call add(new_lines, indent .'}')
