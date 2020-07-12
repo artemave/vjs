@@ -1,3 +1,5 @@
+Include: support/test_helper.vader
+
 Given javascript (defined variable):
   function blah () {
     const aaa = 1
@@ -213,5 +215,44 @@ Expect javascript (inserts object method declaration):
     }
   }
 
-Execute:
-  call LogAllMessages()
+Given javascript (undefined class instance property):
+  class Bbb {
+    getFoo() {
+      const a = this.foo
+    }
+  }
+
+Do:
+  jj
+  ff
+  :VjsCreateDeclaration\<CR>
+
+Expect javascript (inserts property declaration):
+  class Bbb {
+    getFoo() {
+      this.foo = 
+
+      const a = this.foo
+    }
+  }
+
+Given javascript (undefined object literal property):
+  const bbb = {
+    getFoo() {
+      const a = this.foo
+    }
+  }
+
+Do:
+  jj
+  ff
+  :VjsCreateDeclaration\<CR>
+
+Expect javascript (inserts property declaration):
+  const bbb = {
+    getFoo() {
+      this.foo = 
+
+      const a = this.foo
+    }
+  }

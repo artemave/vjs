@@ -2,7 +2,7 @@
 
 set -e
 
-test_file=${1:-test/**/*.vader}
+test_file=${1:-test/*.vader}
 
 if [ -z "$CI" ]; then
   cmd=vim

@@ -1,3 +1,5 @@
+Include: support/test_helper.vader
+
 Given javascript (void function):
   const a = 2
 
@@ -20,7 +22,7 @@ Do:
   :'<,'>VjsExtractFunctionOrMethod\<CR>
   thing\<CR>
 
-Expect:
+Expect javascript:
   const a = 2
 
   function donc() {
@@ -67,7 +69,7 @@ Do:
   :'<,'>VjsExtractFunctionOrMethod\<CR>
   thing\<CR>
 
-Expect:
+Expect javascript:
   import {foo} from 'bar'
 
   class Aaa {
@@ -121,7 +123,7 @@ Do:
   :'<,'>VjsExtractFunctionOrMethod\<CR>
   thing\<CR>
 
-Expect:
+Expect javascript:
   import {foo} from 'bar'
 
   const aaa = {
@@ -306,6 +308,3 @@ Expect javascript:
       }
     },
   }
-
-" Execute:
-"   call LogAllMessages()

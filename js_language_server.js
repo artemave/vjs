@@ -104,7 +104,7 @@ function refactoring() {
           }
         } else {
           if (!referencesForScope({ast, current_line: start_line}).includes(context.reference)) {
-            const loc = context.reference_type === 'variable'
+            const loc = ['variable', 'property'].includes(context.reference_type)
               ? findStatementStart({ast, current_line: start_line})
               : findGlobalScopeStart({ast, current_line: start_line})
 

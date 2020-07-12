@@ -1,3 +1,5 @@
+Include: support/test_helper.vader
+
 Execute (filename only renames in the current file directory):
   file test/fixtures/deeper/stuff.js
 
@@ -84,6 +86,3 @@ Execute:
 Expect javascript:
   require("../../lib/foo")
   import fuga from '../../lib/fuga'
-
-" Execute:
-"   call LogAllMessages()

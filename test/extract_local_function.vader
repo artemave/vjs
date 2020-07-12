@@ -1,3 +1,5 @@
+Include: support/test_helper.vader
+
 Given javascript (local void function):
   function getParentModuleName() {
     const caller = stack.shift()
@@ -14,7 +16,7 @@ Do:
   :'<,'>VjsExtractLocalFunction\<CR>
   thing\<CR>
 
-Expect:
+Expect javascript:
   function getParentModuleName() {
     const caller = stack.shift()
 
@@ -43,7 +45,7 @@ Do:
   :'<,'>VjsExtractLocalFunction\<CR>
   thing\<CR>
 
-Expect:
+Expect javascript:
   function getParentModuleName() {
     const caller = stack.shift()
 
@@ -73,7 +75,7 @@ Do:
   :'<,'>VjsExtractLocalFunction\<CR>
   thing\<CR>
 
-Expect:
+Expect javascript:
   function getParentModuleName() {
     const caller = stack.shift()
 
@@ -104,7 +106,7 @@ Do:
   :'<,'>VjsExtractLocalFunction\<CR>
   thing\<CR>
 
-Expect:
+Expect javascript:
   async function getParentModuleName() {
     const caller = stack.shift()
 
@@ -134,7 +136,7 @@ Do:
   :'<,'>VjsExtractLocalFunction\<CR>
   thing\<CR>
 
-Expect:
+Expect javascript:
   async function getParentModuleName() {
     const caller = stack.shift()
 
@@ -166,7 +168,7 @@ Do:
   :'<,'>VjsExtractLocalFunction\<CR>
   thing\<CR>
 
-Expect:
+Expect javascript:
   async function getParentModuleName() {
     const caller = stack.shift()
 
@@ -181,7 +183,3 @@ Expect:
 
     return path + foo
   }
-
-
-" Execute:
-"   call LogAllMessages()

@@ -19,6 +19,8 @@ fun! vjs#declare#CreateDeclaration() abort
     let context.reference_type = 'method'
   elseif match(current_line, '\C'. cword .' *(') > -1
     let context.reference_type = 'function'
+  elseif match(current_line, '\Cthis. *'. cword) > -1
+    let context.reference_type = 'property'
   else
     let context.reference_type = 'variable'
   endif
@@ -50,6 +52,8 @@ fun! s:HandleCreateDeclarationResponse(message) abort
 
   if reference_type == 'variable'
     call add(new_lines, indent .'const '. reference . ' = ')
+  elseif reference_type == 'property'
+    call add(new_lines, indent .'this.'. reference . ' = ')
   elseif reference_type == 'function'
     call add(new_lines, indent . async .'function '. reference . '() {')
     call add(new_lines, indent .'}')
@@ -80,7 +84,7 @@ fun! s:HandleCreateDeclarationResponse(message) abort
     call append(declaration_line, new_lines)
   endif
 
-  if reference_type == 'variable'
+  if reference_type == 'variable' || reference_type == 'property'
     execute ':'.(declaration_line + 1)
     startinsert!
   else
