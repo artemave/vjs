@@ -14,7 +14,7 @@ A Vim plugin that adds a bunch of refactoring tools for Javascript/TypeScript. N
 - auto generate and keep up to date `tags` file
 - list Express routes
 
-For test related stuff I have a dedicated [plugin](https://github.com/artemave/vigun).
+For test related stuff I am usgin a dedicated [plugin](https://github.com/artemave/vigun).
 
 Note: most of the above will likely fail if you use experimental babel features.
 
