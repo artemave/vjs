@@ -77,6 +77,12 @@ Extracts selected code into a global function.
 
 ![vjs_extract_function](https://user-images.githubusercontent.com/23721/80576556-b38c3000-8a05-11ea-8be8-5b1b18e5ac87.gif)
 
+#### `:ExtractDeclarationIntoFile`
+
+Extracts enclosing function/class into a separate file. Inserts import into the original file.
+
+![extract_into_file](https://user-images.githubusercontent.com/23721/87256789-ef2b8780-c495-11ea-84ff-ed8d10fdec1f.gif)
+
 #### `:VjsCreateDeclaration`
 
 If a reference under cursor happens to be undefined, this will insert a declaration for it. The appropriate declaration - variable, class or function - is automatically picked.
