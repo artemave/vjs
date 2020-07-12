@@ -81,7 +81,10 @@ Extracts selected code into a global function.
 
 If a reference under cursor happens to be undefined, this will insert a declaration for it. The appropriate declaration - variable, class or function - is automatically picked.
 
-In a similar manner, if a method is not defined for `this` in the current scope, this will insert its declaration.
+In a similar manner, if a method/property is not defined for `this` in the current scope, this will insert its declaration.
+
+![create_declaration](https://user-images.githubusercontent.com/23721/87256609-7b3caf80-c494-11ea-97aa-868b245dfd85.gif)
+
 
 #### `:VjsListDependents`
 
