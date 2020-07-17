@@ -48,9 +48,9 @@ endf
 
 fun! vjs#ipc#StartJsTagsServer()
   if !exists('g:vjs_test_env') && !exists('s:tags_server_job') && g:vjs_tags_enabled == 1
-    let tags_job_cmd = s:GetServerExecPath().' tags'
+    let tags_job_cmd = resolve(s:s_path .'/node_modules/.bin/js-editor-tags') .' -w'
     if g:vjs_tags_regenerate_at_start == 0
-      let tags_job_cmd = tags_job_cmd.' --update'
+      let tags_job_cmd = tags_job_cmd.' -u'
     endif
     for path in g:vjs_tags_ignore
       let tags_job_cmd = tags_job_cmd.' --ignore '.path
