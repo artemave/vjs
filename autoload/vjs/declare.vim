@@ -74,10 +74,12 @@ fun! s:HandleCreateDeclarationResponse(message) abort
     call add(new_lines, indent .'}')
   endif
 
+  " insert blank line after new declaration if there isn't one already
   if reference_type != 'classMethod' && getline(declaration_line + 1) != ''
     call add(new_lines, '')
   endif
 
+  " class method is inserted in the end of class body
   if reference_type == 'classMethod'
     call append(declaration_line + 1, new_lines)
   else
