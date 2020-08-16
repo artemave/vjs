@@ -208,6 +208,11 @@ fun s:HandleExtractDeclarationResponse(message)
 
   let name = a:message.declaration.name
   let new_file_path = input('Extract '. name .' into ', s:expand('%:h') .'/'. name .'.'. s:expand('%:e'), 'file')
+
+  if new_file_path == ''
+    return
+  endif
+
   let start_line = a:message.declaration.start_line
   let end_line = a:message.declaration.end_line
 
