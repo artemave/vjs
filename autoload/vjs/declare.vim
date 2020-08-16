@@ -66,6 +66,7 @@ fun! s:HandleCreateDeclarationResponse(message) abort
     call add(new_lines, indent .'},')
   elseif reference_type == 'class'
     call add(new_lines, indent .'class '. reference . ' {')
+    call add(new_lines, indent .'  ')
     call add(new_lines, indent .'}')
   else
     call add(new_lines, indent .'class '. reference . ' {')
@@ -88,6 +89,9 @@ fun! s:HandleCreateDeclarationResponse(message) abort
 
   if reference_type == 'variable' || reference_type == 'property'
     execute ':'.(declaration_line + 1)
+    startinsert!
+  elseif reference_type == 'class'
+    execute ':'.(declaration_line + 2)
     startinsert!
   else
     let jump = 1

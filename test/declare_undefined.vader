@@ -82,6 +82,7 @@ Do:
 
 Expect javascript (inserts class declaration):
   class Stuff {
+    
   }
 
   function blah () {
