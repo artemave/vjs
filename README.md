@@ -57,7 +57,7 @@ If you don't like binding explosion, you might want to consider [popup-menu.nvim
 
 Vjs registers `omnifunc` for `require`/`import` path completion - `CTRL-X CTRL-O` - which gives you this:
 
-<img src="https://user-images.githubusercontent.com/23721/80413735-38752d80-88d0-11ea-8030-de1b17ee4796.gif" loading="lazy">
+<img src="https://user-images.githubusercontent.com/23721/80413735-38752d80-88d0-11ea-8030-de1b17ee4796.gif" loading="lazy" width=500>
 
 #### `:VjsRenameFile`
 
