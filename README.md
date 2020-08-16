@@ -57,31 +57,31 @@ If you don't like binding explosion, you might want to consider [popup-menu.nvim
 
 Vjs registers `omnifunc` for `require`/`import` path completion - `CTRL-X CTRL-O` - which gives you this:
 
-<img src="https://user-images.githubusercontent.com/23721/80413735-38752d80-88d0-11ea-8030-de1b17ee4796.gif" loading="lazy" width=600>
+<img src="https://user-images.githubusercontent.com/23721/80413735-38752d80-88d0-11ea-8030-de1b17ee4796.gif" loading="lazy" width=550>
 
 #### `:VjsRenameFile`
 
 Rename/move file and update imports. It updates both imports in current file and all files that import current file.
 
-![vjs_rename_file](https://user-images.githubusercontent.com/23721/82894765-62fbea00-9f53-11ea-8a64-d3bd123fe553.gif)
+<img src="https://user-images.githubusercontent.com/23721/82894765-62fbea00-9f53-11ea-8a64-d3bd123fe553.gif" loading="lazy" width=550>
 
 #### `:'<,'>VjsExtractVariable`
 
 Extracts selected code into a variable.
 
-![vjs_extract_variable](https://user-images.githubusercontent.com/23721/80576166-01ecff00-8a05-11ea-8826-01ae86e227e1.gif)
+<img src="https://user-images.githubusercontent.com/23721/80576166-01ecff00-8a05-11ea-8826-01ae86e227e1.gif" loading="lazy" width=550>
 
 #### `:'<,'>VjsExtractFunctionOrMethod`
 
 Extracts selected code into a global function.
 
-![vjs_extract_function](https://user-images.githubusercontent.com/23721/80576556-b38c3000-8a05-11ea-8be8-5b1b18e5ac87.gif)
+<img src="https://user-images.githubusercontent.com/23721/80576556-b38c3000-8a05-11ea-8be8-5b1b18e5ac87.gif" loading="lazy" width=550>
 
 #### `:ExtractDeclarationIntoFile`
 
 Extracts enclosing function/class into a separate file. Inserts import into the original file.
 
-![extract_into_file](https://user-images.githubusercontent.com/23721/87256789-ef2b8780-c495-11ea-84ff-ed8d10fdec1f.gif)
+<img src="https://user-images.githubusercontent.com/23721/87256789-ef2b8780-c495-11ea-84ff-ed8d10fdec1f.gif" loading="lazy" width=550>
 
 #### `:VjsCreateDeclaration`
 
@@ -89,20 +89,19 @@ If a reference under cursor happens to be undefined, this will insert a declarat
 
 In a similar manner, if a method/property is not defined for `this` in the current scope, this will insert its declaration.
 
-![create_declaration](https://user-images.githubusercontent.com/23721/87256609-7b3caf80-c494-11ea-97aa-868b245dfd85.gif)
-
+<img src="https://user-images.githubusercontent.com/23721/87256609-7b3caf80-c494-11ea-97aa-868b245dfd85.gif" loading="lazy" width=550>
 
 #### `:VjsListDependents`
 
 Shows list of modules that require/import current file in quickfix window.
 
-![vjs_list_dependents](https://user-images.githubusercontent.com/23721/80421625-0f0ece80-88dd-11ea-8057-93ff00adbf3e.gif)
+<img src="https://user-images.githubusercontent.com/23721/80421625-0f0ece80-88dd-11ea-8057-93ff00adbf3e.gif" loading="lazy" width=550>
 
 #### `:VjsListRoutes`
 
 Shows list of express routes of current file in quickfix window.
 
-![vjs_list_routes](https://user-images.githubusercontent.com/23721/80421959-9d835000-88dd-11ea-87ae-3f65638c7de4.gif)
+<img src="https://user-images.githubusercontent.com/23721/80421959-9d835000-88dd-11ea-87ae-3f65638c7de4.gif" loading="lazy" width=550>
 
 ## Development
 
