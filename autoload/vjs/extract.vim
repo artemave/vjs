@@ -240,13 +240,22 @@ fun s:HandleExtractDeclarationResponse(message)
   let imported_module_full_path_parts = split(fnamemodify(new_file_path, ':p:r'), '/')
   let import_path_parts = vjs#imports#calculateImportPathParts(importing_module_full_path_parts, imported_module_full_path_parts)
 
-  undojoin | call append(0, s:ImportStatement(name, join(import_path_parts, '/')))
+  let import_line = s:LastImportLine()
+  undojoin | call append(import_line, s:ImportStatement(name, join(import_path_parts, '/')))
 
   if !exists('g:vjs_test_env')
     execute 'split' new_file_path
   endif
 
   let @v = s:v_reg
+endf
+
+fun s:LastImportLine() abort
+  let line = 0
+  if match(getline(1), '^#!') > -1
+    let line = 2
+  endif
+  return line
 endf
 
 fun s:ExportStatement(declaration_line)

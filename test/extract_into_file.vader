@@ -127,3 +127,63 @@ Execute:
     \ '  return Object.keys(element).length > 0',
     \ '}',
   \], g:test_extracted_file_lines
+
+Given javascript (inserts import after shebang):
+  #!/usr/bin/env node
+
+  const fs = require('fs')
+
+  function notSillyBlankIEObject (element) {
+    return Object.keys(element).length > 0
+  }
+  module.exports = {
+    focus: function (element, options) {
+      var focus = typeof options === 'object' && options.hasOwnProperty('focus') ? options.focus : true
+
+      if (focus) {
+        var $ = this.get('$')
+        var document = this.get('document')
+        if (element && element.length > 0) {
+          element = element[0]
+        }
+
+        var activeElement = document.activeElement
+        if (activeElement && !$(activeElement).is(':focus') && notSillyBlankIEObject(activeElement)) {
+          $(activeElement).trigger('blur')
+        }
+      }
+    },
+  }
+
+Execute:
+  let g:test_initial_file_name = 'lib/stuff.js'
+
+Do:
+  4j
+  :VjsExtractDeclarationIntoFile\<CR>
+  \<CR>
+
+Expect javascript:
+  #!/usr/bin/env node
+
+  const notSillyBlankIEObject = require('./notSillyBlankIEObject')
+  const fs = require('fs')
+
+  module.exports = {
+    focus: function (element, options) {
+      var focus = typeof options === 'object' && options.hasOwnProperty('focus') ? options.focus : true
+
+      if (focus) {
+        var $ = this.get('$')
+        var document = this.get('document')
+        if (element && element.length > 0) {
+          element = element[0]
+        }
+
+        var activeElement = document.activeElement
+        if (activeElement && !$(activeElement).is(':focus') && notSillyBlankIEObject(activeElement)) {
+          $(activeElement).trigger('blur')
+        }
+      }
+    },
+  }
