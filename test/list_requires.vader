@@ -21,7 +21,7 @@ Execute (require index):
 
 Execute:
   VjsListDependents
-  AssertEqual [
+  AssertEqual sort([
     \ {'lnum': 1, 'fname': 'test/fixtures/deeper/stuff.js', 'text': "require('.')"},
     \ {'lnum': 1, 'fname': 'test/fixtures/deeper/inner/v.js', 'text': "import '..'"},
-  \], GetQFListFiles()
+  \]), sort(GetQFListFiles())
