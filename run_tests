@@ -5,9 +5,9 @@ set -e
 test_file=${1:-test/*.vader}
 
 if [ -z "$CI" ]; then
-  cmd=vim
-else
   cmd=nvim
+else
+  cmd=./squashfs-root/usr/bin/nvim
 fi
 
 $cmd -Nu ./test/vimrc -c "Vader! $test_file"
