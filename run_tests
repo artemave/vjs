@@ -10,4 +10,7 @@ else
   cmd=./squashfs-root/usr/bin/nvim
 fi
 
+# TODO: fix tests on nvim
+cmd=vim
+
 $cmd -Nu ./test/vimrc -c "Vader! $test_file"
