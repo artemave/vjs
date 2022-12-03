@@ -2,7 +2,7 @@
 
 ## What is this?
 
-A Vim plugin that adds a bunch of refactoring tools for Javascript/TypeScript. Namely:
+A Neovim plugin that adds a bunch of refactoring tools for Javascript/TypeScript. Namely:
 
 - extract variable
 - extract function/method
@@ -19,6 +19,8 @@ For test related stuff I am using a dedicated [plugin](https://github.com/artema
 Note: most of the above will likely fail if you use experimental babel features.
 
 ## Installation
+
+Requires [treesitter](https://github.com/nvim-treesitter/nvim-treesitter).
 
 Use [a plugin manager](https://github.com/junegunn/vim-plug):
 
@@ -108,7 +110,6 @@ Shows list of express routes of current file in quickfix window.
 ```
 git clone https://github.com/artemave/vjs.git
 cd vjs
-git clone https://github.com/junegunn/vader.vim.git
 npm install
 npm run test
 ```

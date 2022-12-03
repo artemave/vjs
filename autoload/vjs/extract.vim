@@ -27,6 +27,8 @@ endf
 
 fun! vjs#extract#ExtractVariable()
   let [selection_start_line, selection_start_column] = getpos("'<")[1:2]
+  let [selection_end_line, selection_end_column] = getpos("'>")[1:2]
+
   let text_before_selection_start = getline(selection_start_line)[0:selection_start_column - 2]
   let property_name_match = matchlist(text_before_selection_start, '\(\w\+\) *: *$')
   let property_name = ''
@@ -42,24 +44,13 @@ fun! vjs#extract#ExtractVariable()
     return
   endif
 
-  let code = join(getline(1,'$'), "\n")
-  let context = {'property_name': property_name}
-  let message = {'code': code, 'start_line': selection_start_line, 'action': 'extract_variable', 'context': context}
+  let loc = luaeval('require"vjs".find_statement_start()')
 
-  call vjs#ipc#SendMessage(message, funcref('s:HandleExtractVariableResponse'))
-endf
-
-fun! s:HandleExtractVariableResponse(message) abort
-  let indent = repeat(' ', a:message.column)
+  let indent = repeat(' ', loc.column)
   let current_indent_base = indent(line('.'))
-  let [selection_end_line, selection_end_column] = getpos("'>")[1:2]
-  let last_selected_line_includes_line_break = selection_end_column > 999999 || len(getline(selection_end_line)) <= selection_end_column
-
-  let property_name = a:message.context.property_name
-
-  let selection_start_line = getpos("'<")[1]
 
   normal gv
+  let last_selected_line_includes_line_break = selection_end_column > 999999 || len(getline(selection_end_line)) <= selection_end_column
   if last_selected_line_includes_line_break
     normal $h
   endif
@@ -77,10 +68,10 @@ fun! s:HandleExtractVariableResponse(message) abort
   endif
 
   let new_lines = split(indent ."const ". @v ." = ". @s, "\n")
-  call map(new_lines, {idx, line -> idx > 0 ? substitute(line, "^".repeat(' ', current_indent_base - a:message.column), '', '') : line})
+  call map(new_lines, {idx, line -> idx > 0 ? substitute(line, "^".repeat(' ', current_indent_base - loc.column), '', '') : line})
   call add(new_lines, '')
 
-  undojoin | call append(a:message.line - 1, new_lines)
+  undojoin | call append(loc.line - 1, new_lines)
 
   let @v = s:v_reg
   let @s = s:s_reg

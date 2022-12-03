@@ -1,4 +1,5 @@
 filetype off
+set rtp+=nvim-treesitter
 set rtp+=vader.vim
 set rtp+=.
 set rtp+=after
