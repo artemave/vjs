@@ -36,3 +36,10 @@ Do:
 Expect:
   const package = require('../../../../test/fixtures/blops
   
+Do (es modules):
+  i
+  const package = require('xm\<C-X>\<C-O>\<cr>
+
+Expect:
+  const package = require('../../../../test/fixtures/xman
+  

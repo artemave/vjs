@@ -49,16 +49,16 @@ fun! VjsRequireComplete(findstart, base)
     let base = substitute(line[start : end - 1], '^[./]*', '', '')
     let cmd = s:SearchFilesCmd(base)
 
-    let g:js_require_complete_matches = map(
+    let s:js_require_complete_matches = map(
           \ systemlist(cmd),
-          \ {i, val -> substitute(val, '\(\/index\)\?.[tj]sx\?$', '', '')}
+          \ {i, val -> substitute(val, '\(\/index\)\?.\([tj]sx\?\|mjs\)$', '', '')}
           \ )
 
     return start
   else
     " find files matching with "a:base"
     let res = []
-    for m in g:js_require_complete_matches
+    for m in s:js_require_complete_matches
       if m =~ substitute(a:base, '^[./]*', '', '')
         let current_path_entries = split(expand('%:h'), '/')
         let m_path_entries = split(m, '/')
