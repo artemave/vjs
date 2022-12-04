@@ -49,10 +49,16 @@ fun! VjsRequireComplete(findstart, base)
     let base = substitute(line[start : end - 1], '^[./]*', '', '')
     let cmd = s:SearchFilesCmd(base)
 
-    let s:js_require_complete_matches = map(
-          \ systemlist(cmd),
-          \ {i, val -> substitute(val, '\(\/index\)\?.\([tj]sx\?\|mjs\)$', '', '')}
-          \ )
+    let matches = systemlist(cmd)
+
+    if g:vjs_dumb_require_complete
+      let s:js_require_complete_matches = matches
+    else
+      let s:js_require_complete_matches = map(
+            \ matches,
+            \ {i, val -> substitute(val, '\(\/index\)\?.\([tj]sx\?\|mjs\)$', '', '')}
+            \ )
+    endif
 
     return start
   else
@@ -152,6 +158,10 @@ endif
 
 if !exists('g:vjs_tags_ignore')
   let g:vjs_tags_ignore = []
+endif
+
+if !exists('g:vjs_dumb_require_complete')
+  let g:vjs_dumb_require_complete = 0
 endif
 
 autocmd FileType {javascript,javascript.jsx,typescript} call vjs#ipc#StartJsRefactoringServer()

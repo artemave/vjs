@@ -47,6 +47,8 @@ If you don't like binding explosion, you might want to consider [popup-menu.nvim
 
 ### Configuration
 
+`g:vjs_dumb_require_complete` - don't strip out file extension from autocompleted modules and also show `index` modules. Defaults to `0`.
+
 `g:vjs_tags_enabled` - enable tags file auto generation. Defaults to `1`.
 
 `g:vjs_tags_ignore` - additional paths to ignore when generating tags file. By default vjs tags all non git ignored js/jsx/mjs files. Array.

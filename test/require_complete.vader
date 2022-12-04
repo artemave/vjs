@@ -43,3 +43,12 @@ Do (es modules):
 Expect:
   const package = require('../../../../test/fixtures/xman
   
+
+Do (dumb complete):
+  :let g:vjs_dumb_require_complete=1\<cr>
+  i
+  const package = require('xm\<C-X>\<C-O>\<cr>
+
+Expect:
+  const package = require('../../../../test/fixtures/xman.mjs
+  
