@@ -178,3 +178,5 @@ com VjsCreateDeclaration call vjs#declare#CreateDeclaration()
 com -range VjsExtractVariable call vjs#extract#ExtractVariable()
 com -range VjsExtractLocalFunction call vjs#extract#ExtractFunctionOrMethod('local')
 com -range VjsExtractFunctionOrMethod call vjs#extract#ExtractFunctionOrMethod()
+
+" TODO: require_language javascript

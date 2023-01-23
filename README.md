@@ -69,6 +69,12 @@ Rename/move file and update imports. It updates both imports in current file and
 
 <img src="https://user-images.githubusercontent.com/23721/82894765-62fbea00-9f53-11ea-8a64-d3bd123fe553.gif" loading="lazy" width=550>
 
+It's also possible to batch rename files by calling `vjs#imports#RenameFile` directly. For example, assuming there is a bunch of `.mjs` files in quickfix window that I want to rename to `.jsx`, the following command will perform batch rename and update all the imports:
+
+```
+:cdo call vjs#imports#RenameFile(expand('%:r') . '.jsx')
+```
+
 #### `:'<,'>VjsExtractVariable`
 
 Extracts selected code into a variable.

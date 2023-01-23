@@ -1,21 +1,20 @@
 fun! s:ImportsSearchTerm(for)
   if a:for == 'grep'
     " \x27 is ascii for single quote
-    return '(require\(.*\)\|^ *import  *"\|^ *import  *\x27\| from )'
+    return '(require\(.*\)|^ *import  *"|^ *import  *\x27| from )'
   else
     return '\(require(.*)\|^ *import  *"\|^ *import  *\x27\| from \)'
   endif
 endf
 
 fun! s:PrepareDependantsList()
-  execute 'silent grep!' "'". s:ImportsSearchTerm('grep') ."'"
-  redraw!
+  let raw_results = systemlist(&grepprg . " '" . s:ImportsSearchTerm('grep'). "'")
+  let all_imports = getqflist({'lines': raw_results, 'efm': &grepformat}).items
 
-  let raw_results = getqflist()
   let result_entries = []
   let current_file_full_path = expand('%:p:r')
 
-  for require in raw_results
+  for require in all_imports
     let match = matchlist(require.text, "['\"]".'\(\.\.\?\/.*\|\~.*\|\.\.\?\)'."['\"]")
     if len(match) > 0
       let module_path = match[1]
@@ -45,19 +44,21 @@ fun! s:PrepareDependantsList()
       endif
     endif
   endfor
-  call setqflist([], ' ', {'items': result_entries, 'title': 'Modules that import '.expand('%')})
+
+  return result_entries
 endf
 
 fun! vjs#imports#ListDependents()
-  call s:PrepareDependantsList()
+  let entries = s:PrepareDependantsList()
+  call setqflist([], ' ', {'items': entries, 'title': 'Modules that import '.expand('%')})
   copen
 endf
 
-fun! vjs#imports#RenameFile()
+fun! vjs#imports#RenameFile(new_name = '')
   let old_file_path = expand('%')
   let old_name = expand('%:t:r')
   let current_line = line('.')
-  let new_name = input('New name: ', expand('%:h') .'/', 'file')
+  let new_name = len(a:new_name) ? a:new_name : input('New name: ', expand('%:h') .'/', 'file')
 
   let full_new_name_path = fnamemodify(getcwd() . '/'. new_name, ':p')
 
@@ -68,9 +69,7 @@ fun! vjs#imports#RenameFile()
     end
   endif
 
-  call s:PrepareDependantsList()
-
-  let dependants = getqflist()
+  let dependants = s:PrepareDependantsList()
 
   let imported_module_full_path_parts = split(full_new_name_path, '/')
 
@@ -81,7 +80,8 @@ fun! vjs#imports#RenameFile()
 
     let import_path_parts = vjs#imports#calculateImportPathParts(importing_module_full_path_parts, imported_module_full_path_parts)
 
-    let new_import_path = fnamemodify(join(import_path_parts, '/'), ':r')
+    let new_import_path_with_extension = join(import_path_parts, '/')
+    let new_import_path = g:vjs_dumb_require_complete ? new_import_path_with_extension : fnamemodify(new_import_path_with_extension, ':r')
 
     let new_text_pattern = '\(["'']\).*["'']'
     let new_text_replacement = '\1'. new_import_path .'\1'
@@ -112,8 +112,12 @@ fun! vjs#imports#RenameFile()
 
   call vjs#imports#UpdateCurrentFileImports(old_file_path, full_new_name_path)
 
-  call setqflist([], 'r', {'title': 'Imports updated', 'items': dependants})
-  copen
+  " Hack. Presence of new name indicates programmatic usage (a batch rename
+  " likely) in which case we don't want to modify/open qflist
+  if len(a:new_name) == 0
+    call setqflist([], ' ', {'title': 'Imports updated', 'items': dependants})
+    copen
+  endif
 endf
 
 fun! vjs#imports#UpdateCurrentFileImports(current_file_name, new_file_name)
