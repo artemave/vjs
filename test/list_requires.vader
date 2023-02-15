@@ -25,3 +25,15 @@ Execute:
     \ {'lnum': 1, 'fname': 'test/fixtures/deeper/stuff.js', 'text': "require('.')"},
     \ {'lnum': 1, 'fname': 'test/fixtures/deeper/inner/v.js', 'text': "import '..'"},
   \]), sort(GetQFListFiles())
+
+Given javascript:
+
+Execute (finds nested modules):
+  file test/fixtures/workspaces/a/a.mjs
+
+Execute:
+  VjsListDependents
+  AssertEqual sort([
+    \ {'lnum': 1, 'fname': 'test/fixtures/workspaces/b/b.mjs', 'text': "import * from 'a/a.mjs'"},
+    \ {'lnum': 1, 'fname': 'test/fixtures/workspaces/c/c.mjs', 'text': "import 'a'"},
+  \]), sort(GetQFListFiles())

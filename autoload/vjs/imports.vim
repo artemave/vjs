@@ -7,6 +7,69 @@ fun! s:ImportsSearchTerm(for)
   endif
 endf
 
+function! s:FindNodeDependencyPath(directory, dependency)
+  if a:directory == '/'
+    return
+  endif
+
+  let dependencyDirectory = a:directory . "/node_modules/" . a:dependency
+
+  if isdirectory(dependencyDirectory)
+    return dependencyDirectory
+  else
+    return s:FindNodeDependencyPath(fnamemodify(a:directory, ':h'), a:dependency)
+  endif
+endfunction
+
+function! s:ModuleName(path)
+  let components = split(a:path, '/')
+  if a:path =~ '^@'
+    return join(components[0:1], '/')
+  else
+    return components[0]
+  endif
+endfunction
+
+function! s:ModuleMain(dirname)
+  let packageFilename = a:dirname . '/package.json'
+
+  if filereadable(packageFilename)
+    let package = json_decode(readfile(packageFilename))
+
+    if has_key(package, 'main')
+      return package['main']
+    endif
+  endif
+endfunction
+
+function! s:ResolveMain(dirname, moduleRelativeFilename)
+  if len(a:moduleRelativeFilename) > 0
+    return resolve(a:dirname . a:moduleRelativeFilename)
+  else
+    let main = s:ModuleMain(a:dirname)
+
+    if main isnot 0
+      return resolve(a:dirname . '/' . main)
+    else
+      return resolve(a:dirname)
+    endif
+  endif
+endfunction
+
+function! vjs#imports#ResolvePackageImport(fname)
+  if a:fname !~ '^\.'
+    let fromFile = expand('%:p')
+    let dirname = fnamemodify(fromFile, ':h')
+    let moduleName = s:ModuleName(a:fname)
+    let moduleRelativeFilename = a:fname[len(moduleName):-1]
+    let found = s:FindNodeDependencyPath(dirname, moduleName)
+
+    if found isnot 0
+      return s:ResolveMain(found, moduleRelativeFilename)
+    endif
+  endif
+endfunction
+
 fun! s:PrepareDependantsList()
   let raw_results = systemlist(&grepprg . " '" . s:ImportsSearchTerm('grep'). "'")
   let all_imports = getqflist({'lines': raw_results, 'efm': &grepformat}).items
@@ -15,32 +78,39 @@ fun! s:PrepareDependantsList()
   let current_file_full_path = expand('%:p:r')
 
   for require in all_imports
-    let match = matchlist(require.text, "['\"]".'\(\.\.\?\/.*\|\~.*\|\.\.\?\)'."['\"]")
+    let match = matchlist(require.text, "['\"]".'\(.*\)'."['\"]")
     if len(match) > 0
       let module_path = match[1]
-      let module_path_with_explicit_index = ''
 
-      if match(module_path, '\.$') != -1
-        let module_path = module_path . '/index'
-      elseif match(module_path, '\/$') != -1
-        let module_path = module_path . 'index'
-      elseif match(module_path, 'index\(\.[tj]sx\?\)\?$') == -1
-        let module_path_with_explicit_index = module_path . '/index'
-      endif
+      let package_import = vjs#imports#ResolvePackageImport(module_path)
 
-      if match(module_path, '^\~') != -1
-        " drop leading `~/`
-        let module_path = module_path[2:]
-        let module_base = getcwd()
-      else
-        let module_base = fnamemodify(bufname(require.bufnr), ':p:h')
-      endif
-
-      let module_full_path = fnamemodify(module_base . '/' . module_path, ':p:r')
-      let module_full_path_with_explicit_index = fnamemodify(module_base . '/' . module_path_with_explicit_index, ':p:r')
-
-      if module_full_path == current_file_full_path || module_full_path_with_explicit_index == current_file_full_path
+      if package_import isnot 0 && package_import == expand('%:p')
         call add(result_entries, require)
+      else
+        let module_path_with_explicit_index = ''
+
+        if match(module_path, '\.$') != -1
+          let module_path = module_path . '/index'
+        elseif match(module_path, '\/$') != -1
+          let module_path = module_path . 'index'
+        elseif match(module_path, 'index\(\.[tj]sx\?\)\?$') == -1
+          let module_path_with_explicit_index = module_path . '/index'
+        endif
+
+        if match(module_path, '^\~') != -1
+          " drop leading `~/`
+          let module_path = module_path[2:]
+          let module_base = getcwd()
+        else
+          let module_base = fnamemodify(bufname(require.bufnr), ':p:h')
+        endif
+
+        let module_full_path = fnamemodify(module_base . '/' . module_path, ':p:r')
+        let module_full_path_with_explicit_index = fnamemodify(module_base . '/' . module_path_with_explicit_index, ':p:r')
+
+        if module_full_path == current_file_full_path || module_full_path_with_explicit_index == current_file_full_path
+          call add(result_entries, require)
+        endif
       endif
     endif
   endfor

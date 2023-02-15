@@ -169,6 +169,9 @@ autocmd FileType {javascript,javascript.jsx} call vjs#ipc#StartJsTagsServer()
 " TODO: how to avoid global name with omnifunc?
 autocmd FileType {javascript,javascript.jsx,typescript} setlocal omnifunc=VjsRequireComplete
 
+autocmd FileType javascript setlocal includeexpr=vjs#imports#ResolvePackageImport(v:fname)
+autocmd FileType javascript setlocal isfname+=@-@
+
 com VjsLintFix call s:LintFix()
 com VjsListRoutes call s:ListExpressRoutes()
 com VjsRenameFile call vjs#imports#RenameFile()
