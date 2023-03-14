@@ -1,6 +1,5 @@
 filetype off
-set rtp+=nvim-treesitter
-set rtp+=vader.vim
+set rtp+=vendor/*
 set rtp+=.
 set rtp+=after
 filetype plugin indent on
@@ -44,3 +43,13 @@ fun GetQFList()
   return sort(qflist, "SortByLnum")
 endf
 
+lua <<LUA
+local function on_attach(client, buffnr)
+  vim.g.lsp_client_attached = 1
+end
+
+require('lspconfig')['tsserver'].setup({
+  on_attach = on_attach,
+  cmd = {"typescript-language-server", "--stdio", "--tsserver-path=tsserver" }
+})
+LUA

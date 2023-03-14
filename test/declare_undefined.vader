@@ -1,5 +1,15 @@
 Include: support/test_helper.vader
 
+Before:
+  " This resets the cached state of the parser.
+  " e.g, without this `ts_utils.get_node_at_cursor()` returns nil if there is more than one test.
+  :lua require'nvim-treesitter.parsers'.get_parser():parse()
+  :lua require('lspconfig')['tsserver'].manager.add(vim.fn.getcwd(), true, vim.fn.bufnr())
+  :lua vim.wait(1000, function() return vim.g.lsp_client_attached == 1 end, 20)
+
+After:
+  :let g:lsp_client_attached = 0
+
 Given javascript (defined variable):
   function blah () {
     const aaa = 1

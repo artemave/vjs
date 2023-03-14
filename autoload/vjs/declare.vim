@@ -1,11 +1,12 @@
 fun! vjs#declare#CreateDeclaration() abort
-  let context = {}
   let cword = expand('<cword>')
   let current_line = getline('.')
 
   if cword == 'this'
     return
   endif
+
+  let context = { 'reference': cword }
 
   if cword =~ '\C^[A-Z]'
     let constructor_arguments_match = match(current_line, '\C'. cword .' *([^)]')
@@ -22,10 +23,16 @@ fun! vjs#declare#CreateDeclaration() abort
   elseif match(current_line, '\Cthis. *'. cword) > -1
     let context.reference_type = 'property'
   else
+    let refs = luaeval('require"vjs".references()')
+    if len(refs) > 0
+      return
+    endif
+
     let context.reference_type = 'variable'
+    let loc = luaeval('require"vjs".find_statement_start()')
+    return s:HandleCreateDeclarationResponse({ 'context': context, 'declaration': loc })
   endif
 
-  let context.reference = cword
   let code = join(getline(1, '$'), "\n")
   let message = {'code': code, 'start_line': line('.'), 'action': 'create_declaration', 'context': context}
 

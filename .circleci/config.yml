@@ -13,6 +13,5 @@ jobs:
        - run: sudo chmod +x nvim.appimage
        - run: sudo ./nvim.appimage --appimage-extract
        - run: sudo chmod -R a+rwx ./squashfs-root
-       - run: git clone https://github.com/junegunn/vader.vim.git
        - run: yarn
        - run: yarn test
