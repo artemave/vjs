@@ -25,11 +25,6 @@ fun! vjs#declare#CreateDeclaration() abort
     let loc = luaeval('require"vjs".find_statement_start()')
     return s:HandleCreateDeclarationResponse({ 'context': context, 'declaration': loc })
   else
-    let refs = luaeval('require"vjs".references()')
-    if len(refs) > 0
-      return
-    endif
-
     let context.reference_type = 'variable'
     let loc = luaeval('require"vjs".find_statement_start()')
     return s:HandleCreateDeclarationResponse({ 'context': context, 'declaration': loc })
