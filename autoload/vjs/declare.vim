@@ -22,6 +22,8 @@ fun! vjs#declare#CreateDeclaration() abort
     let context.reference_type = 'function'
   elseif match(current_line, '\Cthis. *'. cword) > -1
     let context.reference_type = 'property'
+    let loc = luaeval('require"vjs".find_statement_start()')
+    return s:HandleCreateDeclarationResponse({ 'context': context, 'declaration': loc })
   else
     let refs = luaeval('require"vjs".references()')
     if len(refs) > 0
