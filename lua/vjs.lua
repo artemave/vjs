@@ -6,11 +6,10 @@ local util = require('vim.lsp.util')
 
 local M = {}
 
-function M.find_statement_start()
+local function find_start(condition_fn)
   local node = ts_utils.get_node_at_cursor()
 
-  -- find the first parent node with type that match *._statement or "declaration"
-  while node and not (string.match(node:type(), ".*_statement") or string.match(node:type(), ".*_declaration")) do
+  while node and condition_fn(node) do
     node = node:parent()
   end
 
@@ -19,29 +18,25 @@ function M.find_statement_start()
   end
 
   local start_row, start_col, _ = node:start()
+
   return {
     line = start_row + 1,
     column = start_col,
   }
 end
 
+function M.find_statement_start()
+  return find_start(function(node)
+    return not (
+      string.match(node:type(), ".*_statement") or string.match(node:type(), ".*_declaration")
+    )
+  end)
+end
+
 function M.find_global_scope_start()
-  local node = ts_utils.get_node_at_cursor()
-
-  -- find parent node in global scope
-  while node and not (string.match(node:type(), ".*_file")) do
-    node = node:parent()
-  end
-
-  if not node then
-    return { line = 1, column = 0 }
-  end
-
-  local start_row, start_col, _ = node:start()
-  return {
-    line = start_row + 1,
-    column = start_col,
-  }
+  return find_start(function(node)
+    return not string.match(node:type(), ".*_file")
+  end)
 end
 
 return M
