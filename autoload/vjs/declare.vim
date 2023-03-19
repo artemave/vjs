@@ -1,3 +1,32 @@
+fun s:InsertClassDeclaration(class_name, with_constructor)
+  let loc = luaeval('require"vjs".find_global_scope_start()')
+  let declaration_line = loc.line - 1
+  let indent = repeat(' ', loc.column)
+
+  let new_lines = []
+
+  call add(new_lines, indent .'class '. a:class_name . ' {')
+  if a:with_constructor
+    call add(new_lines, indent .'  constructor() {')
+    call add(new_lines, indent .'  }')
+  else
+    call add(new_lines, indent .'  ')
+  endif
+  call add(new_lines, indent .'}')
+  call add(new_lines, '')
+
+  call append(declaration_line, new_lines)
+
+  if a:with_constructor
+    execute ':'.(declaration_line + 2)
+    normal f(l
+    startinsert
+  else
+    execute ':'.(declaration_line + 1)
+    startinsert!
+  endif
+endf
+
 fun! vjs#declare#CreateDeclaration() abort
   let cword = expand('<cword>')
   let current_line = getline('.')
@@ -16,8 +45,9 @@ fun! vjs#declare#CreateDeclaration() abort
     else
       let context.reference_type = 'class'
     endif
-    let loc = luaeval('require"vjs".find_global_scope_start()')
-    return s:HandleCreateDeclarationResponse({ 'context': context, 'declaration': loc })
+
+    return s:InsertClassDeclaration(cword, constructor_arguments_match > -1)
+
   elseif match(current_line, '\Cthis. *'. cword .' *(') > -1
     let context.reference_type = luaeval('require"vjs".this_container_type()')
     if context.reference_type == 'classMethod'
@@ -25,26 +55,18 @@ fun! vjs#declare#CreateDeclaration() abort
     else
       let loc = luaeval('require"vjs".method_definition_start()')
     endif
-
-    return s:HandleCreateDeclarationResponse({ 'context': context, 'declaration': loc })
   elseif match(current_line, '\C'. cword .' *(') > -1
     let context.reference_type = 'function'
     let loc = luaeval('require"vjs".find_global_scope_start()')
-    return s:HandleCreateDeclarationResponse({ 'context': context, 'declaration': loc })
   elseif match(current_line, '\Cthis. *'. cword) > -1
     let context.reference_type = 'property'
     let loc = luaeval('require"vjs".find_statement_start()')
-    return s:HandleCreateDeclarationResponse({ 'context': context, 'declaration': loc })
   else
     let context.reference_type = 'variable'
     let loc = luaeval('require"vjs".find_statement_start()')
-    return s:HandleCreateDeclarationResponse({ 'context': context, 'declaration': loc })
   endif
 
-  let code = join(getline(1, '$'), "\n")
-  let message = {'code': code, 'start_line': line('.'), 'action': 'create_declaration', 'context': context}
-
-  call vjs#ipc#SendMessage(message, funcref('s:HandleCreateDeclarationResponse'))
+  return s:HandleCreateDeclarationResponse({ 'context': context, 'declaration': loc })
 endf
 
 fun! s:HandleCreateDeclarationResponse(message) abort
