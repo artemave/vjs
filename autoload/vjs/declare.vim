@@ -1,3 +1,40 @@
+fun s:InsertMethodDeclaration(method_name, is_async)
+  let method_type = luaeval('require"vjs".this_container_type()')
+
+  if method_type == 'classMethod'
+    let loc = luaeval('require"vjs".method_definition_end()')
+  else
+    let loc = luaeval('require"vjs".method_definition_start()')
+  endif
+
+  let declaration_line = loc.line
+  let indent = repeat(' ', loc.column)
+  let new_lines = []
+
+  let async = ''
+  if a:is_async
+    let async = 'async '
+  endif
+
+  if method_type == 'classMethod'
+    call add(new_lines, '')
+    call add(new_lines, indent . async . a:method_name . '() {')
+    call add(new_lines, indent .'}')
+
+    call append(declaration_line, new_lines)
+  else
+    call add(new_lines, indent . async . a:method_name . '() {')
+    call add(new_lines, indent .'},')
+    call add(new_lines, '')
+
+    call append(declaration_line - 1, new_lines)
+  endif
+
+  execute ':'.declaration_line
+  normal f(l
+  startinsert
+endf
+
 fun s:InsertClassDeclaration(class_name, with_constructor)
   let loc = luaeval('require"vjs".find_global_scope_start()')
   let declaration_line = loc.line - 1
@@ -49,12 +86,9 @@ fun! vjs#declare#CreateDeclaration() abort
     return s:InsertClassDeclaration(cword, constructor_arguments_match > -1)
 
   elseif match(current_line, '\Cthis. *'. cword .' *(') > -1
-    let context.reference_type = luaeval('require"vjs".this_container_type()')
-    if context.reference_type == 'classMethod'
-      let loc = luaeval('require"vjs".method_definition_end()')
-    else
-      let loc = luaeval('require"vjs".method_definition_start()')
-    endif
+    let is_async = match(getline('.'), 'await \+\(this\.\)\? *'. cword) > -1
+    return s:InsertMethodDeclaration(cword, is_async)
+
   elseif match(current_line, '\C'. cword .' *(') > -1
     let context.reference_type = 'function'
     let loc = luaeval('require"vjs".find_global_scope_start()')
