@@ -19,7 +19,14 @@ fun! vjs#declare#CreateDeclaration() abort
     let loc = luaeval('require"vjs".find_global_scope_start()')
     return s:HandleCreateDeclarationResponse({ 'context': context, 'declaration': loc })
   elseif match(current_line, '\Cthis. *'. cword .' *(') > -1
-    let context.reference_type = 'method'
+    let context.reference_type = luaeval('require"vjs".this_container_type()')
+    if context.reference_type == 'classMethod'
+      let loc = luaeval('require"vjs".method_definition_end()')
+    else
+      let loc = luaeval('require"vjs".method_definition_start()')
+    endif
+
+    return s:HandleCreateDeclarationResponse({ 'context': context, 'declaration': loc })
   elseif match(current_line, '\C'. cword .' *(') > -1
     let context.reference_type = 'function'
     let loc = luaeval('require"vjs".find_global_scope_start()')

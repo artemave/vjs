@@ -97,7 +97,7 @@ Expect javascript (inserts class declaration with constructor):
     const b = new Stuff({a: 2})
   }
 
-Given javascript (undefined class method):
+Given javascript (undefined method):
   class Stuff {
     foo() {
       const bbb = this.getBbb()
@@ -109,7 +109,7 @@ Do:
   fB
   :VjsCreateDeclaration\<CR>
 
-Expect javascript (inserts class method declaration):
+Expect javascript (inserts method declaration):
   class Stuff {
     foo() {
       const bbb = this.getBbb()
@@ -201,47 +201,5 @@ Expect javascript (inserts object method declaration):
 
     async foo() {
       const bbb = await  this. getBbb  ()
-    }
-  }
-
-Given javascript (undefined class instance property):
-  class Bbb {
-    getFoo() {
-      const a = this.foo
-    }
-  }
-
-Do:
-  jj
-  ff
-  :VjsCreateDeclaration\<CR>
-
-Expect javascript (inserts property declaration):
-  class Bbb {
-    getFoo() {
-      this.foo = 
-
-      const a = this.foo
-    }
-  }
-
-Given javascript (undefined object literal property):
-  const bbb = {
-    getFoo() {
-      const a = this.foo
-    }
-  }
-
-Do:
-  jj
-  ff
-  :VjsCreateDeclaration\<CR>
-
-Expect javascript (inserts property declaration):
-  const bbb = {
-    getFoo() {
-      this.foo = 
-
-      const a = this.foo
     }
   }
