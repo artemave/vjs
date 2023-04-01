@@ -9,6 +9,7 @@ jobs:
        - run: sudo apt-get install --yes silversearcher-ag git vim
        - run: sudo curl -LO https://github.com/BurntSushi/ripgrep/releases/download/11.0.2/ripgrep_11.0.2_amd64.deb
        - run: sudo dpkg -i ripgrep_11.0.2_amd64.deb
+       - run: sudo npm install -g typescript-language-server typescript
        - run: sudo curl -LO https://github.com/neovim/neovim/releases/download/stable/nvim.appimage
        - run: sudo chmod +x nvim.appimage
        - run: sudo ./nvim.appimage --appimage-extract

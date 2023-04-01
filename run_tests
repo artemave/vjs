@@ -18,7 +18,9 @@ fi
 
 if [ ! -d ./vendor/nvim-lspconfig ]; then
   git clone https://github.com/neovim/nvim-lspconfig.git ./vendor/nvim-lspconfig
-  npm install -g typescript-language-server typescript
+  if [ -z "$CI" ]; then
+    npm install -g typescript-language-server typescript
+  fi
 fi
 
 if [ ! -d ./vendor/vader.vim ]; then
