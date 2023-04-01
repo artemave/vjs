@@ -9,19 +9,6 @@ fun! s:Debug(message)
   endif
 endf
 
-fun! s:LintFix()
-  let command = './node_modules/.bin/eslint --fix'
-
-  if executable('./node_modules/.bin/standard')
-    let command = './node_modules/.bin/standard --fix'
-  elseif executable('./node_modules/.bin/prettier')
-    let command = './node_modules/.bin/prettier --write'
-  endif
-  :w
-  silent let f = system(command.' '.expand('%'))
-  checktime
-endf
-
 fun! s:SortByLength(s1, s2)
   return len(a:s1) == len(a:s2) ? 0 : len(a:s1) > len(a:s2) ? 1 : -1
 endf
@@ -172,7 +159,6 @@ autocmd FileType {javascript,javascript.jsx,typescript} setlocal omnifunc=VjsReq
 autocmd FileType javascript setlocal includeexpr=vjs#imports#ResolvePackageImport(v:fname)
 autocmd FileType javascript setlocal isfname+=@-@
 
-com VjsLintFix call s:LintFix()
 com VjsListRoutes call s:ListExpressRoutes()
 com VjsRenameFile call vjs#imports#RenameFile()
 com VjsListDependents call vjs#imports#ListDependents()
