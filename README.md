@@ -59,9 +59,15 @@ If you don't like binding explosion, you might want to consider [popup-menu.nvim
 
 #### Complete import/require paths
 
-Vjs registers `omnifunc` for `require`/`import` path completion - `CTRL-X CTRL-O` - which gives you this:
+Vjs comes with an `omnifunc` for `require`/`import` path completion:
 
 <img src="https://user-images.githubusercontent.com/23721/80413735-38752d80-88d0-11ea-8030-de1b17ee4796.gif" loading="lazy" width=550>
+
+Set it up:
+
+```viml
+autocmd FileType {javascript,typescript} setlocal omnifunc=vjs#ModuleComplete
+```
 
 #### `:VjsRenameFile`
 

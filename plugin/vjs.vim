@@ -36,7 +36,7 @@ fun! s:SearchFilesCmd(base)
   endif
 endf
 
-fun! VjsRequireComplete(findstart, base)
+fun! vjs#ModuleComplete(findstart, base)
   if a:findstart
     " locate the start of the word
     let line = getline('.')
@@ -166,8 +166,6 @@ endif
 
 autocmd FileType {javascript,javascript.jsx,typescript} call vjs#ipc#StartJsRefactoringServer()
 autocmd FileType {javascript,javascript.jsx} call vjs#ipc#StartJsTagsServer()
-" TODO: how to avoid global name with omnifunc?
-autocmd FileType {javascript,javascript.jsx,typescript} setlocal omnifunc=VjsRequireComplete
 
 autocmd FileType javascript setlocal includeexpr=vjs#imports#ResolvePackageImport(v:fname)
 autocmd FileType javascript setlocal isfname+=@-@
