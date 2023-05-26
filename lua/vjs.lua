@@ -1,13 +1,24 @@
-local ts_utils = require "nvim-treesitter.ts_utils"
+local ts = vim.treesitter
+local ts_locals = require("nvim-treesitter.locals")
 local query = require "vim.treesitter.query"
-local utils = require "nvim-treesitter.utils"
-local parsers = require "nvim-treesitter.parsers"
-local util = require('vim.lsp.util')
+
+local function dump(o)
+  if type(o) == 'table' then
+    local s = '{ '
+    for k,v in pairs(o) do
+        if type(k) ~= 'number' then k = '"'..k..'"' end
+        s = s .. '['..k..'] = ' .. dump(v) .. ','
+    end
+    return s .. '} '
+  else
+    return tostring(o)
+  end
+end
 
 local M = {}
 
 local function find_start(condition_fn)
-  local node = ts_utils.get_node_at_cursor()
+  local node = ts.get_node()
 
   while node and condition_fn(node) do
     node = node:parent()
@@ -20,13 +31,13 @@ local function find_start(condition_fn)
   local start_row, start_col, _ = node:start()
 
   return {
-    line = start_row + 1,
+    line = start_row,
     column = start_col,
   }
 end
 
 local function find_end(condition_fn)
-  local node = ts_utils.get_node_at_cursor()
+  local node = ts.get_node()
 
   while node and condition_fn(node) do
     node = node:parent()
@@ -52,15 +63,28 @@ function M.find_statement_start()
   end)
 end
 
+-- TODO: this is a bit silly: global scope start is always line 1
 function M.find_global_scope_start()
   return find_start(function(node)
     return not string.match(node:type(), ".*_file")
   end)
 end
 
+function M.find_closest_global_scope(n)
+  local node = n or ts.get_node()
+
+  return find_start(function(node)
+    return node:parent() and node:parent():type() ~= 'program'
+  end)
+end
+
 function M.method_definition_start()
   return find_start(function(node)
-    return not string.match(node:type(), "method_definition")
+    local is_method = string.match(node:type(), "method_definition")
+    local is_function_property = string.match(node:type(), 'function') and string.match(node:parent():type(), 'pair')
+
+    -- TODO: invert this
+    return not is_method and not is_function_property
   end)
 end
 
@@ -70,8 +94,29 @@ function M.method_definition_end()
   end)
 end
 
-function closest_parent_of_type(type)
-  local node = ts_utils.get_node_at_cursor()
+function M.function_body_start()
+  local function_declaration = closest_parent_of_type('function_declaration')
+  local start_row, start_col, _ = function_declaration:field('body')[1]:start()
+
+  return {
+    line = start_row + 1,
+    column = start_col,
+  }
+end
+
+function closest_with_field(name, n)
+  local node = n or ts.get_node()
+
+  while node do
+    if #node:field(name) > 0 then
+      return node
+    end
+    node = node:parent()
+  end
+end
+
+function closest_parent_of_type(type, n)
+  local node = n or ts.get_node()
 
   while node and node:parent() do
     node = node:parent()
@@ -82,14 +127,104 @@ function closest_parent_of_type(type)
   end
 end
 
-function M.this_container_type()
-  local container_node = closest_parent_of_type('method_definition')
+function M.extracted_type_and_loc(opts, n)
+  local node = n or ts.get_node()
 
-  if container_node:parent():type() == 'class_body' then
-    return 'classMethod'
-  else
-    return 'objectMethod'
+  if not opts.bound then
+    local loc = M.find_closest_global_scope(n)
+    return { 'function', loc.line, loc.column }
   end
+  local container_node = closest_with_field('body', node)
+
+  if container_node then
+    local line, column  = container_node:start()
+
+    if container_node:type() == 'method_definition' then
+      if container_node:parent():type() == 'class_body' then
+        return { 'method', line, column }
+      else
+        return { 'object_method', line, column }
+      end
+    elseif container_node:type() == 'arrow_function' then
+      return M.extracted_type_and_loc(opts, container_node:parent())
+    elseif container_node:type() == 'function_declaration' or container_node:type() == 'function' then
+      if container_node:parent():type() == 'pair' then
+        return { 'object_method', line, column }
+      else
+        return { 'arrow_function', line + 1, column }
+      end
+    else
+      local text = query.get_node_text(container_node, 0)
+      error(string.format("Unhandled node of type %s:\n%s", container_node:type(), text))
+    end
+  end
+
+  local loc = M.find_closest_global_scope(n)
+  return { 'function', loc.line, loc.column }
+end
+
+function M.find_variables_defined_within_selection_but_used_outside(start_line, end_line)
+  local references = ts_locals.get_references(0)
+  local res = {}
+
+  vim.tbl_map(function(reference)
+    local def = ts_locals.find_definition(reference, 0)
+    local def_start, _, _ = def:start() + 1
+    local ref_end, _, _ = reference:end_() + 1
+    local def_name = query.get_node_text(def, 0)
+
+    if def_start >= start_line and def_start <= end_line and ref_end > end_line then
+      -- check if table contains { name = def_name }
+      local found = false
+      for _, def in ipairs(res) do
+        if def.name == def_name then
+          found = true
+          break
+        end
+      end
+
+      if not found then
+        table.insert(res, { name = def_name })
+      end
+    end
+  end, references)
+
+  return res
+end
+
+function M.find_variables_used_within_selection_but_defined_outside(start_line, end_line)
+  local references = ts_locals.get_references(0)
+  local res = {}
+
+  vim.tbl_map(function(reference)
+    local def = ts_locals.find_definition(reference, 0)
+    local def_start, _, _ = def:start() + 1
+    local ref_start, _, _ = reference:start() + 1
+    local def_name = query.get_node_text(def, 0)
+
+    if reference:type() ~= 'identifier' then
+      return
+    end
+
+    if def_start < start_line and ref_start >= start_line and ref_start <= end_line then
+      local lexical_scope = closest_parent_of_type('lexical_declaration', def)
+      if lexical_scope and lexical_scope:parent() then
+        local found = false
+        for _, name in ipairs(res) do
+          if name == def_name then
+            found = true
+            break
+          end
+        end
+
+        if not found then
+          table.insert(res, def_name)
+        end
+      end
+    end
+  end, references)
+
+  return res
 end
 
 return M

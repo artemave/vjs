@@ -1,7 +1,7 @@
 fun s:InsertMethodDeclaration(method_name, is_async)
-  let method_type = luaeval('require"vjs".this_container_type()')
+  let [type; _] = luaeval('require"vjs".extracted_type_and_loc({ bound = true })')
 
-  if method_type == 'classMethod'
+  if type == 'method'
     let loc = luaeval('require"vjs".method_definition_end()')
   else
     let loc = luaeval('require"vjs".method_definition_start()')
@@ -16,7 +16,7 @@ fun s:InsertMethodDeclaration(method_name, is_async)
     let async = 'async '
   endif
 
-  if method_type == 'classMethod'
+  if type == 'method'
     call add(new_lines, '')
     call add(new_lines, indent . async . a:method_name . '() {')
     call add(new_lines, indent .'}')
@@ -27,7 +27,7 @@ fun s:InsertMethodDeclaration(method_name, is_async)
     call add(new_lines, indent .'},')
     call add(new_lines, '')
 
-    call append(declaration_line - 1, new_lines)
+    call append(declaration_line, new_lines)
   endif
 
   execute ':'.declaration_line
@@ -128,13 +128,6 @@ fun! s:HandleCreateDeclarationResponse(message) abort
   elseif reference_type == 'function'
     call add(new_lines, indent . async .'function '. reference . '() {')
     call add(new_lines, indent .'}')
-  elseif reference_type == 'classMethod'
-    call add(new_lines, '')
-    call add(new_lines, indent . async . reference . '() {')
-    call add(new_lines, indent .'}')
-  elseif reference_type == 'objectMethod'
-    call add(new_lines, indent . async . reference . '() {')
-    call add(new_lines, indent .'},')
   elseif reference_type == 'class'
     call add(new_lines, indent .'class '. reference . ' {')
     call add(new_lines, indent .'  ')
@@ -147,12 +140,12 @@ fun! s:HandleCreateDeclarationResponse(message) abort
   endif
 
   " insert blank line after new declaration if there isn't one already
-  if reference_type != 'classMethod' && getline(declaration_line + 1) != ''
+  if getline(declaration_line + 1) != ''
     call add(new_lines, '')
   endif
 
-  " class method is inserted in the end of class body
-  if reference_type == 'classMethod'
+  " method is inserted in the end of class body
+  if reference_type == 'variable'
     call append(declaration_line + 1, new_lines)
   else
     call append(declaration_line, new_lines)
@@ -168,8 +161,6 @@ fun! s:HandleCreateDeclarationResponse(message) abort
     let jump = 1
     if reference_type == 'class_with_constructor_arguments'
       let jump = 2
-    elseif reference_type == 'classMethod'
-      let jump = 3
     endif
     execute ':'.(declaration_line + jump)
     normal f(l

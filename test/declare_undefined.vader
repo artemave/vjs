@@ -3,7 +3,7 @@ Include: support/test_helper.vader
 Before:
   " This resets the cached state of the parser.
   " e.g, without this `ts_utils.get_node_at_cursor()` returns nil if there is more than one test.
-  :lua require'nvim-treesitter.parsers'.get_parser():parse()
+  lua require'nvim-treesitter.parsers'.get_parser():parse()
 
 Given javascript (undefined variable):
   function blah () {
@@ -109,7 +109,7 @@ Do:
   fB
   :VjsCreateDeclaration\<CR>
 
-Expect javascript (inserts method declaration):
+Expect javascript (inserts method):
   class Stuff {
     foo() {
       const bbb = this.getBbb()
@@ -119,7 +119,7 @@ Expect javascript (inserts method declaration):
     }
   }
 
-Given javascript (undefined async class method):
+Given javascript (undefined async method):
   class Stuff {
     async foo() {
       const bbb = await this.getBbb()
@@ -131,7 +131,7 @@ Do:
   fB
   :VjsCreateDeclaration\<CR>
 
-Expect javascript (inserts async class method declaration):
+Expect javascript (inserts async method):
   class Stuff {
     async foo() {
       const bbb = await this.getBbb()

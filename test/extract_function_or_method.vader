@@ -1,5 +1,10 @@
 Include: support/test_helper.vader
 
+Before:
+  " This resets the cached state of the parser.
+  " e.g, without this `ts_utils.get_node_at_cursor()` returns nil if there is more than one test.
+  :lua require'nvim-treesitter.parsers'.get_parser():parse()
+
 Given javascript (void function):
   const a = 2
 
@@ -42,7 +47,7 @@ Expect javascript:
     return path
   }
 
-Given javascript (class method):
+Given javascript (method):
   import {foo} from 'bar'
 
   class Aaa {
@@ -227,19 +232,19 @@ Do:
 Expect javascript (dunno why the indentation is wrong - it works for real):
   import {foo} from 'bar'
 
-  function thing(b, n) {
-    var c = this.aaa
-    foo(work(c, b, n))
-    return c
-  }
-
   function b() {
+    const thing = (b, n) => {
+      var c = this.aaa
+      foo(work(c, b, n))
+      return c
+    }
+
     const aaa = {
       stuff: a => {
         const b = a
         const n = 2
 
-      var c = thing.call(this, b, n)
+        const c = thing(b, n)
         return c + 3
       }
     }
@@ -254,8 +259,8 @@ Given javascript:
       var focus = typeof options === 'object' && options.hasOwnProperty('focus') ? options.focus : true
 
       if (focus) {
-        var $ = this.get('$')
-        var document = this.get('document')
+        const $ = this.get('$')
+        const document = this.get('document')
         if (element && element.length > 0) {
           element = element[0]
         }
@@ -282,7 +287,7 @@ Expect javascript:
   function notSillyBlankIEObject (element) {
     return Object.keys(element).length > 0
   }
-  function thing($, document) {
+  function thing(document, $) {
     var activeElement = document.activeElement
     if (activeElement && !$(activeElement).is(':focus') && notSillyBlankIEObject(activeElement)) {
       $(activeElement).trigger('blur')
@@ -294,13 +299,13 @@ Expect javascript:
       var focus = typeof options === 'object' && options.hasOwnProperty('focus') ? options.focus : true
 
       if (focus) {
-        var $ = this.get('$')
-        var document = this.get('document')
+        const $ = this.get('$')
+        const document = this.get('document')
         if (element && element.length > 0) {
           element = element[0]
         }
 
-        thing($, document)
+        thing(document, $)
         if (['[object Document]', '[object HTMLDocument]'].indexOf(document.toString()) === -1) {
           document.activeElement = element
         }

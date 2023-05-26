@@ -42,3 +42,12 @@ fun GetQFList()
   return qflist
   return sort(qflist, "SortByLnum")
 endf
+
+lua <<EOF
+require'nvim-treesitter.configs'.setup {
+  ensure_installed = { 'javascript' },
+  indent = {
+    enable = true
+  }
+}
+EOF
