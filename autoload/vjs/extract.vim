@@ -209,18 +209,18 @@ fun s:VariableNames(message)
 endf
 
 fun vjs#extract#ExtractDeclarationIntoFile()
-  let code = join(getline(1,'$'), "\n")
-  let message = {'code': code, 'start_line': line('.'), 'action': 'extract_declaration'}
-
-  call vjs#ipc#SendMessage(message, funcref('s:HandleExtractDeclarationResponse'))
-endf
-
-fun s:HandleExtractDeclarationResponse(message)
-  if !has_key(a:message, 'declaration')
+  let declaration = luaeval('require"vjs".closest_declaration()')
+  if declaration is v:null
     echom 'No declaration found under cursor'
     return
   endif
 
+  let message = {'start_line': line('.'), 'declaration': declaration}
+
+  call s:HandleExtractDeclarationResponse(message)
+endf
+
+fun s:HandleExtractDeclarationResponse(message)
   let name = a:message.declaration.name
   let new_file_path = input('Extract '. name .' into ', s:expand('%:h') .'/'. name .'.'. s:expand('%:e'), 'file')
 

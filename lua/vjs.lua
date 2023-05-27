@@ -95,7 +95,7 @@ function M.method_definition_end()
 end
 
 function M.function_body_start()
-  local function_declaration = closest_parent_of_type('function_declaration')
+  local function_declaration = closest_of_type('function_declaration')
   local start_row, start_col, _ = function_declaration:field('body')[1]:start()
 
   return {
@@ -115,15 +115,20 @@ function closest_with_field(name, n)
   end
 end
 
-function closest_parent_of_type(type, n)
+function closest_of_type(types, n)
   local node = n or ts.get_node()
 
-  while node and node:parent() do
-    node = node:parent()
+  if type(types) ~= 'table' then
+    types = { types }
+  end
 
-    if node:type() == type then
-      return node
+  while node and node:parent() do
+    for _, t in ipairs(types) do
+      if node:type() == t then
+        return node
+      end
     end
+    node = node:parent()
   end
 end
 
@@ -207,7 +212,7 @@ function M.find_variables_used_within_selection_but_defined_outside(start_line, 
     end
 
     if def_start < start_line and ref_start >= start_line and ref_start <= end_line then
-      local lexical_scope = closest_parent_of_type('lexical_declaration', def)
+      local lexical_scope = closest_of_type('lexical_declaration', def:parent())
       if lexical_scope and lexical_scope:parent() then
         local found = false
         for _, name in ipairs(res) do
@@ -225,6 +230,18 @@ function M.find_variables_used_within_selection_but_defined_outside(start_line, 
   end, references)
 
   return res
+end
+
+function M.closest_declaration()
+  local node = closest_of_type({ 'function_declaration', 'class_declaration' })
+  if node then
+    local name = ts.get_node_text(node:field('name')[1], 0)
+    return {
+      name = name,
+      start_line = node:start() + 1,
+      end_line = node:end_() + 1
+    }
+  end
 end
 
 return M
