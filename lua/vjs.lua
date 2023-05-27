@@ -1,6 +1,5 @@
 local ts = vim.treesitter
 local ts_locals = require("nvim-treesitter.locals")
-local query = require "vim.treesitter.query"
 
 local function dump(o)
   if type(o) == 'table' then
@@ -159,7 +158,7 @@ function M.extracted_type_and_loc(opts, n)
         return { 'arrow_function', line + 1, column }
       end
     else
-      local text = query.get_node_text(container_node, 0)
+      local text = ts.get_node_text(container_node, 0)
       error(string.format("Unhandled node of type %s:\n%s", container_node:type(), text))
     end
   end
@@ -176,7 +175,7 @@ function M.find_variables_defined_within_selection_but_used_outside(start_line, 
     local def = ts_locals.find_definition(reference, 0)
     local def_start, _, _ = def:start() + 1
     local ref_end, _, _ = reference:end_() + 1
-    local def_name = query.get_node_text(def, 0)
+    local def_name = ts.get_node_text(def, 0)
 
     if def_start >= start_line and def_start <= end_line and ref_end > end_line then
       -- check if table contains { name = def_name }
@@ -205,7 +204,7 @@ function M.find_variables_used_within_selection_but_defined_outside(start_line, 
     local def = ts_locals.find_definition(reference, 0)
     local def_start, _, _ = def:start() + 1
     local ref_start, _, _ = reference:start() + 1
-    local def_name = query.get_node_text(def, 0)
+    local def_name = ts.get_node_text(def, 0)
 
     if reference:type() ~= 'identifier' then
       return

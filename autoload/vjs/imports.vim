@@ -78,7 +78,7 @@ fun! s:PrepareDependantsList()
   let current_file_full_path = expand('%:p:r')
 
   for require in all_imports
-    let match = matchlist(require.text, "['\"]".'\(.*\)'."['\"]")
+    let match = matchlist(require.text, "['\"]".'\(.\+\)'."['\"]")
     if len(match) > 0
       let module_path = match[1]
 

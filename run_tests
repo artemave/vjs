@@ -16,12 +16,10 @@ if [ ! -d ./vendor/nvim-treesitter ]; then
   $cmd --headless -u ./test/vimrc -c 'TSInstallSync! javascript | q'
 fi
 
-if [ ! -d ./vendor/nvim-lspconfig ]; then
-  git clone https://github.com/neovim/nvim-lspconfig.git ./vendor/nvim-lspconfig
-  if [ -z "$CI" ]; then
-    npm install -g typescript-language-server typescript
-  fi
-fi
+# if [ ! -d ./vendor/nvim-lspconfig ]; then
+#   git clone https://github.com/neovim/nvim-lspconfig.git ./vendor/nvim-lspconfig
+#   npm install -g typescript-language-server typescript
+# fi
 
 if [ ! -d ./vendor/vader.vim ]; then
   git clone https://github.com/junegunn/vader.vim.git ./vendor/vader.vim

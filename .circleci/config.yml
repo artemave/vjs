@@ -7,7 +7,7 @@ jobs:
        - checkout
        - run: sudo apt-get update
        - run: sudo apt-get install --yes git ripgrep
-       - run: sudo npm install -g typescript-language-server typescript
+       # - run: sudo npm install -g typescript-language-server typescript
        - run: sudo curl -LO https://github.com/neovim/neovim/releases/download/stable/nvim.appimage
        - run: sudo chmod +x nvim.appimage
        - run: sudo ./nvim.appimage --appimage-extract

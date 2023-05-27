@@ -7,12 +7,12 @@ Execute:
 
 Execute:
   VjsListDependents
-  AssertEqual [
+  AssertEqual sort([
     \ {'lnum': 1, 'fname': 'test/fixtures/blops.js', 'text': "const stuff = require('./deeper/stuff')"},
     \ {'lnum': 3, 'fname': 'test/fixtures/package/index.js', 'text': 'const stuff = require("../deeper/stuff")'},
     \ {'lnum': 4, 'fname': 'test/fixtures/banana.js', 'text': 'import "~/test/fixtures/deeper/stuff"'},
     \ {'lnum': 5, 'fname': 'test/fixtures/deeper/blah.jsx', 'text': '} from "./stuff"'},
-  \], GetQFListFiles()
+  \]), sort(GetQFListFiles())
 
 Given javascript:
 
