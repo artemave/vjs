@@ -2,7 +2,7 @@ version: 2
 jobs:
    build:
      docker:
-       - image: circleci/node
+       - image: cimg/node:20.2.0
      steps:
        - checkout
        - run: sudo apt-get update
