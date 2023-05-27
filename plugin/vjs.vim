@@ -135,24 +135,10 @@ fun! s:ListExpressRoutes()
   syntax match llFileName /^[^|]*|[^|]*| / transparent conceal
 endf
 
-if !exists('g:vjs_tags_enabled')
-  let g:vjs_tags_enabled = 1
-endif
-
-if !exists('g:vjs_tags_regenerate_at_start')
-  let g:vjs_tags_regenerate_at_start = 1
-endif
-
-if !exists('g:vjs_tags_ignore')
-  let g:vjs_tags_ignore = []
-endif
-
 if !exists('g:vjs_dumb_require_complete')
   let g:vjs_dumb_require_complete = 0
 endif
 
-autocmd FileType {javascript,javascript.jsx,typescript} call vjs#ipc#StartJsRefactoringServer()
-autocmd FileType {javascript,javascript.jsx} call vjs#ipc#StartJsTagsServer()
 " TODO: how to avoid global name with omnifunc?
 autocmd FileType {javascript,javascript.jsx,typescript} setlocal omnifunc=VjsRequireComplete
 

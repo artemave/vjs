@@ -11,7 +11,6 @@ A Neovim plugin that adds a bunch of refactoring tools for Javascript/TypeScript
 - autocomplete `require`/`import` paths
 - update imports on file rename/move
 - list imports for current file
-- auto generate and keep up to date `tags` file
 - list Express (or express like) routes
 
 For test related stuff I am using a dedicated [plugin](https://github.com/artemave/vigun).
@@ -25,7 +24,7 @@ Requires [treesitter](https://github.com/nvim-treesitter/nvim-treesitter).
 Use [a plugin manager](https://github.com/junegunn/vim-plug):
 
 ```vim script
-Plug 'artemave/vjs', { 'do': 'npm install' }
+Plug 'artemave/vjs'
 ```
 
 If you don't use a plugin manager, don't forget to run `npm install` in the plugin directory.
@@ -48,12 +47,6 @@ If you don't like binding explosion, you might want to consider [popup-menu.nvim
 ### Configuration
 
 `g:vjs_dumb_require_complete` - don't strip out file extension from autocompleted modules and also show `index` modules. Defaults to `0`.
-
-`g:vjs_tags_enabled` - enable tags file auto generation. Defaults to `1`.
-
-`g:vjs_tags_ignore` - additional paths to ignore when generating tags file. By default vjs tags all non git ignored js/jsx/mjs files. Array.
-
-`g:vjs_tags_regenerate_at_start` - when vim starts and this is set to `0`, it will update existing tags file rather than regenerating it. Defaults to `1`.
 
 ## Usage
 
