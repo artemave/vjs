@@ -1,5 +1,10 @@
 Include: support/test_helper.vader
 
+Before:
+  " This resets the cached state of the parser.
+  " e.g, without this `ts_utils.get_node_at_cursor()` returns nil if there is more than one test.
+  lua require'nvim-treesitter.parsers'.get_parser():parse()
+
 Given javascript (local void function):
   function getParentModuleName() {
     const caller = stack.shift()
@@ -146,7 +151,7 @@ Expect javascript:
       return path
     }
 
-    let path = await thing()
+    const path = await thing()
 
     return path
   }
@@ -179,7 +184,7 @@ Expect javascript:
       return {path, foo}
     }
 
-    let {path, foo} = thing()
+    const {path, foo} = thing()
 
     return path + foo
   }

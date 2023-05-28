@@ -1,37 +1,25 @@
 Include: support/test_helper.vader
 
-Given javascript:
-
-Execute:
+Execute (list dependents):
   file test/fixtures/deeper/stuff.js
-
-Execute:
   VjsListDependents
-  AssertEqual [
+  AssertEqual sort([
     \ {'lnum': 1, 'fname': 'test/fixtures/blops.js', 'text': "const stuff = require('./deeper/stuff')"},
     \ {'lnum': 3, 'fname': 'test/fixtures/package/index.js', 'text': 'const stuff = require("../deeper/stuff")'},
     \ {'lnum': 4, 'fname': 'test/fixtures/banana.js', 'text': 'import "~/test/fixtures/deeper/stuff"'},
     \ {'lnum': 5, 'fname': 'test/fixtures/deeper/blah.jsx', 'text': '} from "./stuff"'},
-  \], GetQFListFiles()
-
-Given javascript:
+  \]), sort(GetQFListFiles())
 
 Execute (require index):
   file test/fixtures/deeper/index.js
-
-Execute:
   VjsListDependents
   AssertEqual sort([
     \ {'lnum': 1, 'fname': 'test/fixtures/deeper/stuff.js', 'text': "require('.')"},
     \ {'lnum': 1, 'fname': 'test/fixtures/deeper/inner/v.js', 'text': "import '..'"},
   \]), sort(GetQFListFiles())
 
-Given javascript:
-
 Execute (finds nested modules):
   file test/fixtures/workspaces/a/a.mjs
-
-Execute:
   VjsListDependents
   AssertEqual sort([
     \ {'lnum': 1, 'fname': 'test/fixtures/workspaces/b/b.mjs', 'text': "import * from 'a/a.mjs'"},

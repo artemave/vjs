@@ -1,11 +1,78 @@
+fun s:InsertMethodDeclaration(method_name, is_async)
+  let [type; _] = luaeval('require"vjs".extracted_type_and_loc({ bound = true })')
+
+  if type == 'method'
+    let loc = luaeval('require"vjs".method_definition_end()')
+  else
+    let loc = luaeval('require"vjs".method_definition_start()')
+  endif
+
+  let declaration_line = loc.line
+  let indent = repeat(' ', loc.column)
+  let new_lines = []
+
+  let async = ''
+  if a:is_async
+    let async = 'async '
+  endif
+
+  if type == 'method'
+    call add(new_lines, '')
+    call add(new_lines, indent . async . a:method_name . '() {')
+    call add(new_lines, indent .'}')
+
+    call append(declaration_line, new_lines)
+  else
+    call add(new_lines, indent . async . a:method_name . '() {')
+    call add(new_lines, indent .'},')
+    call add(new_lines, '')
+
+    call append(declaration_line, new_lines)
+  endif
+
+  execute ':'.declaration_line
+  normal f(l
+  startinsert
+endf
+
+fun s:InsertClassDeclaration(class_name, with_constructor)
+  let loc = luaeval('require"vjs".find_global_scope_start()')
+  let declaration_line = loc.line - 1
+  let indent = repeat(' ', loc.column)
+
+  let new_lines = []
+
+  call add(new_lines, indent .'class '. a:class_name . ' {')
+  if a:with_constructor
+    call add(new_lines, indent .'  constructor() {')
+    call add(new_lines, indent .'  }')
+  else
+    call add(new_lines, indent .'  ')
+  endif
+  call add(new_lines, indent .'}')
+  call add(new_lines, '')
+
+  call append(declaration_line, new_lines)
+
+  if a:with_constructor
+    execute ':'.(declaration_line + 2)
+    normal f(l
+    startinsert
+  else
+    execute ':'.(declaration_line + 1)
+    startinsert!
+  endif
+endf
+
 fun! vjs#declare#CreateDeclaration() abort
-  let context = {}
   let cword = expand('<cword>')
   let current_line = getline('.')
 
   if cword == 'this'
     return
   endif
+
+  let context = { 'reference': cword }
 
   if cword =~ '\C^[A-Z]'
     let constructor_arguments_match = match(current_line, '\C'. cword .' *([^)]')
@@ -15,21 +82,25 @@ fun! vjs#declare#CreateDeclaration() abort
     else
       let context.reference_type = 'class'
     endif
+
+    return s:InsertClassDeclaration(cword, constructor_arguments_match > -1)
+
   elseif match(current_line, '\Cthis. *'. cword .' *(') > -1
-    let context.reference_type = 'method'
+    let is_async = match(getline('.'), 'await \+\(this\.\)\? *'. cword) > -1
+    return s:InsertMethodDeclaration(cword, is_async)
+
   elseif match(current_line, '\C'. cword .' *(') > -1
     let context.reference_type = 'function'
+    let loc = luaeval('require"vjs".find_global_scope_start()')
   elseif match(current_line, '\Cthis. *'. cword) > -1
     let context.reference_type = 'property'
+    let loc = luaeval('require"vjs".find_statement_start()')
   else
     let context.reference_type = 'variable'
+    let loc = luaeval('require"vjs".find_statement_start()')
   endif
 
-  let context.reference = cword
-  let code = join(getline(1, '$'), "\n")
-  let message = {'code': code, 'start_line': line('.'), 'action': 'create_declaration', 'context': context}
-
-  call vjs#ipc#SendMessage(message, funcref('s:HandleCreateDeclarationResponse'))
+  return s:HandleCreateDeclarationResponse({ 'context': context, 'declaration': loc })
 endf
 
 fun! s:HandleCreateDeclarationResponse(message) abort
@@ -57,13 +128,6 @@ fun! s:HandleCreateDeclarationResponse(message) abort
   elseif reference_type == 'function'
     call add(new_lines, indent . async .'function '. reference . '() {')
     call add(new_lines, indent .'}')
-  elseif reference_type == 'classMethod'
-    call add(new_lines, '')
-    call add(new_lines, indent . async . reference . '() {')
-    call add(new_lines, indent .'}')
-  elseif reference_type == 'objectMethod'
-    call add(new_lines, indent . async . reference . '() {')
-    call add(new_lines, indent .'},')
   elseif reference_type == 'class'
     call add(new_lines, indent .'class '. reference . ' {')
     call add(new_lines, indent .'  ')
@@ -76,12 +140,12 @@ fun! s:HandleCreateDeclarationResponse(message) abort
   endif
 
   " insert blank line after new declaration if there isn't one already
-  if reference_type != 'classMethod' && getline(declaration_line + 1) != ''
+  if getline(declaration_line + 1) != ''
     call add(new_lines, '')
   endif
 
-  " class method is inserted in the end of class body
-  if reference_type == 'classMethod'
+  " method is inserted in the end of class body
+  if reference_type == 'variable'
     call append(declaration_line + 1, new_lines)
   else
     call append(declaration_line, new_lines)
@@ -97,8 +161,6 @@ fun! s:HandleCreateDeclarationResponse(message) abort
     let jump = 1
     if reference_type == 'class_with_constructor_arguments'
       let jump = 2
-    elseif reference_type == 'classMethod'
-      let jump = 3
     endif
     execute ':'.(declaration_line + jump)
     normal f(l

@@ -9,19 +9,6 @@ fun! s:Debug(message)
   endif
 endf
 
-fun! s:LintFix()
-  let command = './node_modules/.bin/eslint --fix'
-
-  if executable('./node_modules/.bin/standard')
-    let command = './node_modules/.bin/standard --fix'
-  elseif executable('./node_modules/.bin/prettier')
-    let command = './node_modules/.bin/prettier --write'
-  endif
-  :w
-  silent let f = system(command.' '.expand('%'))
-  checktime
-endf
-
 fun! s:SortByLength(s1, s2)
   return len(a:s1) == len(a:s2) ? 0 : len(a:s1) > len(a:s2) ? 1 : -1
 endf
@@ -148,36 +135,20 @@ fun! s:ListExpressRoutes()
   syntax match llFileName /^[^|]*|[^|]*| / transparent conceal
 endf
 
-if !exists('g:vjs_tags_enabled')
-  let g:vjs_tags_enabled = 1
-endif
-
-if !exists('g:vjs_tags_regenerate_at_start')
-  let g:vjs_tags_regenerate_at_start = 1
-endif
-
-if !exists('g:vjs_tags_ignore')
-  let g:vjs_tags_ignore = []
-endif
-
 if !exists('g:vjs_dumb_require_complete')
   let g:vjs_dumb_require_complete = 0
 endif
 
-autocmd FileType {javascript,javascript.jsx,typescript} call vjs#ipc#StartJsRefactoringServer()
-autocmd FileType {javascript,javascript.jsx} call vjs#ipc#StartJsTagsServer()
-
 autocmd FileType javascript setlocal includeexpr=vjs#imports#ResolvePackageImport(v:fname)
 autocmd FileType javascript setlocal isfname+=@-@
 
-com VjsLintFix call s:LintFix()
 com VjsListRoutes call s:ListExpressRoutes()
 com VjsRenameFile call vjs#imports#RenameFile()
 com VjsListDependents call vjs#imports#ListDependents()
 com VjsExtractDeclarationIntoFile call vjs#extract#ExtractDeclarationIntoFile()
 com VjsCreateDeclaration call vjs#declare#CreateDeclaration()
 com -range VjsExtractVariable call vjs#extract#ExtractVariable()
-com -range VjsExtractLocalFunction call vjs#extract#ExtractFunctionOrMethod('local')
+com -range VjsExtractLocalFunction call vjs#extract#ExtractLocalFunction()
 com -range VjsExtractFunctionOrMethod call vjs#extract#ExtractFunctionOrMethod()
 
 " TODO: require_language javascript

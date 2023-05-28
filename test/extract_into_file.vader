@@ -1,5 +1,10 @@
 Include: support/test_helper.vader
 
+Before:
+  " This resets the cached state of the parser.
+  " e.g, without this `ts_utils.get_node_at_cursor()` returns nil if there is more than one test.
+  :lua require'nvim-treesitter.parsers'.get_parser():parse()
+
 Given javascript (common js):
   const fs = require('fs')
 

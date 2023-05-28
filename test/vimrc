@@ -1,10 +1,11 @@
 filetype off
-set rtp+=nvim-treesitter
-set rtp+=vader.vim
+set rtp+=vendor/*
 set rtp+=.
 set rtp+=after
 filetype plugin indent on
 syntax enable
+
+autocmd FileType {javascript,typescript} setlocal omnifunc=vjs#ModuleComplete
 
 set grepprg=rg\ --vimgrep
 set grepformat=%f:%l:%c:%m
@@ -34,13 +35,20 @@ endf
 fun GetQFListFiles()
   let qflist = getqflist()
   call map(qflist, {k,v -> {'fname': bufname(v.bufnr), 'lnum': v.lnum, 'text': v.text}})
-  return sort(qflist, "SortByLnum")
+  return qflist
 endf
 
 fun GetQFList()
   let qflist = getqflist()
   call map(qflist, {k,v -> {'lnum': v.lnum, 'text': v.text}})
   return qflist
-  return sort(qflist, "SortByLnum")
 endf
 
+lua <<EOF
+require'nvim-treesitter.configs'.setup {
+  ensure_installed = { 'javascript' },
+  indent = {
+    enable = true
+  }
+}
+EOF

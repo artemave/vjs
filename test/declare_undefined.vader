@@ -1,21 +1,9 @@
 Include: support/test_helper.vader
 
-Given javascript (defined variable):
-  function blah () {
-    const aaa = 1
-    foo(aaa)
-  }
-
-Do:
-  2j
-  fa
-  :VjsCreateDeclaration\<CR>
-
-Expect javascript (nothing happens):
-  function blah () {
-    const aaa = 1
-    foo(aaa)
-  }
+Before:
+  " This resets the cached state of the parser.
+  " e.g, without this `ts_utils.get_node_at_cursor()` returns nil if there is more than one test.
+  lua require'nvim-treesitter.parsers'.get_parser():parse()
 
 Given javascript (undefined variable):
   function blah () {
@@ -109,7 +97,7 @@ Expect javascript (inserts class declaration with constructor):
     const b = new Stuff({a: 2})
   }
 
-Given javascript (undefined class method):
+Given javascript (undefined method):
   class Stuff {
     foo() {
       const bbb = this.getBbb()
@@ -121,7 +109,7 @@ Do:
   fB
   :VjsCreateDeclaration\<CR>
 
-Expect javascript (inserts class method declaration):
+Expect javascript (inserts method):
   class Stuff {
     foo() {
       const bbb = this.getBbb()
@@ -131,7 +119,7 @@ Expect javascript (inserts class method declaration):
     }
   }
 
-Given javascript (undefined async class method):
+Given javascript (undefined async method):
   class Stuff {
     async foo() {
       const bbb = await this.getBbb()
@@ -143,7 +131,7 @@ Do:
   fB
   :VjsCreateDeclaration\<CR>
 
-Expect javascript (inserts async class method declaration):
+Expect javascript (inserts async method):
   class Stuff {
     async foo() {
       const bbb = await this.getBbb()
@@ -213,47 +201,5 @@ Expect javascript (inserts object method declaration):
 
     async foo() {
       const bbb = await  this. getBbb  ()
-    }
-  }
-
-Given javascript (undefined class instance property):
-  class Bbb {
-    getFoo() {
-      const a = this.foo
-    }
-  }
-
-Do:
-  jj
-  ff
-  :VjsCreateDeclaration\<CR>
-
-Expect javascript (inserts property declaration):
-  class Bbb {
-    getFoo() {
-      this.foo = 
-
-      const a = this.foo
-    }
-  }
-
-Given javascript (undefined object literal property):
-  const bbb = {
-    getFoo() {
-      const a = this.foo
-    }
-  }
-
-Do:
-  jj
-  ff
-  :VjsCreateDeclaration\<CR>
-
-Expect javascript (inserts property declaration):
-  const bbb = {
-    getFoo() {
-      this.foo = 
-
-      const a = this.foo
     }
   }

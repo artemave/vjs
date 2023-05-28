@@ -1,4 +1,4 @@
-vader.vim/
 node_modules
 test.js
-nvim-treesitter/
+vendor
+squashfs-root

@@ -1,13 +1,7 @@
 let s:v_reg = ''
 let s:s_reg = ''
 
-fun! vjs#extract#ExtractFunctionOrMethod(...)
-  if a:0 > 0
-    let action = 'extract_local_function'
-  else
-    let action = 'extract_function_or_method'
-  endif
-
+fun! vjs#extract#ExtractFunctionOrMethod()
   let s:v_reg = @v
   let s:s_reg = @s
 
@@ -19,10 +13,48 @@ fun! vjs#extract#ExtractFunctionOrMethod(...)
   let selection_start_line = getpos("'<")[1]
   let selection_end_line = getpos("'>")[1]
 
-  let code = join(getline(1,'$'), "\n")
-  let message = {'code': code, 'start_line': selection_start_line, 'end_line': selection_end_line, 'action': action}
+  let function_arguments = luaeval('require"vjs".find_variables_used_within_selection_but_defined_outside('.selection_start_line.', '.selection_end_line.')')
+  let return_values = luaeval('require"vjs".find_variables_defined_within_selection_but_used_outside('.selection_start_line.', '.selection_end_line.')')
 
-  call vjs#ipc#SendMessage(message, funcref('s:HandleExtractFunctionResponse'))
+  " TODO: why gv needed?
+  normal gv
+  undojoin | normal "sx
+
+  if match(@v, '^\<this\>\.') > -1 || match(@s, '\<this\>') > -1
+    let @v = substitute(@v, '^\<this\>\.', '', '')
+    let [type, line, column] = luaeval('require"vjs".extracted_type_and_loc({ bound = true })')
+  else
+    let [type, line, column] = luaeval('require"vjs".extracted_type_and_loc({ bound = false })')
+  endif
+
+  let response = {'function_arguments': function_arguments, 'return_values': return_values, 'line': line, 'column': column, 'type': type}
+
+  call s:HandleExtractFunctionResponse(response)
+endf
+
+fun! vjs#extract#ExtractLocalFunction()
+  let s:v_reg = @v
+  let s:s_reg = @s
+
+  let @v = input('Function name: ')
+  if empty(@v)
+    return
+  endif
+
+  let selection_start_line = getpos("'<")[1]
+  let selection_end_line = getpos("'>")[1]
+
+  let function_arguments = []
+  let return_values = luaeval('require"vjs".find_variables_defined_within_selection_but_used_outside('.selection_start_line.', '.selection_end_line.')')
+
+  let type = 'function'
+  let loc = {'line': selection_start_line - 1, 'column': line('.')->indent()}
+  let response = {'function_arguments': function_arguments, 'return_values': return_values, 'line': loc.line, 'column': loc.column, 'type': type}
+
+  normal gv
+  undojoi | normal "sx
+
+  call s:HandleExtractFunctionResponse(response)
 endf
 
 fun! vjs#extract#ExtractVariable()
@@ -71,89 +103,91 @@ fun! vjs#extract#ExtractVariable()
   call map(new_lines, {idx, line -> idx > 0 ? substitute(line, "^".repeat(' ', current_indent_base - loc.column), '', '') : line})
   call add(new_lines, '')
 
-  undojoin | call append(loc.line - 1, new_lines)
+  undojoin | call append(loc.line, new_lines)
 
   let @v = s:v_reg
   let @s = s:s_reg
 endf
 
 fun! s:HandleExtractFunctionResponse(message) abort
-  normal gv
-  normal "sx
-
   let is_async = match(@s, '\<await ')
 
   let extracted_lines = s:ExtractedFunctionLines(a:message, is_async)
   let @v = s:InvokationLine(a:message, is_async)
 
   if match(@s, '\n$') > -1
-    undojoin | normal "vP
+    normal "vP
   else
-    undojoin | normal "vp
+    normal "vp
   endif
   undojoin | normal ==
 
-  undojoin | call append(a:message.line - 1, extracted_lines)
+  undojoin | call append(a:message.line, extracted_lines)
+  let save_cursor = getcurpos()
+  call setpos('.', [0, a:message.line, 0, 0])
+  " TODO: replace all `normal` with `normal!`
+  undojoin | silent execute 'normal!' '='.(len(extracted_lines) + 1).'j'
+  call setpos('.', save_cursor)
 
   let @v = s:v_reg
   let @s = s:s_reg
 endf
 
 fun s:ExtractedFunctionLines(message, is_async)
-  let indent = repeat(' ', a:message.column)
   let new_lines = split(@s, "\n")
-  let copy_indent = len(new_lines[0]) - len(substitute(new_lines[0], "^ *", '', ''))
-
   let first_new_line = s:FirstNewLine(a:message, a:is_async)
 
-  " remove indent from copied text
-  call map(new_lines, {_, line -> substitute(line, '^'.repeat(' ', copy_indent), '', '') })
+  call insert(new_lines, first_new_line)
 
-  call map(new_lines, {_, line -> len(line) > 0 ? indent . repeat(' ', &shiftwidth) . line : line})
-  call insert(new_lines, indent . first_new_line)
-
-  let return_value_line = s:ReturnValueLine(a:message, indent)
+  let return_value_line = s:ReturnValueLine(a:message)
   if len(return_value_line)
     call add(new_lines, return_value_line)
   endif
 
   let closing_bracket = '}'
-  if a:message.type == 'objectMethod'
+  if a:message.type == 'object_method'
     let closing_bracket = closing_bracket. ','
   endif
-  call extend(new_lines, [indent . closing_bracket, ''])
+  call extend(new_lines, [closing_bracket, ''])
 
   return new_lines
 endf
 
 fun s:FirstNewLine(message, is_async)
-  let declaration = a:message.type == 'function' || a:message.type == 'unboundFunction' ? 'function ' : ''
+  let args = join(a:message.function_arguments, ', ')
 
-  let first_new_line = declaration. @v .'('. join(a:message.function_arguments, ', ') .') {'
-  if a:is_async > -1
-    let first_new_line = 'async '. first_new_line
+  if a:message.type == 'arrow_function'
+    let first_new_line = 'const '. @v .' = '
+    if a:is_async > -1
+      let first_new_line = 'async '. first_new_line
+    endif
+    let first_new_line = first_new_line . '('. args .') => {'
+  else
+    let first_new_line = a:message.type == 'function' ? 'function ' : ''
+
+    let first_new_line = first_new_line. @v .'('. args .') {'
+
+    if a:is_async > -1
+      let first_new_line = 'async '. first_new_line
+    endif
   endif
 
   return first_new_line
 endf
 
-fun s:ReturnValueLine(message, indent)
+fun s:ReturnValueLine(message)
   if len(a:message.return_values) == 1
-    return a:indent . repeat(' ', &shiftwidth) .'return '.a:message.return_values[0].name
+    return repeat(' ', &shiftwidth) .'return '.a:message.return_values[0].name
   elseif len(a:message.return_values) > 1
-    return a:indent . repeat(' ', &shiftwidth) .'return {'. s:VariableNames(a:message) .'}'
+    return repeat(' ', &shiftwidth) .'return {'. s:VariableNames(a:message) .'}'
   end
   return ''
 endf
 
 fun s:InvokationLine(message, is_async)
-  if a:message.type == 'unboundFunction'
-    let invokation_line = @v .'.call('. join(insert(a:message.function_arguments, 'this'), ', ') .")\n"
-  else
-    let invokation_line = @v ."(". join(a:message.function_arguments, ', ') .")\n"
-  endif
+  let invokation_line = @v ."(". join(a:message.function_arguments, ', ') .")\n"
 
-  if a:message.type == 'objectMethod' || a:message.type == 'classMethod'
+  if a:message.type == 'object_method' || a:message.type == 'method'
     let invokation_line = 'this.'. invokation_line
   endif
 
@@ -162,19 +196,9 @@ fun s:InvokationLine(message, is_async)
   endif
 
   if len(a:message.return_values) == 1
-    let invokation_line = a:message.return_values[0].kind .' '. a:message.return_values[0].name .' = '. invokation_line
+    let invokation_line = 'const '. a:message.return_values[0].name .' = '. invokation_line
   elseif len(a:message.return_values) > 1
-    let kinds = map(copy(a:message.return_values), {_, v -> v.kind})
-    let non_const_kinds = filter(kinds, 'v:val == "const"')
-
-    let kind = ''
-    if len(non_const_kinds) == 0
-      let kind = 'const'
-    else
-      let kind = 'let'
-    endif
-
-    let invokation_line = kind .' {'. s:VariableNames(a:message) .'} = '. invokation_line
+    let invokation_line = 'const {'. s:VariableNames(a:message) .'} = '. invokation_line
   endif
 
   return invokation_line
@@ -185,18 +209,18 @@ fun s:VariableNames(message)
 endf
 
 fun vjs#extract#ExtractDeclarationIntoFile()
-  let code = join(getline(1,'$'), "\n")
-  let message = {'code': code, 'start_line': line('.'), 'action': 'extract_declaration'}
-
-  call vjs#ipc#SendMessage(message, funcref('s:HandleExtractDeclarationResponse'))
-endf
-
-fun s:HandleExtractDeclarationResponse(message)
-  if !has_key(a:message, 'declaration')
+  let declaration = luaeval('require"vjs".closest_declaration()')
+  if declaration is v:null
     echom 'No declaration found under cursor'
     return
   endif
 
+  let message = {'start_line': line('.'), 'declaration': declaration}
+
+  call s:HandleExtractDeclarationResponse(message)
+endf
+
+fun s:HandleExtractDeclarationResponse(message)
   let name = a:message.declaration.name
   let new_file_path = input('Extract '. name .' into ', s:expand('%:h') .'/'. name .'.'. s:expand('%:e'), 'file')
 

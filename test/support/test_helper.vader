@@ -1,2 +1,3 @@
 After:
   call LogAllMessages()
+  call setqflist([], 'r')

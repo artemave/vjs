@@ -9,13 +9,20 @@ else
   cmd=./squashfs-root/usr/bin/nvim
 fi
 
-if [ ! -d ./nvim-treesitter ]; then
-  git clone https://github.com/nvim-treesitter/nvim-treesitter.git
+mkdir -p ./vendor
+
+if [ ! -d ./vendor/nvim-treesitter ]; then
+  git clone https://github.com/nvim-treesitter/nvim-treesitter.git ./vendor/nvim-treesitter
   $cmd --headless -u ./test/vimrc -c 'TSInstallSync! javascript | q'
 fi
 
-if [ ! -d ./vader.vim ]; then
-  git clone https://github.com/junegunn/vader.vim.git
+# if [ ! -d ./vendor/nvim-lspconfig ]; then
+#   git clone https://github.com/neovim/nvim-lspconfig.git ./vendor/nvim-lspconfig
+#   npm install -g typescript-language-server typescript
+# fi
+
+if [ ! -d ./vendor/vader.vim ]; then
+  git clone https://github.com/junegunn/vader.vim.git ./vendor/vader.vim
 fi
 
 $cmd --headless -u ./test/vimrc -c "Vader! $test_file"
