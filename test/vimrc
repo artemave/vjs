@@ -5,6 +5,8 @@ set rtp+=after
 filetype plugin indent on
 syntax enable
 
+autocmd FileType {javascript,typescript} setlocal omnifunc=vjs#ModuleComplete
+
 set grepprg=rg\ --vimgrep
 set grepformat=%f:%l:%c:%m
 set shiftwidth=2

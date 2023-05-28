@@ -243,4 +243,30 @@ function M.closest_declaration()
   end
 end
 
+function M.to_template_string()
+  local node_at_cursor = ts.get_node()
+
+  if node_at_cursor:type() ~= 'string_fragment' then
+    return
+  end
+
+  local node_at_cursor_text = ts.get_node_text(node_at_cursor, 0)
+  local node_with_quotes = node_at_cursor:parent()
+  local node_with_quotes_text = ts.get_node_text(node_with_quotes, 0)
+
+  if string.match(node_with_quotes_text, "^`") or not string.match(node_at_cursor_text, "%${") then
+    return
+  end
+
+  -- replace node_with_quotes with node_at_cursor wrapped in ``
+  local start_row, start_col, _ = node_with_quotes:start()
+  local end_row, end_col, _ = node_with_quotes:end_()
+  local buf = vim.api.nvim_buf_get_lines(0, 0, -1, false)
+
+  buf[start_row + 1] = string.sub(buf[start_row + 1], 1, start_col) .. "`" .. string.sub(buf[start_row + 1], start_col + 2)
+  buf[end_row + 1] = string.sub(buf[end_row + 1], 1, end_col - 1) .. "`" .. string.sub(buf[end_row + 1], end_col + 1)
+
+  vim.api.nvim_buf_set_lines(0, 0, -1, false, buf)
+end
+
 return M

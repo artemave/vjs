@@ -52,9 +52,15 @@ If you don't like binding explosion, you might want to consider [popup-menu.nvim
 
 #### Complete import/require paths
 
-Vjs registers `omnifunc` for `require`/`import` path completion - `CTRL-X CTRL-O` - which gives you this:
+Vjs comes with an `omnifunc` for `require`/`import` path completion:
 
 <img src="https://user-images.githubusercontent.com/23721/80413735-38752d80-88d0-11ea-8030-de1b17ee4796.gif" loading="lazy" width=550>
+
+Set it up:
+
+```viml
+autocmd FileType {javascript,typescript} setlocal omnifunc=vjs#ModuleComplete
+```
 
 #### `:VjsRenameFile`
 
@@ -105,6 +111,15 @@ Shows list of modules that require/import current file in quickfix window.
 Shows list of express routes of current file in quickfix window.
 
 <img src="https://user-images.githubusercontent.com/23721/80421959-9d835000-88dd-11ea-87ae-3f65638c7de4.gif" loading="lazy" width=550>
+
+#### Template strings
+
+Vjs can automatically convert normal string to template string once the string contains `${}`. To enable this:
+
+```viml
+autocmd TextChanged * if &ft =~ 'javascript\|typescript' | call luaeval("require'vjs'.to_template_string()") | endif
+autocmd InsertLeave * if &ft =~ 'javascript\|typescript' | call luaeval("require'vjs'.to_template_string()") | endif
+```
 
 ## Development
 
