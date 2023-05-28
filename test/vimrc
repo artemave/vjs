@@ -33,14 +33,13 @@ endf
 fun GetQFListFiles()
   let qflist = getqflist()
   call map(qflist, {k,v -> {'fname': bufname(v.bufnr), 'lnum': v.lnum, 'text': v.text}})
-  return sort(qflist, "SortByLnum")
+  return qflist
 endf
 
 fun GetQFList()
   let qflist = getqflist()
   call map(qflist, {k,v -> {'lnum': v.lnum, 'text': v.text}})
   return qflist
-  return sort(qflist, "SortByLnum")
 endf
 
 lua <<EOF
