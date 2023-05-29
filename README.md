@@ -10,12 +10,11 @@ A Neovim plugin that adds a bunch of refactoring tools for Javascript/TypeScript
 - declare undefined variable/method/function/class
 - autocomplete `require`/`import` paths
 - update imports on file rename/move
+- turn a string into a template string once `${}` detected
 - list imports for current file
 - list Express (or express like) routes
 
 For test related stuff I am using a dedicated [plugin](https://github.com/artemave/vigun).
-
-Note: most of the above will likely fail if you use experimental babel features.
 
 ## Installation
 
