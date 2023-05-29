@@ -19,7 +19,7 @@ local M = {}
 local function find_start(condition_fn)
   local node = ts.get_node()
 
-  while node and condition_fn(node) do
+  while node and not condition_fn(node) do
     node = node:parent()
   end
 
@@ -56,7 +56,7 @@ end
 
 function M.find_statement_start()
   return find_start(function(node)
-    return not (
+    return (
       string.match(node:type(), ".*_statement") or string.match(node:type(), ".*_declaration")
     )
   end)
@@ -65,7 +65,7 @@ end
 -- TODO: this is a bit silly: global scope start is always line 1
 function M.find_global_scope_start()
   return find_start(function(node)
-    return not string.match(node:type(), ".*_file")
+    return string.match(node:type(), ".*_file")
   end)
 end
 
@@ -73,7 +73,7 @@ function M.find_closest_global_scope(n)
   local node = n or ts.get_node()
 
   return find_start(function(node)
-    return node:parent() and node:parent():type() ~= 'program'
+    return not node:parent() or node:parent():type() == 'program'
   end)
 end
 
@@ -82,8 +82,7 @@ function M.method_definition_start()
     local is_method = string.match(node:type(), "method_definition")
     local is_function_property = string.match(node:type(), 'function') and string.match(node:parent():type(), 'pair')
 
-    -- TODO: invert this
-    return not is_method and not is_function_property
+    return is_method or is_function_property
   end)
 end
 
