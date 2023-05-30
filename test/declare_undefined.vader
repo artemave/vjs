@@ -78,7 +78,7 @@ Expect javascript (inserts class declaration):
   import fs from 'fs'
 
   class Stuff {
-    
+
   }
 
   function blah () {

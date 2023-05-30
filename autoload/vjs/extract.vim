@@ -77,9 +77,6 @@ fun! vjs#extract#ExtractVariable()
 
   let loc = luaeval('require"vjs".find_statement_start()')
 
-  let indent = repeat(' ', loc.column)
-  let current_indent_base = indent(line('.'))
-
   normal gv
   let last_selected_line_includes_line_break = selection_end_column > 999999 || len(getline(selection_end_line)) <= selection_end_column
   if last_selected_line_includes_line_break
@@ -98,11 +95,11 @@ fun! vjs#extract#ExtractVariable()
     endif
   endif
 
-  let new_lines = split(indent ."const ". @v ." = ". @s, "\n")
-  call map(new_lines, {idx, line -> idx > 0 ? substitute(line, "^".repeat(' ', current_indent_base - loc.column), '', '') : line})
+  let new_lines = split("const ". @v ." = ". @s, "\n")
   call add(new_lines, '')
 
   undojoin | call append(loc.line - 1, new_lines)
+  call vjs#utils#indent(loc.line - 1, len(new_lines))
 
   let @v = s:v_reg
   let @s = s:s_reg
@@ -124,10 +121,7 @@ fun! s:HandleExtractFunctionResponse(message) abort
   let declaration_line = a:message.type == 'arrow_function' ? a:message.line : a:message.line - 1
 
   undojoin | call append(declaration_line, extracted_lines)
-  let save_cursor = getcurpos()
-  call setpos('.', [0, declaration_line, 0, 0])
-  undojoin | silent execute 'normal' '='.(len(extracted_lines) + 1).'j'
-  call setpos('.', save_cursor)
+  call vjs#utils#indent(declaration_line, len(extracted_lines))
 
   let @v = s:v_reg
   let @s = s:s_reg
@@ -239,9 +233,7 @@ fun s:HandleExtractDeclarationResponse(message)
   let s:v_reg = @v
   execute start_line .','. end_line .'d' 'v'
 
-  let indent_to_remove = indent(start_line)
   let new_file_lines = split(@v, "\n", 1)
-  call map(new_file_lines, {_, line -> substitute(line, '^'.repeat(' ', indent_to_remove), '', '') })
 
   " drop empty lines at the end
   while new_file_lines[-1] == ''
