@@ -22,21 +22,23 @@ fun s:InsertMethodDeclaration(method_name, is_async)
     call add(new_lines, indent .'}')
 
     call append(declaration_line, new_lines)
+    execute ':'.declaration_line
   else
     call add(new_lines, indent . async . a:method_name . '() {')
     call add(new_lines, indent .'},')
     call add(new_lines, '')
 
+    let declaration_line -= 1
     call append(declaration_line, new_lines)
+    execute ':'.declaration_line
   endif
 
-  execute ':'.declaration_line
   normal f(l
   startinsert
 endf
 
 fun s:InsertClassDeclaration(class_name, with_constructor)
-  let loc = luaeval('require"vjs".find_global_scope_start()')
+  let loc = luaeval('require"vjs".find_closest_global_scope()')
   let declaration_line = loc.line - 1
   let indent = repeat(' ', loc.column)
 
@@ -91,10 +93,7 @@ fun! vjs#declare#CreateDeclaration() abort
 
   elseif match(current_line, '\C'. cword .' *(') > -1
     let context.reference_type = 'function'
-    let loc = luaeval('require"vjs".find_global_scope_start()')
-  elseif match(current_line, '\Cthis. *'. cword) > -1
-    let context.reference_type = 'property'
-    let loc = luaeval('require"vjs".find_statement_start()')
+    let loc = luaeval('require"vjs".find_closest_global_scope()')
   else
     let context.reference_type = 'variable'
     let loc = luaeval('require"vjs".find_statement_start()')
@@ -113,6 +112,7 @@ fun! s:HandleCreateDeclarationResponse(message) abort
   endif
 
   let declaration_line = a:message.declaration.line - 1
+  " TODO: get rid of manual indent
   let indent = repeat(' ', a:message.declaration.column)
   let new_lines = []
 
@@ -123,8 +123,6 @@ fun! s:HandleCreateDeclarationResponse(message) abort
 
   if reference_type == 'variable'
     call add(new_lines, indent .'const '. reference . ' = ')
-  elseif reference_type == 'property'
-    call add(new_lines, indent .'this.'. reference . ' = ')
   elseif reference_type == 'function'
     call add(new_lines, indent . async .'function '. reference . '() {')
     call add(new_lines, indent .'}')
@@ -139,28 +137,21 @@ fun! s:HandleCreateDeclarationResponse(message) abort
     call add(new_lines, indent .'}')
   endif
 
-  " insert blank line after new declaration if there isn't one already
-  if getline(declaration_line + 1) != ''
-    call add(new_lines, '')
-  endif
+  call add(new_lines, '')
 
-  " method is inserted in the end of class body
+  call append(declaration_line, new_lines)
+
+  " TODO: tidy up
   if reference_type == 'variable'
-    call append(declaration_line + 1, new_lines)
-  else
-    call append(declaration_line, new_lines)
-  endif
-
-  if reference_type == 'variable' || reference_type == 'property'
-    execute ':'.(declaration_line + 1)
+    execute ':'.declaration_line
     startinsert!
   elseif reference_type == 'class'
-    execute ':'.(declaration_line + 2)
+    execute ':'.(declaration_line + 1)
     startinsert!
   else
-    let jump = 1
+    let jump = 0
     if reference_type == 'class_with_constructor_arguments'
-      let jump = 2
+      let jump = 1
     endif
     execute ':'.(declaration_line + jump)
     normal f(l

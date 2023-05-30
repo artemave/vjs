@@ -30,7 +30,7 @@ local function find_start(condition_fn)
   local start_row, start_col, _ = node:start()
 
   return {
-    line = start_row,
+    line = start_row + 1,
     column = start_col,
   }
 end
@@ -59,13 +59,6 @@ function M.find_statement_start()
     return (
       string.match(node:type(), ".*_statement") or string.match(node:type(), ".*_declaration")
     )
-  end)
-end
-
--- TODO: this is a bit silly: global scope start is always line 1
-function M.find_global_scope_start()
-  return find_start(function(node)
-    return string.match(node:type(), ".*_file")
   end)
 end
 
@@ -144,15 +137,15 @@ function M.extracted_type_and_loc(opts, n)
 
     if container_node:type() == 'method_definition' then
       if container_node:parent():type() == 'class_body' then
-        return { 'method', line, column }
+        return { 'method', line + 1, column }
       else
-        return { 'object_method', line, column }
+        return { 'object_method', line + 1, column }
       end
     elseif container_node:type() == 'arrow_function' then
       return M.extracted_type_and_loc(opts, container_node:parent())
     elseif container_node:type() == 'function_declaration' or container_node:type() == 'function' then
       if container_node:parent():type() == 'pair' then
-        return { 'object_method', line, column }
+        return { 'object_method', line + 1, column }
       else
         return { 'arrow_function', line + 1, column }
       end

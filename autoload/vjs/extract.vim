@@ -16,7 +16,6 @@ fun! vjs#extract#ExtractFunctionOrMethod()
   let function_arguments = luaeval('require"vjs".find_variables_used_within_selection_but_defined_outside('.selection_start_line.', '.selection_end_line.')')
   let return_values = luaeval('require"vjs".find_variables_defined_within_selection_but_used_outside('.selection_start_line.', '.selection_end_line.')')
 
-  " TODO: why gv needed?
   normal gv
   undojoin | normal "sx
 
@@ -48,7 +47,7 @@ fun! vjs#extract#ExtractLocalFunction()
   let return_values = luaeval('require"vjs".find_variables_defined_within_selection_but_used_outside('.selection_start_line.', '.selection_end_line.')')
 
   let type = 'function'
-  let loc = {'line': selection_start_line - 1, 'column': line('.')->indent()}
+  let loc = {'line': selection_start_line, 'column': line('.')->indent()}
   let response = {'function_arguments': function_arguments, 'return_values': return_values, 'line': loc.line, 'column': loc.column, 'type': type}
 
   normal gv
@@ -103,7 +102,7 @@ fun! vjs#extract#ExtractVariable()
   call map(new_lines, {idx, line -> idx > 0 ? substitute(line, "^".repeat(' ', current_indent_base - loc.column), '', '') : line})
   call add(new_lines, '')
 
-  undojoin | call append(loc.line, new_lines)
+  undojoin | call append(loc.line - 1, new_lines)
 
   let @v = s:v_reg
   let @s = s:s_reg
@@ -122,11 +121,12 @@ fun! s:HandleExtractFunctionResponse(message) abort
   endif
   undojoin | normal ==
 
-  undojoin | call append(a:message.line, extracted_lines)
+  let declaration_line = a:message.type == 'arrow_function' ? a:message.line : a:message.line - 1
+
+  undojoin | call append(declaration_line, extracted_lines)
   let save_cursor = getcurpos()
-  call setpos('.', [0, a:message.line, 0, 0])
-  " TODO: replace all `normal` with `normal!`
-  undojoin | silent execute 'normal!' '='.(len(extracted_lines) + 1).'j'
+  call setpos('.', [0, declaration_line, 0, 0])
+  undojoin | silent execute 'normal' '='.(len(extracted_lines) + 1).'j'
   call setpos('.', save_cursor)
 
   let @v = s:v_reg

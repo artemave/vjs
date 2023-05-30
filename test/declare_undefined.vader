@@ -41,16 +41,20 @@ Expect javascript (inserts function declaration):
   }
 
 Given javascript (undefined async function):
+  import fs from 'fs'
+
   async function blah () {
     await foo(aaa)
   }
 
 Do:
-  j
+  3j
   ff
   :VjsCreateDeclaration\<CR>
 
 Expect javascript (inserts async function declaration):
+  import fs from 'fs'
+
   async function foo() {
   }
 
@@ -59,16 +63,20 @@ Expect javascript (inserts async function declaration):
   }
 
 Given javascript (undefined class):
+  import fs from 'fs'
+
   function blah () {
     new Stuff()
   }
 
 Do:
-  j
-  fu
+  3j
+  fS
   :VjsCreateDeclaration\<CR>
 
 Expect javascript (inserts class declaration):
+  import fs from 'fs'
+
   class Stuff {
     
   }
