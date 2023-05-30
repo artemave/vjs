@@ -12,7 +12,6 @@ A Neovim plugin that adds a bunch of refactoring tools for Javascript/TypeScript
 - update imports on file rename/move
 - turn a string into a template string once `${}` detected
 - list imports for current file
-- list Express (or express like) routes
 
 For test related stuff I am using a dedicated [plugin](https://github.com/artemave/vigun).
 
@@ -105,12 +104,6 @@ Shows list of modules that require/import current file in quickfix window.
 
 <img src="https://user-images.githubusercontent.com/23721/80421625-0f0ece80-88dd-11ea-8057-93ff00adbf3e.gif" loading="lazy" width=550>
 
-#### `:VjsListRoutes`
-
-Shows list of express routes of current file in quickfix window.
-
-<img src="https://user-images.githubusercontent.com/23721/80421959-9d835000-88dd-11ea-87ae-3f65638c7de4.gif" loading="lazy" width=550>
-
 #### Template strings
 
 Vjs can automatically convert normal string to template string once the string contains `${}`. To enable this:
@@ -125,6 +118,5 @@ autocmd InsertLeave * if &ft =~ 'javascript\|typescript' | call luaeval("require
 ```
 git clone https://github.com/artemave/vjs.git
 cd vjs
-npm install
-npm run test
+./run_tests
 ```

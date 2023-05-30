@@ -86,55 +86,6 @@ fun! vjs#ModuleComplete(findstart, base)
   endif
 endf
 
-fun! s:ListExpressRoutes()
-  fun! StripLeadingSpaces(i, val)
-    let newVal = substitute(a:val, '^[ \t]*', '', '')
-    return newVal
-  endf
-
-  fun! FindAndCallForEachMatch(regex, func_name)
-    let expr = ':keeppatterns %s/' . a:regex . '/\=' . a:func_name. '(submatch(0))/gn'
-    execute expr
-  endf
-
-  fun! CollectMatchResults(match)
-    call add(g:collected_match_results, a:match)
-  endf
-
-  fun! ToQuickFixEntry(i, line_number)
-    let match = g:collected_match_results[a:i]
-    let match = split(match, "\n")
-    let match = map(match, function('StripLeadingSpaces'))
-    let match = join(match, '')
-    let match = substitute(match, '[ \t]', nr2char(160), 'g')
-
-    return {'filename': expand('%'), 'lnum': a:line_number, 'text': match}
-  endf
-
-  let g:collected_match_results = []
-  let rx = '\w\+\.\(get\|post\|put\|delete\|patch\|head\|options\|use\)(\_s*[''"`][^''"`]\+[''"`]'
-  let starting_pos = getpos('.')
-
-  call cursor(1, 1)
-
-  let line_numbers = []
-  while search(rx, 'W') > 0
-    call add(line_numbers, line('.'))
-  endwhile
-
-  call FindAndCallForEachMatch(rx, 'CollectMatchResults')
-
-  call setpos('.', starting_pos)
-
-  let entries = map(line_numbers, function('ToQuickFixEntry'))
-  call setqflist([], ' ', {'title': 'Express routes', 'items': entries})
-  copen
-
-  " hide filename and linenumber
-  set conceallevel=2 concealcursor=nc
-  syntax match llFileName /^[^|]*|[^|]*| / transparent conceal
-endf
-
 if !exists('g:vjs_dumb_require_complete')
   let g:vjs_dumb_require_complete = 0
 endif
@@ -142,7 +93,6 @@ endif
 autocmd FileType javascript setlocal includeexpr=vjs#imports#ResolvePackageImport(v:fname)
 autocmd FileType javascript setlocal isfname+=@-@
 
-com VjsListRoutes call s:ListExpressRoutes()
 com VjsRenameFile call vjs#imports#RenameFile()
 com VjsListDependents call vjs#imports#ListDependents()
 com VjsExtractDeclarationIntoFile call vjs#extract#ExtractDeclarationIntoFile()
