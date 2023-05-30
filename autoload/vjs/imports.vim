@@ -151,7 +151,7 @@ fun! vjs#imports#RenameFile(new_name = '')
     let import_path_parts = vjs#imports#calculateImportPathParts(importing_module_full_path_parts, imported_module_full_path_parts)
 
     let new_import_path_with_extension = join(import_path_parts, '/')
-    let new_import_path = g:vjs_dumb_require_complete ? new_import_path_with_extension : fnamemodify(new_import_path_with_extension, ':r')
+    let new_import_path = g:vjs_es_modules_complete ? new_import_path_with_extension : fnamemodify(new_import_path_with_extension, ':r')
 
     let new_text_pattern = '\(["'']\).*["'']'
     let new_text_replacement = '\1'. new_import_path .'\1'

@@ -38,7 +38,7 @@ fun! vjs#ModuleComplete(findstart, base)
 
     let matches = systemlist(cmd)
 
-    if g:vjs_dumb_require_complete
+    if g:vjs_es_modules_complete
       let s:js_require_complete_matches = matches
     else
       let s:js_require_complete_matches = map(
@@ -86,8 +86,8 @@ fun! vjs#ModuleComplete(findstart, base)
   endif
 endf
 
-if !exists('g:vjs_dumb_require_complete')
-  let g:vjs_dumb_require_complete = 0
+if !exists('g:vjs_es_modules_complete')
+  let g:vjs_es_modules_complete = 0
 endif
 
 autocmd FileType javascript setlocal includeexpr=vjs#imports#ResolvePackageImport(v:fname)

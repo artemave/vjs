@@ -44,7 +44,7 @@ If you don't like binding explosion, you might want to consider [popup-menu.nvim
 
 ### Configuration
 
-`g:vjs_dumb_require_complete` - don't strip out file extension from autocompleted modules and also show `index` modules. Defaults to `0`.
+`g:vjs_es_modules_complete` - don't strip out file extension from autocompleted modules and also show `index` modules. Defaults to `0`.
 
 ## Usage
 

@@ -45,7 +45,7 @@ Expect:
   
 
 Do (dumb complete):
-  :let g:vjs_dumb_require_complete=1\<cr>
+  :let g:vjs_es_modules_complete=1\<cr>
   i
   const package = require('xm\<C-X>\<C-O>\<cr>
 
