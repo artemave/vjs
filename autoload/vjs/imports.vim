@@ -172,6 +172,8 @@ fun! vjs#imports#RenameFile(new_name = '')
       if v:shell_error
         throw output
       endif
+      " reload require.bufnr buffer
+      execute 'edit! '. fname
     endif
   endfor
 
