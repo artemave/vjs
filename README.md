@@ -25,8 +25,6 @@ Use [a plugin manager](https://github.com/junegunn/vim-plug):
 Plug 'artemave/vjs'
 ```
 
-If you don't use a plugin manager, don't forget to run `npm install` in the plugin directory.
-
 ### Example bindings
 
 There are no default bindings. But you can use these:
