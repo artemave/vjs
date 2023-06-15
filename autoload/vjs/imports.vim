@@ -134,7 +134,7 @@ fun! vjs#imports#RenameFile(new_name = '')
 
   if !exists('g:vjs_test_env')
     if rename(expand('%:p'), full_new_name_path) != 0
-      echoerr '... rename failed!'
+      echoerr 'Rename '. expand('%:p') . ' to '. full_new_name_path . ' failed!'
       return
     end
   endif
@@ -172,8 +172,6 @@ fun! vjs#imports#RenameFile(new_name = '')
       if v:shell_error
         throw output
       endif
-      " reload require.bufnr buffer
-      execute 'edit! '. fname
     endif
   endfor
 
@@ -224,6 +222,9 @@ fun! vjs#imports#UpdateCurrentFileImports(current_file_name, new_file_name)
   endwhile
 
   call setpos('.', current_cursor_pos)
+  if !exists('g:vjs_test_env')
+    w
+  endif
 endf
 
 fun! vjs#imports#calculateImportPathParts(importing_module_full_path_parts, imported_module_full_path_parts)
