@@ -124,24 +124,21 @@ fun! vjs#imports#ListDependents()
   copen
 endf
 
-fun! vjs#imports#RenameFile(new_name = '')
-  let old_file_path = expand('%')
-  let old_name = expand('%:t:r')
+fun! vjs#imports#RenameFile(new_name = '', old_name = '')
   let current_line = line('.')
-  let new_name = len(a:new_name) ? a:new_name : input('New name: ', expand('%:h') .'/', 'file')
-
-  let full_new_name_path = fnamemodify(getcwd() . '/'. new_name, ':p')
+  let new_name = len(a:new_name) ? a:new_name : input('New name: ', expand('%:h:p') .'/', 'file')
+  let old_name = len(a:old_name) ? a:old_name : expand('%:p')
 
   if !exists('g:vjs_test_env')
-    if rename(expand('%:p'), full_new_name_path) != 0
-      echoerr 'Rename '. expand('%:p') . ' to '. full_new_name_path . ' failed!'
+    if rename(old_name, new_name) != 0
+      echoerr 'Rename '. old_name . ' to '. new_name . ' failed!'
       return
     end
   endif
 
   let dependants = s:PrepareDependantsList()
 
-  let imported_module_full_path_parts = split(full_new_name_path, '/')
+  let imported_module_full_path_parts = split(new_name, '/')
 
   for require in dependants
     let import_path_parts = []
@@ -177,10 +174,10 @@ fun! vjs#imports#RenameFile(new_name = '')
 
   if !exists('g:vjs_test_env')
     silent bwipeout!
-    execute 'edit +'. current_line full_new_name_path
+    execute 'edit +'. current_line new_name
   endif
 
-  call vjs#imports#UpdateCurrentFileImports(old_file_path, full_new_name_path)
+  call vjs#imports#UpdateCurrentFileImports(old_name, new_name)
 
   " Hack. Presence of new name indicates programmatic usage (a batch rename
   " likely) in which case we don't want to modify/open qflist
@@ -193,8 +190,8 @@ endf
 fun! vjs#imports#UpdateCurrentFileImports(current_file_name, new_file_name)
   let current_cursor_pos = getcurpos()
 
-  let imported_module_base_path = fnamemodify(a:current_file_name, ':p:h')
-  let importing_module_full_path_parts = split(fnamemodify(a:new_file_name, ':p'), '/')
+  let imported_module_base_path = fnamemodify(a:current_file_name, ':h')
+  let importing_module_full_path_parts = split(a:new_file_name, '/')
 
   call cursor(1,1)
 
@@ -265,3 +262,120 @@ fun! vjs#imports#calculateImportPathParts(importing_module_full_path_parts, impo
 
   return import_path_parts
 endf
+
+fun vjs#imports#MoveDirectory(oldDirectory, newDirectory)
+  " get all files and folders in the oldDirectory
+  let files = globpath(a:oldDirectory, '**', 1, 1)
+  " for each entry ensure that new directory structure exists in newDirectory
+  for file in files
+    let newFile = substitute(file, a:oldDirectory, a:newDirectory, '')
+
+    call mkdir(fnamemodify(newFile, ':p:h'), 'p')
+    if !isdirectory(file)
+      call s:renameFile(file, newFile)
+    endif
+  endfor
+endf
+
+fun s:renameFile(file, newFile)
+  " if newFile is a javascript/typescript file, call vjs#imports#RenameFile
+  if a:file =~ '\.\([jt]sx\?\|[mc]\?js\|m\?ts\)$'
+    call vjs#imports#RenameFile(a:newFile, a:file)
+  else
+    call rename(a:file, a:newFile)
+  endif
+endf
+
+function! s:inputPrompt(...)
+  let title = 'Rename the current node'
+  let info = 'Enter the new path for the node:'
+  let minimal = 'Move to:'
+
+    if g:NERDTreeMenuController.isMinimal()
+        redraw! " Clear the menu
+        return minimal . ' '
+    else
+        let divider = '=========================================================='
+        return title . "\n" . divider . "\n" . info . "\n"
+    end
+endfunction
+
+function! s:renameBuffer(bufNum, newNodeName, isDirectory)
+    if a:isDirectory
+        let quotedFileName = fnameescape(a:newNodeName . '/' . fnamemodify(bufname(a:bufNum),':t'))
+        let editStr = g:NERDTreePath.New(a:newNodeName . '/' . fnamemodify(bufname(a:bufNum),':t')).str({'format': 'Edit'})
+    else
+        let quotedFileName = fnameescape(a:newNodeName)
+        let editStr = g:NERDTreePath.New(a:newNodeName).str({'format': 'Edit'})
+    endif
+    " 1. ensure that a new buffer is loaded
+    call nerdtree#exec('badd ' . quotedFileName, 0)
+    " 2. ensure that all windows which display the just deleted filename
+    " display a buffer for a new filename.
+    let s:originalTabNumber = tabpagenr()
+    let s:originalWindowNumber = winnr()
+    call nerdtree#exec('tabdo windo if winbufnr(0) ==# ' . a:bufNum . " | exec ':e! " . editStr . "' | endif", 0)
+    call nerdtree#exec('tabnext ' . s:originalTabNumber, 1)
+    call nerdtree#exec(s:originalWindowNumber . 'wincmd w', 1)
+    " 3. We don't need a previous buffer anymore
+    try
+        call nerdtree#exec('confirm bwipeout ' . a:bufNum, 0)
+    catch
+        " This happens when answering Cancel if confirmation is needed. Do nothing.
+    endtry
+endfunction
+
+" This function is a copy of the plugin's function with the actual renaming
+" swapped for vjs#imports#RenameFile
+fun! vjs#imports#NERDTreeMoveNode()
+  let curNode = g:NERDTreeFileNode.GetSelected()
+  let prompt = s:inputPrompt('move')
+  let newNodePath = input(prompt, curNode.path.str(), 'file')
+  while filereadable(newNodePath)
+    call nerdtree#echoWarning('This destination already exists. Try again.')
+    let newNodePath = substitute(input(prompt, curNode.path.str(), 'file'), '\(^\s*\|\s*$\)', '', 'g')
+  endwhile
+
+  if newNodePath ==# ''
+    call nerdtree#echo('Node Renaming Aborted.')
+    return
+  endif
+
+  try
+    if curNode.path.isDirectory
+      let l:curPath = escape(curNode.path.str(),'\') . (nerdtree#runningWindows()?'\\':'/') . '.*'
+      let l:openBuffers = filter(range(1,bufnr('$')),'bufexists(v:val) && fnamemodify(bufname(v:val),":p") =~# "'.escape(l:curPath,'\').'"')
+      call vjs#imports#MoveDirectory(curNode.path.str(), newNodePath)
+
+      let l:fileInNewDirectory = fnamemodify(globpath(newNodePath, '*', 0, 1)[0], ':p')
+    else
+      let l:openBuffers = filter(range(1,bufnr('$')),'bufexists(v:val) && fnamemodify(bufname(v:val),":p") ==# curNode.path.str()')
+      call s:renameFile(curNode.path.str(), newNodePath)
+    endif
+
+    call g:NERDTree.Close()
+    execute 'NERDTreeFind'
+
+    " If the file node is open, or files under the directory node are
+    " open, ask the user if they want to replace the file(s) with the
+    " renamed files.
+    if !empty(l:openBuffers)
+      if curNode.path.isDirectory
+        echo "\nDirectory renamed.\n\nFiles with the old directory name are open in buffers " . join(l:openBuffers, ', ') . '. Replace these buffers with the new files? (yN)'
+      else
+        echo "\nFile renamed.\n\nThe old file is open in buffer " . l:openBuffers[0] . '. Replace this buffer with the new file? (yN)'
+      endif
+      if g:NERDTreeAutoDeleteBuffer || nr2char(getchar()) ==# 'y'
+        for bufNum in l:openBuffers
+          call s:renameBuffer(bufNum, newNodePath, curNode.path.isDirectory)
+        endfor
+      endif
+    endif
+
+    call curNode.putCursorHere(1, 0)
+
+    redraw!
+  catch /^NERDTree/
+    call nerdtree#echoWarning('Node Not Renamed.')
+  endtry
+endfunction

@@ -70,6 +70,8 @@ It's also possible to batch rename files by calling `vjs#imports#RenameFile` dir
 :cdo call vjs#imports#RenameFile(expand('%:r') . '.jsx')
 ```
 
+There is an experimental integration with [NERDTree](https://github.com/preservim/nerdtree) project explorer. Renaming/moving javascript/typescript files in NERDTree automatically updates imports.
+
 #### `:'<,'>VjsExtractVariable`
 
 Extracts selected code into a variable.

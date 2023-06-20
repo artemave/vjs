@@ -41,7 +41,10 @@ Given javascript (going up one directory):
   import fuga from '../fuga'
 
 Execute:
-  call vjs#imports#UpdateCurrentFileImports('test/fixtures/lib/foo/bar.js', 'test/fixtures/lib/bar.js')
+  call vjs#imports#UpdateCurrentFileImports(
+    \ fnamemodify('test/fixtures/lib/foo/bar.js', ':p'),
+    \ fnamemodify('test/fixtures/lib/bar.js', ':p')
+  \ )
 
 Expect javascript:
   require("./foo")
@@ -53,7 +56,10 @@ Given javascript (going down one directory):
   import fuga from '../fuga'
 
 Execute:
-  call vjs#imports#UpdateCurrentFileImports('test/fixtures/lib/bar.js', 'test/fixtures/lib/foo/bar.js')
+  call vjs#imports#UpdateCurrentFileImports(
+    \ fnamemodify('test/fixtures/lib/bar.js', ':p'),
+    \ fnamemodify('test/fixtures/lib/foo/bar.js', ':p')
+  \ )
 
 Expect javascript:
   require("..")
@@ -65,7 +71,10 @@ Given javascript (different parent directories):
   import fuga from '../fuga'
 
 Execute:
-  call vjs#imports#UpdateCurrentFileImports('test/fixtures/lib/foo/bar.js', 'test/fixtures/lib2/foo/bar.js')
+  call vjs#imports#UpdateCurrentFileImports(
+    \ fnamemodify('test/fixtures/lib/foo/bar.js', ':p'),
+    \ fnamemodify('test/fixtures/lib2/foo/bar.js', ':p')
+  \ )
 
 Expect javascript:
   require("../../lib/foo")

@@ -93,6 +93,17 @@ endif
 autocmd FileType javascript setlocal includeexpr=vjs#imports#ResolvePackageImport(v:fname)
 autocmd FileType javascript setlocal isfname+=@-@
 
+let override =<<EOL
+if !exists('g:vjs_nerd_tree_overriden')
+  let g:vjs_nerd_tree_overriden = 1
+
+  function! NERDTreeMoveNode()
+    call vjs#imports#NERDTreeMoveNode()
+  endfunction
+endif
+EOL
+autocmd FileType nerdtree execute join(override, "\n")
+
 com VjsRenameFile call vjs#imports#RenameFile()
 com VjsListDependents call vjs#imports#ListDependents()
 com VjsExtractDeclarationIntoFile call vjs#extract#ExtractDeclarationIntoFile()
