@@ -119,7 +119,7 @@ au FileType {javascript,javascript.jsx,typescript} nmap <leader>vr :VjsRenameFil
 au FileType {javascript,javascript.jsx,typescript} nmap <leader>vl :VjsListDependents<cr>
 ```
 
-If you don't like binding explosion, you might want to consider [popup-menu.nvim](https://github.com/kamykn/popup-menu.nvim) to group commands in context menus.
+If you don't like binding explosion, then perhaps you could add those as code actions via [null-ls](https://github.com/jose-elias-alvarez/null-ls.nvim).
 
 ### Configuration
 
