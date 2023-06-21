@@ -113,6 +113,18 @@ autocmd TextChanged * if &ft =~ 'javascript\|typescript' | call luaeval("require
 autocmd InsertLeave * if &ft =~ 'javascript\|typescript' | call luaeval("require'vjs'.to_template_string()") | endif
 ```
 
+#### npm workspaces support
+
+Import update on rename, list dependants and `gf` follow package references. E.g, in the following example, pressing `gf` when the cursor is within `'abc'` in `./lib/index.js`, jumps to `./packages/abc/index.js`:
+
+```js
+// ./packages/abc/index.js
+module.exports = 'abc'
+
+// ./lib/index.js
+const moduleA = require('abc')
+```
+
 ## Development
 
 ```
