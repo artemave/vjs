@@ -70,12 +70,12 @@ function! vjs#imports#ResolvePackageImport(fname)
   endif
 endfunction
 
-fun! s:PrepareDependantsList()
+fun! s:PrepareDependantsList(current_file_full_path = '')
   let raw_results = systemlist(&grepprg . " '" . s:ImportsSearchTerm('grep'). "'")
   let all_imports = getqflist({'lines': raw_results, 'efm': &grepformat}).items
 
   let result_entries = []
-  let current_file_full_path = expand('%:p:r')
+  let current_file_full_path = empty(a:current_file_full_path) ? expand('%:p:r') : fnamemodify(a:current_file_full_path, ':r')
 
   for require in all_imports
     let match = matchlist(require.text, "['\"]".'\(.\+\)'."['\"]")
@@ -126,8 +126,13 @@ endf
 
 fun! vjs#imports#RenameFile(new_name = '', old_name = '')
   let current_line = line('.')
-  let new_name = len(a:new_name) ? a:new_name : input('New name: ', expand('%:h:p') .'/', 'file')
-  let old_name = len(a:old_name) ? a:old_name : expand('%:p')
+  let new_name = empty(a:new_name) ? input('New name: ', expand('%:p'), 'file') : a:new_name
+  let old_name = empty(a:old_name) ? expand('%:p') : a:old_name
+
+  if empty(new_name)
+    echom 'Rename cancelled'
+    return
+  endif
 
   if !exists('g:vjs_test_env')
     if rename(old_name, new_name) != 0
@@ -136,15 +141,21 @@ fun! vjs#imports#RenameFile(new_name = '', old_name = '')
     end
   endif
 
-  let dependants = s:PrepareDependantsList()
+  let dependants = s:PrepareDependantsList(old_name)
+  echom 'dependants'
+  echom dependants
 
   let imported_module_full_path_parts = split(new_name, '/')
+  echom 'imported_module_full_path_parts'
+  echom imported_module_full_path_parts
 
   for require in dependants
     let import_path_parts = []
     let fname = bufname(require.bufnr)
     let importing_module_full_path_parts = split(fnamemodify(fname, ':p'), '/')
 
+    echom 'importing_module_full_path_parts'
+    echom importing_module_full_path_parts
     let import_path_parts = vjs#imports#calculateImportPathParts(importing_module_full_path_parts, imported_module_full_path_parts)
 
     let new_import_path_with_extension = join(import_path_parts, '/')
@@ -171,6 +182,7 @@ fun! vjs#imports#RenameFile(new_name = '', old_name = '')
       endif
     endif
   endfor
+  echom '*********'
 
   if !exists('g:vjs_test_env')
     silent bwipeout!
@@ -272,9 +284,17 @@ fun vjs#imports#MoveDirectory(oldDirectory, newDirectory)
 
     call mkdir(fnamemodify(newFile, ':p:h'), 'p')
     if !isdirectory(file)
-      call s:renameFile(file, newFile)
+      call s:renameFile(fnamemodify(file, ':p'), fnamemodify(newFile, ':p'))
     endif
   endfor
+
+  " remove oldDirectory if it's empty OR contains only subdirectories
+  " (recursively)
+  let files = globpath(a:oldDirectory, '**', 1, 1)
+  let files = filter(files, '!isdirectory(v:val)')
+  if len(files) == 0
+    call delete(a:oldDirectory, 'rf')
+  endif
 endf
 
 fun s:renameFile(file, newFile)
