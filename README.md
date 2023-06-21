@@ -25,25 +25,6 @@ Use [a plugin manager](https://github.com/junegunn/vim-plug):
 Plug 'artemave/vjs'
 ```
 
-### Example bindings
-
-There are no default bindings. But you can use these:
-
-```vim script
-au FileType {javascript,javascript.jsx,typescript} vmap <leader>vv :VjsExtractVariable<cr>
-au FileType {javascript,javascript.jsx,typescript} vmap <leader>vf :VjsExtractFunctionOrMethod<cr>
-au FileType {javascript,javascript.jsx,typescript} nmap <leader>ve :VjsExtractDeclarationIntoFile<cr>
-au FileType {javascript,javascript.jsx,typescript} nmap <leader>vd :VjsCreateDeclaration<cr>
-au FileType {javascript,javascript.jsx,typescript} nmap <leader>vr :VjsRenameFile<cr>
-au FileType {javascript,javascript.jsx,typescript} nmap <leader>vl :VjsListDependents<cr>
-```
-
-If you don't like binding explosion, you might want to consider [popup-menu.nvim](https://github.com/kamykn/popup-menu.nvim) to group commands in context menus.
-
-### Configuration
-
-`g:vjs_es_modules_complete` - don't strip out file extension from autocompleted modules and also show `index` modules. Defaults to `0`.
-
 ## Usage
 
 #### Complete import/require paths
@@ -124,6 +105,27 @@ module.exports = 'abc'
 // ./lib/index.js
 const moduleA = require('abc')
 ```
+
+### Example bindings
+
+There are no default bindings. But you can use these:
+
+```vim script
+au FileType {javascript,javascript.jsx,typescript} vmap <leader>vv :VjsExtractVariable<cr>
+au FileType {javascript,javascript.jsx,typescript} vmap <leader>vf :VjsExtractFunctionOrMethod<cr>
+au FileType {javascript,javascript.jsx,typescript} nmap <leader>ve :VjsExtractDeclarationIntoFile<cr>
+au FileType {javascript,javascript.jsx,typescript} nmap <leader>vd :VjsCreateDeclaration<cr>
+au FileType {javascript,javascript.jsx,typescript} nmap <leader>vr :VjsRenameFile<cr>
+au FileType {javascript,javascript.jsx,typescript} nmap <leader>vl :VjsListDependents<cr>
+```
+
+If you don't like binding explosion, you might want to consider [popup-menu.nvim](https://github.com/kamykn/popup-menu.nvim) to group commands in context menus.
+
+### Configuration
+
+`g:vjs_es_modules_complete` - don't strip out file extension from autocompleted modules and also show `index` modules. Defaults to `0`.
+
+`g:vjs_nerd_tree_overriden` - if truthy, disables nerdtree integration. Defaults to `0`.
 
 ## Development
 
