@@ -9,9 +9,8 @@ A Neovim plugin that adds a bunch of refactoring tools for Javascript/TypeScript
 - extract class/function/variable declaration into a separate file
 - declare undefined variable/method/function/class
 - list imports for current file
-- update imports when moving file/folder in NERDTree
+- update imports when moving file (also works in NERDTree)
 - autocomplete `require`/`import` paths
-- update imports on file rename/move
 - turn a string into a template string once `${}` detected
 
 ## Installation
