@@ -46,7 +46,7 @@ Rename/move file and update imports. It updates both imports in current file and
 It's also possible to batch rename files by calling `vjs#imports#RenameFile` directly. For example, assuming there is a bunch of `.mjs` files in quickfix window that I want to rename to `.jsx`, the following command will perform batch rename and update all the imports:
 
 ```
-:cdo call vjs#imports#RenameFile(expand('%:r') . '.jsx')
+:cdo call vjs#imports#RenameFile({ 'new_name': expand('%:r') . '.jsx' })
 ```
 
 There is an experimental integration with [NERDTree](https://github.com/preservim/nerdtree) project explorer. Renaming/moving javascript/typescript files in NERDTree automatically updates imports ([watch demo](https://www.veed.io/view/823c1c54-fbaf-4c6e-97a4-5a89203a1e07?panel=share)).

@@ -124,10 +124,11 @@ fun! vjs#imports#ListDependents()
   copen
 endf
 
-fun! vjs#imports#RenameFile(new_name = '', old_name = '')
+fun! vjs#imports#RenameFile(opts = {})
   let current_line = line('.')
-  let new_name = empty(a:new_name) ? input('New name: ', expand('%:p'), 'file') : a:new_name
-  let old_name = empty(a:old_name) ? expand('%:p') : a:old_name
+  let new_name = has_key(a:opts, 'new_name') ? get(a:opts, 'new_name') : input('New name: ', expand('%:p'), 'file')
+  let old_name = get(a:opts, 'old_name', expand('%:p'))
+  let show_qf = !has_key(a:opts, 'new_name') || has_key(a:opts, 'show_qf')
 
   if empty(new_name)
     echom 'Rename cancelled'
@@ -142,20 +143,14 @@ fun! vjs#imports#RenameFile(new_name = '', old_name = '')
   endif
 
   let dependants = s:PrepareDependantsList(old_name)
-  echom 'dependants'
-  echom dependants
 
   let imported_module_full_path_parts = split(new_name, '/')
-  echom 'imported_module_full_path_parts'
-  echom imported_module_full_path_parts
 
   for require in dependants
     let import_path_parts = []
     let fname = bufname(require.bufnr)
     let importing_module_full_path_parts = split(fnamemodify(fname, ':p'), '/')
 
-    echom 'importing_module_full_path_parts'
-    echom importing_module_full_path_parts
     let import_path_parts = vjs#imports#calculateImportPathParts(importing_module_full_path_parts, imported_module_full_path_parts)
 
     let new_import_path_with_extension = join(import_path_parts, '/')
@@ -174,7 +169,7 @@ fun! vjs#imports#RenameFile(new_name = '', old_name = '')
       let cmd = 'sed -i -e '
     endif
 
-    let cmd = cmd .'"'. require.lnum .'s/'. escape(new_text_pattern, '/\"') .'/'. escape(new_text_replacement, '/\"') .'/" '. fname
+    let cmd = cmd .'"'. require.lnum .'s/'. escape(new_text_pattern, '/\"') .'/'. escape(new_text_replacement, '/\"') .'/" ' .. shellescape(fname)
     if !exists('g:vjs_test_env')
       let output = system(cmd)
       if v:shell_error
@@ -182,7 +177,6 @@ fun! vjs#imports#RenameFile(new_name = '', old_name = '')
       endif
     endif
   endfor
-  echom '*********'
 
   if !exists('g:vjs_test_env')
     silent bwipeout!
@@ -191,9 +185,7 @@ fun! vjs#imports#RenameFile(new_name = '', old_name = '')
 
   call vjs#imports#UpdateCurrentFileImports(old_name, new_name)
 
-  " Hack. Presence of new name indicates programmatic usage (a batch rename
-  " likely) in which case we don't want to modify/open qflist
-  if len(a:new_name) == 0
+  if show_qf
     call setqflist([], ' ', {'title': 'Imports updated', 'items': dependants})
     copen
   endif

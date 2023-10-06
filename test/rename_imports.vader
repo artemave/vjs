@@ -1,34 +1,38 @@
 Include: support/test_helper.vader
 
-Do (rename in current directory):
-  :file test/fixtures/deeper/stuff.js
-  :VjsRenameFile\<CR>
-  thing.js\<CR>
-  :AssertEqual sort([
+
+Execute (rename in current directory):
+  file test/fixtures/deeper/stuff.js
+  call vjs#imports#RenameFile({ 'new_name': fnamemodify('test/fixtures/deeper/thing.js', ':p'), 'show_qf': 1 })
+
+Then:
+  AssertEqual sort([
     \ {'lnum': 1, 'fname': 'test/fixtures/blops.js', 'text': "const stuff = require('./deeper/thing')"},
     \ {'lnum': 3, 'fname': 'test/fixtures/package/index.js', 'text': 'const stuff = require("../deeper/thing")'},
     \ {'lnum': 4, 'fname': 'test/fixtures/banana.js', 'text': 'import "./deeper/thing"'},
     \ {'lnum': 5, 'fname': 'test/fixtures/deeper/blah.jsx', 'text': '} from "./thing"'},
   \]), sort(GetQFListFiles())
 
-Do (path from project root 1):
-  :file test/fixtures/deeper/stuff.js
-  :VjsRenameFile\<CR>
-  \<C-U>
-  test/fixtures/thing.js\<CR>
-  :AssertEqual sort([
+
+Execute (move one dir up):
+  file test/fixtures/deeper/stuff.js
+  call vjs#imports#RenameFile({ 'new_name': fnamemodify('test/fixtures/thing.js', ':p'), 'show_qf': 1 })
+
+Then:
+  AssertEqual sort([
     \ {'lnum': 1, 'fname': 'test/fixtures/blops.js', 'text': "const stuff = require('./thing')"},
     \ {'lnum': 3, 'fname': 'test/fixtures/package/index.js', 'text': 'const stuff = require("../thing")'},
     \ {'lnum': 4, 'fname': 'test/fixtures/banana.js', 'text': 'import "./thing"'},
     \ {'lnum': 5, 'fname': 'test/fixtures/deeper/blah.jsx', 'text': '} from "../thing"'},
   \]), sort(GetQFListFiles())
 
-Do (moving to a sibling folder):
-  :file test/fixtures/deeper/stuff.js
-  :VjsRenameFile\<CR>
-  \<C-U>
-  test/fixtures/package/thing.js\<CR>
-  :AssertEqual sort([
+
+Execute (moving to a sibling folder):
+  file test/fixtures/deeper/stuff.js
+  call vjs#imports#RenameFile({ 'new_name': fnamemodify('test/fixtures/package/thing.js', ':p'), 'show_qf': 1 })
+
+Then:
+  AssertEqual sort([
     \ {'lnum': 1, 'fname': 'test/fixtures/blops.js', 'text': "const stuff = require('./package/thing')"},
     \ {'lnum': 3, 'fname': 'test/fixtures/package/index.js', 'text': 'const stuff = require("./thing")'},
     \ {'lnum': 4, 'fname': 'test/fixtures/banana.js', 'text': 'import "./package/thing"'},
@@ -79,3 +83,13 @@ Execute:
 Expect javascript:
   require("../../lib/foo")
   import fuga from '../../lib/fuga'
+
+
+Execute (importing file contains special characters in the file name):
+  file test/fixtures/pages/components/header.tsx
+  call vjs#imports#RenameFile({ 'new_name': fnamemodify('test/fixtures/pages/components/footer.tsx', ':p'), 'show_qf': 1 })
+
+Then:
+  AssertEqual sort([
+    \ {'lnum': 1, 'fname': 'test/fixtures/pages/[slug].tsx', 'text': "import header from './components/footer'"},
+  \]), sort(GetQFListFiles())
