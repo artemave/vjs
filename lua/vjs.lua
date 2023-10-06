@@ -238,7 +238,7 @@ end
 function M.to_template_string()
   local node_at_cursor = ts.get_node()
 
-  if node_at_cursor:type() ~= 'string_fragment' then
+  if not node_at_cursor or node_at_cursor:type() ~= 'string_fragment' then
     return
   end
 
